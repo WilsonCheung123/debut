@@ -1,0 +1,234 @@
+import '@fontsource/newsreader/400.css';
+import '@fontsource/newsreader/400-italic.css';
+import '@fontsource/newsreader/500.css';
+import '@fontsource/caveat/400.css';
+import '@fontsource/caveat/500.css';
+import './styles.css';
+
+import * as THREE from 'three';
+import gsap from 'gsap';
+import { state, refreshMedia, flags } from './state';
+import { api } from './api';
+import { materials } from './materials';
+import { createScene } from './engine/scene';
+import { Lights } from './engine/lights';
+import { CameraRig } from './engine/camera';
+import { Picker } from './engine/picking';
+import { Hover } from './engine/hover';
+import { Focus } from './engine/focus';
+import { createLoop } from './engine/loop';
+import { Quality } from './engine/quality';
+import { watchResize } from './engine/resize';
+import { Overlay } from './ui/overlay';
+import { Label } from './ui/label';
+import { Panel } from './ui/panel';
+import { Bubble } from './ui/bubble';
+import { A11yList } from './ui/a11y';
+import { registry } from './objects/index';
+import { isCluster, type TableObject, type ObjectCtx, type FocusCamera } from './objects/types';
+import { rest as restPoses } from './layout';
+import type { LampObject } from './objects/lamp';
+
+async function boot(): Promise<void> {
+  performance.mark('table:boot');
+  if (flags.qa) gsap.ticker.lagSmoothing(0);
+  const canvas = document.getElementById('scene') as HTMLCanvasElement;
+  const ui = document.getElementById('ui') as HTMLElement;
+
+  const { renderer, scene, maxAnisotropy } = createScene(canvas);
+  const lights = new Lights(scene, state.isPhone);
+  const rig = new CameraRig();
+  const overlay = new Overlay(ui);
+  const label = new Label(ui);
+  const panel = new Panel(ui);
+  const bubble = new Bubble(ui);
+  const a11y = new A11yList(ui);
+  const picker = new Picker(rig.camera, canvas);
+  const hover = new Hover();
+
+  // The context objects are built with. focus/exit/reframe bind once Focus exists.
+  let focusCtl: Focus | null = null;
+  const focusCams = new Map<string, FocusCamera>();
+  const ctx: ObjectCtx = {
+    scene, renderer, camera: rig.camera, state, materials, api, isPhone: state.isPhone, maxAnisotropy,
+    focusPose(id) {
+      let c = focusCams.get(id);
+      if (!c) { c = { position: new THREE.Vector3(), target: new THREE.Vector3() }; focusCams.set(id, c); }
+      return c;
+    },
+    motion(id) { return hover.motion(id); },
+    exit() { void focusCtl?.exit(); },
+    reframe(id, duration) { focusCtl?.reframe(id, duration); },
+  };
+
+  // Objects: create, place roots from layout, register.
+  const objects: TableObject[] = [];
+  let lamp: LampObject | null = null;
+  for (const entry of registry) {
+    const r = entry.create(ctx);
+    const pose = restPoses[entry.key];
+    const root = isCluster(r) ? r.root : r.group;
+    if (pose) {
+      root.position.set(pose.position[0], pose.position[1], pose.position[2]);
+      root.rotation.y = THREE.MathUtils.degToRad(pose.rotationY ?? 0);
+    } else {
+      console.warn(`layout.rest has no pose for ${entry.key}`);
+    }
+    scene.add(root);
+    for (const o of isCluster(r) ? r.objects : [r]) objects.push(o);
+    if (entry.key === 'lamp') lamp = r as LampObject;
+  }
+  scene.updateMatrixWorld(true);
+  performance.mark('table:objects');
+  for (const o of objects) hover.register(o);
+  const interactive = objects.filter((o) => o.hit.length > 0);
+  picker.register(interactive);
+  if (lamp) lights.attachToLamp(lamp.headWorld(), lamp.aimWorld());
+
+  focusCtl = new Focus({ rig, lights, hover, picker, overlay, label, panel, bubble, a11y, objects: interactive, ctx });
+  const focus = focusCtl;
+
+  // Keyboard path: focusing a hidden button shows the hover state; Enter focuses.
+  a11y.build(interactive, {
+    onFocusIn(obj) { if (!state.focused) { hover.set(obj); label.show(obj.label); } },
+    onFocusOut(obj) { if (hover.current === obj && !state.focused) { hover.set(null); label.hide(); } },
+    onActivate(obj, btn) { void focus.focus(obj.id, { origin: btn }); },
+  });
+
+  // Pointer: parallax source and click routing (a drag is not a click).
+  let downX = 0, downY = 0;
+  canvas.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
+  canvas.addEventListener('click', (e) => {
+    if (Math.hypot(e.clientX - downX, e.clientY - downY) > 8) return;
+    focus.routeClick(e.clientX, e.clientY);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    rig.pointer.set((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1));
+  }, { passive: true });
+  canvas.addEventListener('pointerleave', () => rig.pointer.set(0, 0));
+
+  // The hover label follows the object's anchor (it lifts, the camera parallaxes).
+  const anchorWorld = new THREE.Vector3();
+  const anchorScreen = (obj: TableObject): { x: number; y: number } => {
+    obj.group.localToWorld(anchorWorld.copy(obj.anchor)).project(rig.camera);
+    return { x: (anchorWorld.x + 1) / 2 * innerWidth, y: (1 - anchorWorld.y) / 2 * innerHeight };
+  };
+  // x from the anchor, y from the top of the object's projected silhouette, so
+  // the label never sits on the object (a box's back edge projects above its top centre).
+  const placeLabel = (): void => {
+    const o = hover.current;
+    if (!o || !label.visible) return;
+    const p = anchorScreen(o);
+    const r = picker.visibleRect(o);
+    label.place(p.x, r ? Math.min(p.y, r.y) : p.y);
+  };
+
+  const setHover = (obj: TableObject | null): void => {
+    if (obj === hover.current) return;
+    hover.set(obj);
+    if (obj) label.show(obj.label); else label.hide();
+    canvas.style.cursor = obj ? 'pointer' : '';
+  };
+
+  // Quality tier: one-way drop on sustained slow frames.
+  const quality = new Quality(() => {
+    state.quality = 'low';
+    renderer.setPixelRatio(1);
+    lights.setShadowSize(1024);
+    lamp?.setDustCount(60);
+  }, flags.lockTier);
+
+  const applySize = (): void => {
+    refreshMedia();
+    const w = innerWidth, h = innerHeight;
+    const dpr = state.quality === 'low' ? 1 : Math.min(devicePixelRatio || 1, state.isPhone ? 1.5 : 2);
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(w, h, false);
+    rig.fitRest(w, h);
+    panel.setSheet(state.portrait);
+    rig.parallaxEnabled = !state.isTouch && !state.reducedMotion;
+    if (state.focused) focus.onResize();
+    else if (rig.mode === 'rest') rig.applyImmediate(rig.rest);
+  };
+  watchResize(applySize);
+
+  let lastMode = rig.mode;
+  // frame-time record of the last camera move (for the no-frame-over-50-ms check on a real GPU)
+  const moveStats = { max: 0, frames: 0, last: { max: 0, frames: 0 } };
+  let frame = 0;
+  const loop = createLoop((dt, t, frameMs) => {
+    frame++;
+    quality.sample(frameMs);
+    if (rig.mode === 'moving') { moveStats.max = Math.max(moveStats.max, frameMs); moveStats.frames++; }
+    if (rig.mode !== lastMode) {
+      if (lastMode === 'moving') { moveStats.last = { max: moveStats.max, frames: moveStats.frames }; moveStats.max = 0; moveStats.frames = 0; }
+      lastMode = rig.mode;
+      picker.pointer.dirty = true;
+    }
+    // one raycast per frame at most, only when the pointer moved (or the scene settled)
+    if (picker.pointer.dirty) {
+      picker.pointer.dirty = false;
+      if (!state.focused && !state.isTouch && rig.mode === 'rest') {
+        const pick = picker.pointer.inside ? picker.raycast(picker.pointer.x, picker.pointer.y, hover.current) : null;
+        setHover(pick?.obj ?? null);
+      }
+    }
+    hover.updateTilt(picker, dt);
+    hover.apply();
+    for (const o of objects) o.update?.(dt, t);
+    rig.update(dt);
+    lights.apply();
+    overlay.apply();
+    placeLabel();
+    renderer.render(scene, rig.camera);
+  });
+  loop.onResume(() => quality.reset());
+
+  // First frame: everything compiled and the shadow map drawn while the lights
+  // are still at zero, so the first frame of light is the finished table.
+  rig.applyImmediate(rig.rest);
+  lights.warm = 0;
+  lights.apply();
+  await renderer.compileAsync(scene, rig.camera);
+  performance.mark('table:compiled');
+  renderer.render(scene, rig.camera);
+  performance.mark('table:first-render');
+  loop.start();
+  overlay.depth = 1.6;
+  overlay.tweenDepth(0, 1.2, 'sine.inOut');
+  await lights.warmUp(1.2);
+  state.ready = true;
+  performance.mark('table:ready');
+  focus.mark('ready');
+  const deep = focus.deepLink();
+  if (deep) void focus.focus(deep, { viaHash: true });
+
+  // Test hooks for tools/shot.mjs and QA. Small, read-only except hover/focus/exit.
+  const byId = new Map(interactive.map((o) => [o.id, o]));
+  (window as unknown as { __table: unknown }).__table = {
+    ids: interactive.map((o) => o.id),
+    state,
+    timeline: focus.timeline,
+    get ready() { return state.ready; },
+    rect(id: string, minPx = 0) { const o = byId.get(id); return o ? picker.rectOf(o, minPx) : null; },
+    visibleRect(id: string) { const o = byId.get(id); return o ? picker.visibleRect(o) : null; },
+    anchor(id: string) { const o = byId.get(id); return o ? anchorScreen(o) : null; },
+    pickAt(x: number, y: number) { return picker.pickAt(x, y, state.isTouch ? 44 : 0)?.obj.id ?? null; },
+    hover(id: string | null) { setHover(id ? byId.get(id) ?? null : null); },
+    focus(id: string) { return focus.focus(id); },
+    exit() { return focus.exit(); },
+    liftOf(id: string) { return hover.liftOf(id); },
+    info() {
+      return {
+        drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
+        dpr: renderer.getPixelRatio(), tier: state.quality, mode: rig.mode, busy: focus.busy, frame,
+        lastMove: moveStats.last,
+        camera: { position: rig.camera.position.toArray(), target: rig.pose.target.toArray(), fov: rig.camera.fov, offX: rig.pose.offX, offY: rig.pose.offY },
+        rest: { position: rig.rest.position.toArray(), target: rig.rest.target.toArray(), fov: rig.rest.fov },
+      };
+    },
+  };
+}
+
+boot().catch((err) => console.error(err));

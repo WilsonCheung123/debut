@@ -1,0 +1,10 @@
+[
+  {"action":"wait","ready":true},
+  {"action":"assert","name":"reduced-flag","js":"window.__table.state.reducedMotion === true"},
+  {"action":"hover","id":"puppet"},
+  {"action":"assert","name":"no-lift","js":"window.__table.liftOf('puppet') === 0"},
+  {"action":"focus","id":"puppet"},
+  {"action":"shot","name":"reduced-focus-puppet"},
+  {"action":"exit"},
+  {"action":"assert","name":"reduced-back","js":"window.__table.state.focused === null"}
+]

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0a09" />
+    <meta name="description" content="A desk, late at night. The things of Wilson Cheung's life, on a table." />
+    <title>Wilson Cheung</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b0a09; color: #f2ead8; overflow: hidden; }
+      body { font-family: 'Newsreader', Georgia, 'Times New Roman', serif; -webkit-font-smoothing: antialiased; }
+      #scene { position: fixed; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+      noscript .ns { position: fixed; inset: 0; overflow: auto; padding: 48px 24px; max-width: 560px; margin: 0 auto; line-height: 1.55; font-size: 17px; }
+      noscript .ns h1 { font-weight: 400; font-size: 26px; margin: 0 0 12px; }
+      noscript .ns p { margin: 0 0 16px; color: #d6cdbb; }
+      noscript .ns ul { padding-left: 20px; }
+      noscript .ns li { margin: 4px 0; }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene" tabindex="-1" aria-label="A desk at night with Wilson's things on it"></canvas>
+    <div id="ui"></div>
+    <noscript>
+      <div class="ns">
+        <h1>Wilson Cheung</h1>
+        <p>This page is a desk, late at night, with the things of my life on it. It needs JavaScript to be a desk. Without it, here is the list:</p>
+        <ul>
+          <li>Nine books: Anna Karenina, Inferno, Becoming Steve Jobs, The Innovator's Dilemma, The Three-Body Problem, The Power Broker, Thinking, Fast and Slow, 天龙八部, Pride and Prejudice</li>
+          <li>My student ID</li>
+          <li>An FPGA board (Architect)</li>
+          <li>A die-cast sample part (a startup, AI for CAD)</li>
+          <li>A guitar capo and a pick</li>
+          <li>A hologram projector playing Realm's films</li>
+          <li>A wooden puppet holding an instant camera and an iPhone</li>
+          <li>A glass jar of paper slips (how to reach me)</li>
+          <li>A turntable</li>
+        </ul>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

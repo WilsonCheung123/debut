@@ -1,0 +1,22 @@
+name = "wilsons-table-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Local dev: `npm run worker` (wrangler dev --local on 8780); Vite proxies /api there.
+# Deploy later: `npx wrangler login`, create the D1 database
+# (`npx wrangler d1 create wilsons-table`), paste its id below, apply the
+# schema (`npx wrangler d1 execute wilsons-table --remote --file=worker/schema.sql`),
+# set secrets (`npx wrangler secret put TURNSTILE_SECRET` etc.), then `npx wrangler deploy --config worker/wrangler.toml`.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wilsons-table"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[vars]
+# Set in .dev.vars locally / `wrangler secret put` in production:
+#   TURNSTILE_SECRET  Cloudflare Turnstile secret; when unset, verification is skipped (local dev)
+#   RESEND_API_KEY    optional; with OWNER_EMAIL, each note is emailed to the owner
+#   OWNER_EMAIL       the owner's address; lives here only, never in client code
+#   IP_SALT           salt for hashing visitor IPs (rate limiting)

@@ -1,0 +1,36 @@
+{
+  "name": "wilsons-table",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5180 --strictPort",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "preview": "vite preview --port 5181 --strictPort",
+    "worker": "wrangler dev --config worker/wrangler.toml --local --port 8780",
+    "worker:init": "wrangler d1 execute wilsons-table --config worker/wrangler.toml --local --file=worker/schema.sql",
+    "shots": "node tools/shot.mjs",
+    "qa": "node tools/qa.mjs",
+    "images": "node tools/images.mjs"
+  },
+  "dependencies": {
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/newsreader": "^5.3.0",
+    "gsap": "^3.15.0",
+    "hls.js": "^1.7.3",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261019.1",
+    "@types/three": "^0.186.0",
+    "playwright": "^1.61.1",
+    "sharp": "^0.35.5",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.4",
+    "wrangler": "^4.151.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "workerd@1.20261019.1": true
+  }
+}
