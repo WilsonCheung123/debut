@@ -4,6 +4,7 @@ import { placeholder } from './placeholder';
 import { roundedBox, solid } from './helpers';
 import { metal } from '../materials';
 import { bookSlots } from '../layout';
+import { austenPanel } from '../panels/austen';
 
 // PLACEHOLDER. The books builder replaces this file: nine procedurally
 // covered books, five standing between two bookends and four in a stack.
@@ -44,6 +45,9 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
       color: tones[i % tones.length],
       hover: slot.standing ? { tiltMode: 'forward', tilt: 8, lift: 0.006 } : { lift: 0.012 },
     });
+    // TEMPORARY (vinyl branch): route the placeholder Pride and Prejudice to the Austen panel for
+    // testing; the integrator keeps the books builder's version of this file.
+    if (slot.id === 'book.pride-and-prejudice') obj.focus.panel = austenPanel();
     if (slot.standing) {
       obj.group.position.set(cursor + size[0] / 2, 0, 0);
       cursor += size[0] + GAP;
