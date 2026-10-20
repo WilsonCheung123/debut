@@ -629,7 +629,11 @@ export function createHologram(ctx: ObjectCtx): TableObject {
     prepareTimer = window.setTimeout(() => { if (!focused) void player.prepare(FILMS[selected]); }, delay);
   };
   // idle after the lamp has warmed: the first film is ready to start on the click
-  const whenReady = (): void => { if (state.ready) prepareSoon(2500); else setTimeout(whenReady, 500); };
+  const whenReady = (): void => {
+    if (!state.ready) { setTimeout(whenReady, 300); return; }
+    if ('requestIdleCallback' in window) requestIdleCallback(() => prepareSoon(0), { timeout: 1500 });
+    else prepareSoon(800);
+  };
   whenReady();
 
   const listeners = new Set<(i: number) => void>();
