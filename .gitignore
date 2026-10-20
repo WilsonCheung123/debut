@@ -10,3 +10,4 @@ worker/.dev.vars
 
 # agent worktrees live inside the repo dir; never commit them
 .claude/
+node_modules
