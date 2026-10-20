@@ -62,8 +62,8 @@ const RECEDE_Z = -0.018;
 const WHEEL = 0.00055;
 /** Scroll past the ends is allowed this far and springs back. */
 const OVERSCROLL = 0.035;
-/** Fraction of the visible half-width the end book stops short of the view's centre at the scroll limits. */
-const END_REACH = 0.45;
+/** How far past the view's edge the end books can scroll inward, as a fraction of the visible half-width. */
+const END_REACH = 0.5;
 
 const CSS = `
 #shelf { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
@@ -339,10 +339,12 @@ export class Shelf {
     if (this.active) {
       const half = this.visibleHalf();
       const total = this.spreadX[this.spreadX.length - 1] - this.spreadX[0] + this.books[0].size[0] / 2 + this.books[this.books.length - 1].size[0] / 2 + 0.06;
-      // the row scrolls until its end book sits near the middle of the view (round 3: the old bound, the end book at the edge, felt constrained)
-      const over = Math.max(0, total / 2 - half * END_REACH);
+      // the row parks with its first book at the view's left edge and scrolls past either end until the
+      // end book sits well inside the view (round 3: the old bounds, the end books pinned at the edges, felt constrained)
+      const edge = Math.max(0, total / 2 - half);
+      const over = edge + half * END_REACH;
       s.min = -over; s.max = over;
-      if (s.target === -1 && s.pos === -1) { s.target = s.pos = s.prev = s.min; }
+      if (s.target === -1 && s.pos === -1) { s.target = s.pos = s.prev = -edge; }
       // past the ends: ease back once the wheel is quiet
       if (s.target < s.min) s.target += (s.min - s.target) * Math.min(1, dt * 8);
       else if (s.target > s.max) s.target += (s.max - s.target) * Math.min(1, dt * 8);
@@ -446,11 +448,13 @@ export class Shelf {
   }
 
   /** QA snapshot. */
-  snapshot(): { active: boolean; spread: number; open: string | null; hovered: string | null; scroll: number; min: number; max: number; lean: number } {
+  snapshot(): { active: boolean; spread: number; open: string | null; hovered: string | null; scroll: number; min: number; max: number; lean: number; settled: boolean } {
     return {
       active: this.active, spread: this.spread, open: this.openId,
       hovered: this.hovered >= 0 ? this.books[this.hovered].id : null,
       scroll: this.scroll.pos, min: this.scroll.min, max: this.scroll.max, lean: this.scroll.lean,
+      // QA: the row has stopped moving (a scripted click aimed at a gliding book misses; a person's cannot)
+      settled: Math.abs(this.scroll.pos - this.scroll.target) < 0.0015 && this.scroll.target >= this.scroll.min - 0.001 && this.scroll.target <= this.scroll.max + 0.001,
     };
   }
 }

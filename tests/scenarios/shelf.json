@@ -58,6 +58,11 @@
   },
   {
     "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
+    "action": "assert",
     "name": "shelf-hover-leans",
     "js": "window.__until(() => { const b = window.__books.state('book.three-body'); return window.__books.shelf().hovered === 'book.three-body' && b.shelf.z > 0.02 && b.shelf.pitch > 0.1; }, 15000)"
   },
@@ -148,6 +153,11 @@
     "js": "window.__books.drive.hover('book.thinking-fast-slow')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.thinking-fast-slow"
   },
@@ -184,6 +194,11 @@
   {
     "action": "eval",
     "js": "window.__books.drive.hover('book.pride-and-prejudice')"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
   },
   {
     "action": "click-object",

@@ -39,6 +39,11 @@
     "js": "window.__books.drive.hover('book.anna-karenina')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.anna-karenina"
   },
@@ -73,6 +78,11 @@
     "js": "window.__books.drive.hover('book.becoming-steve-jobs')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.becoming-steve-jobs"
   },
@@ -101,6 +111,11 @@
   {
     "action": "eval",
     "js": "window.__books.drive.hover('book.innovators-dilemma')"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
   },
   {
     "action": "click-object",
@@ -142,6 +157,11 @@
     "js": "window.__books.drive.hover('book.power-broker')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.power-broker"
   },
@@ -174,6 +194,11 @@
   {
     "action": "eval",
     "js": "window.__books.drive.hover('book.demi-gods')"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
   },
   {
     "action": "click-object",

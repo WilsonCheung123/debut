@@ -234,6 +234,11 @@
     "js": "window.__books.drive.hover('book.anna-karenina')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.anna-karenina"
   },
@@ -262,6 +267,11 @@
   {
     "action": "eval",
     "js": "window.__books.drive.hover('book.inferno')"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
   },
   {
     "action": "click-object",
@@ -294,6 +304,11 @@
     "js": "window.__books.drive.hover('book.becoming-steve-jobs')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.becoming-steve-jobs"
   },
@@ -324,6 +339,11 @@
     "js": "window.__books.drive.hover('book.innovators-dilemma')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.innovators-dilemma"
   },
@@ -352,6 +372,11 @@
   {
     "action": "eval",
     "js": "window.__books.drive.hover('book.three-body')"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
   },
   {
     "action": "click-object",
@@ -393,6 +418,11 @@
     "js": "window.__books.drive.hover('book.power-broker')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.power-broker"
   },
@@ -423,6 +453,11 @@
     "js": "window.__books.drive.hover('book.thinking-fast-slow')"
   },
   {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
+  },
+  {
     "action": "click-object",
     "id": "book.thinking-fast-slow"
   },
@@ -451,6 +486,11 @@
   {
     "action": "eval",
     "js": "window.__books.drive.hover('book.demi-gods')"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
   },
   {
     "action": "click-object",
@@ -485,6 +525,11 @@
   {
     "action": "eval",
     "js": "window.__books.drive.hover('book.pride-and-prejudice')"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-settled",
+    "js": "window.__until(() => window.__books.shelf().settled, 15000)"
   },
   {
     "action": "click-object",
