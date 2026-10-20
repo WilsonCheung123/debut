@@ -23,13 +23,13 @@ import { hologramPanel, type HologramController } from '../panels/hologram';
 
 const PUCK = { r: 0.046, h: 0.020, bevel: 0.0035 };
 const LENS = { base: 0.019, h: 0.0075 };
-const CONE = { h: 0.21, rTop: 0.085, rBottom: 0.012 };
+const CONE = { h: 0.17, rTop: 0.068, rBottom: 0.012 };
 const GHOST = { w: 0.12, y: 0.115, intensity: 0.28 };
 const SCREEN = { w: 0.32, h: 0.18, y: 0.255, bow: 0.012, tilt: -0.10 };
 const CYAN = new THREE.Color(0x6fdcff);
 
-const REST = { cone: 0.20, glow: 0.35, light: 0.05, coneScale: 1 };
-const FOCUS = { cone: 0.52, glow: 0.9, light: 0.35, coneScale: 1.12 };
+const REST = { cone: 0.16, glow: 0.35, light: 0.05, coneScale: 1 };
+const FOCUS = { cone: 0.30, glow: 0.9, light: 0.3, coneScale: 1.05 };
 
 // ---------------------------------------------------------------- shaders
 
@@ -49,7 +49,7 @@ varying vec2 vUv; varying vec3 vN; varying vec3 vV;
 void main() {
   float h = 1.0 - vUv.y;                       // 0 at the lens, 1 at the top
   float rim = pow(abs(dot(normalize(vN), normalize(vV))), 1.6);   // thin at the silhouette: reads as volume
-  float fall = pow(1.0 - h, 1.35) * (0.3 + 0.7 * smoothstep(0.0, 0.10, h));
+  float fall = pow(1.0 - h, 1.9) * (0.3 + 0.7 * smoothstep(0.0, 0.10, h)) * smoothstep(1.0, 0.78, h);
   float bands = 0.93 + 0.07 * sin(h * 24.0 - time * 1.1 + sin(vUv.x * 12.566 + time * 0.3));
   float flick = 1.0 + 0.02 * sin(time * 9.0) * sin(time * 3.1);
   vec3 col = mix(colorA, colorB, h);
