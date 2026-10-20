@@ -42,6 +42,7 @@ export const PlayerState = { UNSTARTED: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUF
 
 interface YTPlayer {
   playVideo(): void; pauseVideo(): void; nextVideo(): void; previousVideo(): void; destroy(): void;
+  cuePlaylist(ids: string[] | { list: string; listType?: 'playlist'; index?: number }): void;
   getPlayerState(): number;
   getPlaylist(): string[] | null;
   getPlaylistIndex(): number;
@@ -161,14 +162,15 @@ class Music {
       if (this.status !== 'loading' || !window.YT?.Player) return;
       try {
         const playerVars: Record<string, string | number> = { playsinline: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, origin: location.origin };
-        let videoId: string | undefined;
+        // a playlist id goes in the player vars; an id list is cued once the player is ready
+        // (cuePlaylist, not the videoId + playlist vars: getPlaylist() would then leave the first video out)
         if (YOUTUBE_PLAYLIST) { playerVars.listType = 'playlist'; playerVars.list = YOUTUBE_PLAYLIST; }
-        else { videoId = TRACKS[0]?.id; if (TRACKS.length > 1) playerVars.playlist = TRACKS.slice(1).map((t) => t.id).join(','); }
         this.player = new window.YT.Player(target, {
-          width: '100%', height: '100%', videoId, playerVars,
+          width: '100%', height: '100%', playerVars,
           events: {
-            onReady: () => {
+            onReady: (e) => {
               clearTimeout(this.timer);
+              if (!YOUTUBE_PLAYLIST) { try { e.target.cuePlaylist(TRACKS.map((t) => t.id)); } catch (err) { console.error(err); } }
               this.setStatus('ready');
               this.syncTrack();
             },

@@ -94,19 +94,27 @@ const problems = [];
 const note = (s) => { problems.push(s); console.log(`  ! ${s}`); };
 // SwiftShader-only noise (not present on real GPUs): recorded, not counted.
 const ENV_NOISE = /KHR_parallel_shader_compile|GL Driver Message/;
-// Third-party noise: Chromium warns about the YouTube player's own iframe markup (allow="…fullscreen" plus
-// allowfullscreen); it is YouTube's element, not ours. Recorded as [3p.warn], not counted.
+// Third-party noise: anything logged from a script that is not ours (the YouTube IFrame API's
+// www-widgetapi.js warns about postMessage before its iframe answers; inside the player's own frame
+// an ad beacon to doubleclick fails CORS) or about the player's iframe markup (allow="…fullscreen" plus
+// allowfullscreen). Recorded as [3p.error] / [3p.warn] / [3p.requestfailed], not counted.
 const THIRD_PARTY_NOISE = /Allow attribute will take precedence over 'allowfullscreen'/;
+const ours = (src) => !src || src.startsWith(u.origin) || src.startsWith('blob:' + u.origin);
 page.on('console', (msg) => {
   const type = msg.type();
   const text = msg.text();
-  if (type === 'error') note(`[console.error] ${text}`);
-  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : THIRD_PARTY_NOISE.test(text) ? `[3p.warn] ${text}` : `[console.warn] ${text}`);
+  const foreign = !ours(msg.location()?.url) || THIRD_PARTY_NOISE.test(text);
+  if (type === 'error') note(foreign ? `[3p.error] ${text}` : `[console.error] ${text}`);
+  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : foreign ? `[3p.warn] ${text}` : `[console.warn] ${text}`);
 });
 page.on('pageerror', (err) => note(`[pageerror] ${err.message}`));
 page.on('requestfailed', (req) => {
   const f = req.failure();
-  if (f && f.errorText !== 'net::ERR_ABORTED') note(`[requestfailed] ${req.url()} — ${f.errorText}`);
+  if (!f || f.errorText === 'net::ERR_ABORTED') return;
+  // a request made by a third-party frame (the YouTube player's beacons) is theirs, not ours
+  const frame = req.frame();
+  const foreign = frame && frame !== page.mainFrame();
+  note(`${foreign ? '[3p.requestfailed]' : '[requestfailed]'} ${req.url()} — ${f.errorText}`);
 });
 page.on('response', (res) => { if (res.status() >= 400) note(`[http ${res.status()}] ${res.url()}`); });
 
