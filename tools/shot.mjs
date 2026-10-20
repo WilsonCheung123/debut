@@ -66,7 +66,7 @@ if (!device) { console.error(`unknown viewport ${viewportName}`); process.exit(1
 const touch = !!device.hasTouch;
 
 const browser = await chromium.launch({
-  args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync'],
+  args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'],
 });
 const context = await browser.newContext({
   ...device,
