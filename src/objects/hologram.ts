@@ -4,6 +4,7 @@ import type Hls from 'hls.js';
 import type { ErrorData } from 'hls.js';
 import type { ObjectCtx, TableObject } from './types';
 import { hitProxy, solid } from './helpers';
+import { HIT_LAYER } from '../engine/picking';
 import { metal, plastic, makeCanvasTexture, hash2 } from '../materials';
 import { FILMS, thumbnailUrl, hlsUrl, type Film } from '../content/hologram';
 import { hologramPanel, type HologramController } from '../panels/hologram';
@@ -179,10 +180,28 @@ function bowedPlane(w: number, h: number, bow: number): THREE.PlaneGeometry {
 
 type Mode = 'hls' | 'native' | 'file';
 
+/** Fullscreen across engines (Safari before 16.4 is prefixed; iOS only has the video-level call). */
+interface FsVideo extends HTMLVideoElement {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+  webkitEnterFullscreen?: () => void;
+}
+interface FsDocument extends Document {
+  webkitFullscreenElement?: Element | null;
+  webkitExitFullscreen?: () => Promise<void> | void;
+}
+const fsElement = (): Element | null => document.fullscreenElement ?? (document as FsDocument).webkitFullscreenElement ?? null;
+
 /**
  * Owns the one hidden <video>, the hls.js instance and the VideoTexture.
- * `start` swaps the source; `poll` (per frame) reports when real frames flow;
- * `stop` pauses, detaches hls, clears the source and frees the GPU texture.
+ *
+ * The expensive parts of starting a stream in Chrome are not the network: it is
+ * importing hls.js, opening the MediaSource and loading the playlists. `prepare`
+ * does all of that at idle (no fragment is fetched: autoStartLoad off), so the
+ * focus click only has to `startLoad` and `play`. `poll` (per frame) reports when
+ * real frames flow; `stop` pauses, detaches hls, clears the source and frees the
+ * GPU texture. `enterCinema` turns the same element into the fullscreen player
+ * with sound (same stream, same position); leaving fullscreen returns it to the
+ * muted, hidden hologram source without a reload.
  */
 class Player {
   video: HTMLVideoElement | null = null;
@@ -191,16 +210,38 @@ class Player {
   mode: Mode | null = null;
   live = false;
   playing = false;
-  held = false;
+  cinema = false;
   lastError = '';
+  /** A short trace of media and hls.js events (QA: `__hologram.status().events`). */
+  events: string[] = [];
+  private preparedFor: string | null = null;
+  private hlsMod: Promise<typeof Hls | null> | null = null;
   private token = 0;
+  private readonly t0 = performance.now();
 
   constructor(
     private readonly fileOverride: string | null,
     /** QA: take the hls.js path even where the browser plays HLS natively. */
     private readonly forceHls: boolean,
     private readonly onLive: (tex: THREE.VideoTexture) => void,
-  ) {}
+    private readonly onCinema: (on: boolean) => void,
+  ) {
+    const onFsChange = (): void => { if (this.cinema && fsElement() !== this.video) this.leaveCinema(); };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+    // Escape while the fullscreen player (or its fallback overlay) is up closes only that, never the focus
+    document.addEventListener('keydown', (e) => {
+      if (!this.cinema || e.key !== 'Escape') return;
+      e.stopPropagation();
+      e.preventDefault();
+      this.leaveCinema();
+    }, true);
+  }
+
+  trace(s: string): void {
+    this.events.push(`${((performance.now() - this.t0) / 1000).toFixed(2)} ${s}`);
+    if (this.events.length > 200) this.events.shift();
+  }
 
   private ensureVideo(): HTMLVideoElement {
     if (this.video) return this.video;
@@ -209,57 +250,110 @@ class Player {
     v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('aria-hidden', 'true');
     v.crossOrigin = 'anonymous';
     v.tabIndex = -1;
+    v.className = 'holo-video';
+    for (const ev of ['loadstart', 'loadedmetadata', 'loadeddata', 'playing', 'waiting', 'stalled', 'pause', 'ended', 'error', 'emptied'])
+      v.addEventListener(ev, () => this.trace(ev === 'error' ? `video:error ${v.error?.code ?? '?'} ${v.error?.message ?? ''}` : `video:${ev}`));
+    v.addEventListener('webkitendfullscreen', () => { if (this.cinema) this.leaveCinema(); }); // iOS's own player
     // in the document (Safari decodes nothing for a detached element) but out of sight
-    v.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1;';
     document.body.append(v);
     this.video = v;
     return v;
   }
 
+  private useNative(v: HTMLVideoElement): boolean {
+    return !this.fileOverride && !this.forceHls && !!v.canPlayType('application/vnd.apple.mpegurl');
+  }
+
+  private loadHls(): Promise<typeof Hls | null> {
+    this.hlsMod ??= import('hls.js')
+      .then((m) => { this.trace('hls.js imported'); return m.default; })
+      .catch((e: unknown) => { this.lastError = `hls-import: ${e instanceof Error ? e.message : String(e)}`; this.hlsMod = null; return null; });
+    return this.hlsMod;
+  }
+
+  private newHls(HlsCtor: typeof Hls, autoStartLoad: boolean): Hls {
+    const hls = new HlsCtor({
+      enableWorker: true, autoStartLoad,
+      // a 32 cm sheet of light: ~20 s ahead is plenty (the default maxBufferSize would fetch whole films)
+      maxBufferLength: 20, maxMaxBufferLength: 30, maxBufferSize: 8 * 1000 * 1000, backBufferLength: 10,
+    });
+    for (const ev of [HlsCtor.Events.MEDIA_ATTACHED, HlsCtor.Events.MANIFEST_LOADED, HlsCtor.Events.LEVEL_LOADED, HlsCtor.Events.FRAG_BUFFERED])
+      hls.on(ev, () => this.trace(`hls:${ev}`));
+    hls.on(HlsCtor.Events.MANIFEST_PARSED, () => {
+      // no more than 720p on the hologram
+      let cap = -1;
+      hls.levels.forEach((l, i) => { if (l.height && l.height <= 720) cap = i; });
+      if (cap >= 0) hls.autoLevelCapping = cap;
+    });
+    let retriedNet = false, retriedMedia = false;
+    hls.on(HlsCtor.Events.ERROR, (_ev, data: ErrorData) => {
+      this.trace(`hls:error ${data.fatal ? 'FATAL' : 'minor'} ${data.type} ${data.details}${data.response ? ` http ${data.response.code}` : ''}`);
+      if (!data.fatal) return;
+      if (data.type === HlsCtor.ErrorTypes.NETWORK_ERROR && !retriedNet) { retriedNet = true; hls.startLoad(); return; }
+      if (data.type === HlsCtor.ErrorTypes.MEDIA_ERROR && !retriedMedia) { retriedMedia = true; hls.recoverMediaError(); return; }
+      this.lastError = data.details;
+      this.playing = false;
+      hls.destroy();
+      if (this.hls === hls) { this.hls = null; this.preparedFor = null; }
+    });
+    return hls;
+  }
+
+  /** Idle work for the film most likely to play next: import hls.js, open the MediaSource, load the playlists. Fetches no video. */
+  async prepare(film: Film): Promise<void> {
+    if (this.playing || this.preparedFor === film.id || this.fileOverride) return;
+    const v = this.ensureVideo();
+    if (this.useNative(v)) return; // Safari's own stack starts fast enough
+    const token = this.token;
+    const HlsCtor = await this.loadHls();
+    if (!HlsCtor || token !== this.token || this.playing || this.preparedFor === film.id) return;
+    if (!HlsCtor.isSupported()) { this.lastError = 'hls-unsupported'; return; }
+    this.detach();
+    this.mode = 'hls';
+    const hls = this.newHls(HlsCtor, false);
+    this.hls = hls;
+    hls.attachMedia(v);
+    hls.loadSource(hlsUrl(film));
+    this.preparedFor = film.id;
+    this.trace(`prepared ${film.id.slice(0, 8)}`);
+  }
+
   async start(film: Film): Promise<void> {
     const token = ++this.token;
     const v = this.ensureVideo();
-    this.detach();
+    this.trace(`start ${film.id.slice(0, 8)}${this.preparedFor === film.id ? ' (prepared)' : ''}`);
     this.live = false;
     this.playing = true;
-    this.held = false;
     this.lastError = '';
     if (this.fileOverride) {
+      this.detach();
       this.mode = 'file';
       v.src = this.fileOverride;
-    } else if (!this.forceHls && v.canPlayType('application/vnd.apple.mpegurl')) {
+    } else if (this.useNative(v)) {
+      this.detach();
       this.mode = 'native';
       v.src = hlsUrl(film);
+    } else if (this.hls && this.preparedFor === film.id) {
+      this.hls.startLoad();
     } else {
-      let HlsCtor: typeof Hls;
-      try { HlsCtor = (await import('hls.js')).default; }
-      catch (e: unknown) { this.lastError = `hls-import: ${e instanceof Error ? e.message : String(e)}`; this.playing = false; return; }
+      this.detach();
+      const HlsCtor = await this.loadHls();
       if (token !== this.token) return;
+      if (!HlsCtor) { this.playing = false; return; }
       if (!HlsCtor.isSupported()) { this.lastError = 'hls-unsupported'; this.playing = false; return; }
       this.mode = 'hls';
-      const hls = new HlsCtor({ enableWorker: true, maxBufferLength: 20, backBufferLength: 20, startLevel: -1 });
+      const hls = this.newHls(HlsCtor, true);
       this.hls = hls;
-      let retriedNet = false, retriedMedia = false;
-      hls.on(HlsCtor.Events.MANIFEST_PARSED, () => {
-        // a 32 cm sheet of light needs no more than 720p
-        let cap = -1;
-        hls.levels.forEach((l, i) => { if (l.height && l.height <= 720) cap = i; });
-        if (cap >= 0) hls.autoLevelCapping = cap;
-      });
-      hls.on(HlsCtor.Events.ERROR, (_ev, data: ErrorData) => {
-        if (!data.fatal) return;
-        if (data.type === HlsCtor.ErrorTypes.NETWORK_ERROR && !retriedNet) { retriedNet = true; hls.startLoad(); return; }
-        if (data.type === HlsCtor.ErrorTypes.MEDIA_ERROR && !retriedMedia) { retriedMedia = true; hls.recoverMediaError(); return; }
-        this.lastError = data.details;
-        this.playing = false;
-        hls.destroy();
-        if (this.hls === hls) this.hls = null;
-      });
       hls.attachMedia(v);
       hls.loadSource(hlsUrl(film));
+      this.preparedFor = film.id;
     }
+    this.play(v);
+  }
+
+  private play(v: HTMLVideoElement): void {
     const p = v.play();
-    if (p) p.catch((e: unknown) => { this.lastError = e instanceof Error ? e.name : String(e); });
+    if (p) p.catch((e: unknown) => { this.lastError = e instanceof Error ? e.name : String(e); this.trace(`play rejected ${this.lastError}`); });
   }
 
   /** Called every frame: attaches the VideoTexture once the first frame exists (never before: an empty video would log a WebGL warning). */
@@ -276,15 +370,54 @@ class Player {
     }
     this.texture.needsUpdate = true;
     this.live = true;
+    this.trace(`live ${v.videoWidth}x${v.videoHeight}`);
     this.onLive(this.texture);
   }
 
-  hold(on: boolean): void {
-    this.held = on;
+  /**
+   * The same element, fullscreen, with sound and the browser's controls. Must run inside the
+   * user's click (unmuting and fullscreen are gated on the gesture). Where fullscreen is
+   * refused the element stays as a full-viewport overlay (Escape closes it).
+   */
+  enterCinema(): boolean {
+    const v = this.video as FsVideo | null;
+    if (!v || !this.playing || this.cinema) return false;
+    this.cinema = true;
+    this.trace('cinema on');
+    v.muted = false;
+    v.controls = true;
+    v.classList.add('cinema');
+    this.onCinema(true);
+    const req = v.requestFullscreen ?? v.webkitRequestFullscreen;
+    if (req) {
+      try {
+        const p = req.call(v);
+        if (p && typeof (p as Promise<void>).catch === 'function') (p as Promise<void>).catch((e: unknown) => this.trace(`fullscreen refused ${e instanceof Error ? e.message : String(e)}`));
+      } catch (e: unknown) { this.trace(`fullscreen threw ${e instanceof Error ? e.message : String(e)}`); }
+    } else if (v.webkitEnterFullscreen) {
+      v.webkitEnterFullscreen();
+    }
+    if (v.paused) this.play(v);
+    return true;
+  }
+
+  leaveCinema(): void {
+    if (!this.cinema) return;
+    this.cinema = false;
+    this.trace('cinema off');
     const v = this.video;
-    if (!v || !this.playing) return;
-    if (on) v.pause();
-    else { const p = v.play(); if (p) p.catch(() => { /* a paused hologram is acceptable */ }); }
+    if (v) {
+      v.muted = true;
+      v.controls = false;
+      v.classList.remove('cinema');
+      if (fsElement() === v) {
+        const d = document as FsDocument;
+        const p = d.exitFullscreen ? d.exitFullscreen() : d.webkitExitFullscreen?.();
+        if (p && typeof (p as Promise<void>).catch === 'function') (p as Promise<void>).catch(() => { /* already out */ });
+      }
+      if (this.playing && v.paused) this.play(v); // the visitor may have paused it in fullscreen; the hologram runs
+    }
+    this.onCinema(false);
   }
 
   /** Draws the current frame into `canvas`; false when there is no frame (or the canvas would be tainted). */
@@ -302,15 +435,16 @@ class Player {
 
   private detach(): void {
     if (this.hls) { this.hls.destroy(); this.hls = null; }
+    this.preparedFor = null;
     const v = this.video;
     if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
   }
 
   stop(): void {
     this.token++;
+    if (this.cinema) this.leaveCinema();
     this.playing = false;
     this.live = false;
-    this.held = false;
     this.detach();
     this.texture?.dispose(); // the GPU copy goes; the object is reused next time
   }
@@ -322,6 +456,11 @@ class Player {
     this.video = null;
   }
 }
+
+const VIDEO_CSS = `
+video.holo-video { position: fixed; left: 0; bottom: 0; width: 2px; height: 2px; opacity: 0.01; pointer-events: none; z-index: -1; background: #000; }
+video.holo-video.cinema { inset: 0; width: 100%; height: 100%; opacity: 1; pointer-events: auto; z-index: 40; object-fit: contain; }
+`;
 
 // ---------------------------------------------------------------- the object
 
@@ -408,7 +547,7 @@ export function createHologram(ctx: ObjectCtx): TableObject {
       for (const f of cbs) f(t);
     };
     loader.load(
-      thumbnailUrl(FILMS[i]),
+      thumbnailUrl(FILMS[i], 960),
       (t) => {
         t.colorSpace = THREE.SRGBColorSpace;
         t.anisotropy = Math.min(ctx.maxAnisotropy, 8);
@@ -420,7 +559,7 @@ export function createHologram(ctx: ObjectCtx): TableObject {
     );
   };
   const snapCanvas = document.createElement('canvas');
-  snapCanvas.width = 480; snapCanvas.height = 270;
+  snapCanvas.width = 960; snapCanvas.height = 540;
   const snapTex = new THREE.CanvasTexture(snapCanvas);
   snapTex.colorSpace = THREE.SRGBColorSpace;
   snapTex.minFilter = THREE.LinearFilter;
@@ -470,7 +609,32 @@ export function createHologram(ctx: ObjectCtx): TableObject {
   const fileOverride = holoParam && holoParam.startsWith('/') ? holoParam : null; // QA: a same-origin test video instead of Mux
   let selected = 0;
   let focused = false;
-  const player = new Player(fileOverride, holoParam === 'hls', (tex) => { if (focused) fadeTo(tex, 0.5); });
+  if (!document.getElementById('hologram-video-css')) {
+    const s = document.createElement('style');
+    s.id = 'hologram-video-css';
+    s.textContent = VIDEO_CSS;
+    document.head.append(s);
+  }
+  const player = new Player(fileOverride, holoParam === 'hls', (tex) => { if (focused) fadeTo(tex, 0.5); }, (on) => {
+    // fullscreen covers the table: no texture uploads meanwhile; back from it, the sheet fades in on the running stream
+    if (on) { screen.visible = false; return; }
+    if (!focused) return;
+    screen.visible = true;
+    su.opacity.value = 0;
+    tw(su.opacity, { value: 1, ease: 'power2.out' }, 0.5);
+  });
+  let prepareTimer = 0;
+  const prepareSoon = (delay: number): void => {
+    clearTimeout(prepareTimer);
+    prepareTimer = window.setTimeout(() => { if (!focused) void player.prepare(FILMS[selected]); }, delay);
+  };
+  // idle after the lamp has warmed: the first film is ready to start on the click
+  const whenReady = (): void => {
+    if (!state.ready) { setTimeout(whenReady, 300); return; }
+    if ('requestIdleCallback' in window) requestIdleCallback(() => prepareSoon(0), { timeout: 1500 });
+    else prepareSoon(800);
+  };
+  whenReady();
 
   const listeners = new Set<(i: number) => void>();
   const controller: HologramController = {
@@ -480,15 +644,12 @@ export function createHologram(ctx: ObjectCtx): TableObject {
       if (i === selected || i < 0 || i >= FILMS.length) return;
       selected = i;
       for (const l of listeners) l(i);
-      if (!focused) { poster(i, (t) => { if (selected === i && !focused) showGhost(t); }); return; }
+      if (!focused) { poster(i, (t) => { if (selected === i && !focused) showGhost(t); }); prepareSoon(0); return; }
       if (player.snapshot(snapCanvas)) { snapTex.needsUpdate = true; showStatic(snapTex); }
       poster(i, (t) => { if (selected === i && focused) fadeTo(t, 0.35); });
       void player.start(FILMS[i]);
     },
-    hold(on) {
-      player.hold(on);
-      gsap.to(su.intensity, { value: on ? 0.55 : 1, duration: state.reducedMotion ? 0.2 : 0.4, ease: 'power2.out', overwrite: 'auto' });
-    },
+    cinema() { return focused && player.enterCinema(); },
     onChange(cb) { listeners.add(cb); return () => { listeners.delete(cb); }; },
   };
 
@@ -501,11 +662,13 @@ export function createHologram(ctx: ObjectCtx): TableObject {
 
   const enter = (): void => {
     focused = true;
+    clearTimeout(prepareTimer);
     // a late poster fills a still-black screen; it never interrupts a video that has already gone live
     poster(selected, (t) => { if (focused && !player.live && su.mapA.value === black && su.mapB.value === black) showStatic(t); });
     const have = posters.get(selected);
     showStatic(have ?? black);
     screen.visible = true;
+    screenProxy.layers.set(HIT_LAYER);
     tw(su.opacity, { value: 1, ease: 'power2.out' }, 0.6, 0.45);        // with the panel entrance
     tw(coneUniforms.intensity, { value: FOCUS.cone, ease: 'power2.inOut' }, 0.9);
     tw(cone.scale, { y: state.reducedMotion ? 1 : FOCUS.coneScale, ease: 'power2.inOut' }, 0.9);
@@ -517,10 +680,12 @@ export function createHologram(ctx: ObjectCtx): TableObject {
 
   const exit = (): void => {
     focused = false;
+    screenProxy.layers.disableAll();
     // hold the last frame as a still, release the video now (no race with a quick re-focus), fade the still with the panel
     if (player.snapshot(snapCanvas)) { snapTex.needsUpdate = true; showStatic(snapTex); }
     else if (su.mapA.value === player.texture || su.mapB.value === player.texture) showStatic(posters.get(selected) ?? black);
     player.stop();
+    screen.visible = true;
     tw(su.opacity, { value: 0, ease: 'power2.in', onComplete: () => { if (!focused) screen.visible = false; } }, 0.24);
     tw(su.intensity, { value: 1 }, 0.24);
     tw(coneUniforms.intensity, { value: REST.cone, ease: 'power2.inOut' }, 0.8);
@@ -529,18 +694,25 @@ export function createHologram(ctx: ObjectCtx): TableObject {
     tw(light, { intensity: REST.light, ease: 'power2.inOut' }, 0.8);
     poster(selected, (t) => { if (!focused) showGhost(t); });
     tw(gu.opacity, { value: 1, ease: 'power2.out' }, 0.6, 0.3);
+    prepareSoon(2000); // the next focus starts as fast as this one did
   };
 
   // --- hit, anchor
   const proxy = hitProxy(0.14, 0.30, 0.14, 'hologram:proxy');
   proxy.position.y = 0.15;
   group.add(proxy);
+  // the floating sheet is a click target only while focused (second click: fullscreen with sound)
+  const screenProxy = hitProxy(SCREEN.w, SCREEN.h, 0.04, 'hologram:screen');
+  screenProxy.position.y = SCREEN.y;
+  screenProxy.rotation.x = SCREEN.tilt;
+  screenProxy.layers.disableAll();
+  group.add(screenProxy);
 
   // QA hook (tests/scenarios/hologram*.json)
   (window as unknown as { __hologram: unknown }).__hologram = {
     get selected() { return selected; },
     get focused() { return focused; },
-    get held() { return player.held; },
+    get cinema() { return player.cinema; },
     get screenVisible() { return screen.visible; },
     get screenOpacity() { return su.opacity.value; },
     get ghostOpacity() { return gu.opacity.value; },
@@ -548,10 +720,15 @@ export function createHologram(ctx: ObjectCtx): TableObject {
     get posterFallback() { return posterFallback; },
     status() {
       const v = player.video;
+      const h = player.hls;
       return {
-        mode: player.mode, playing: player.playing, live: player.live, hls: player.hls !== null,
-        readyState: v?.readyState ?? -1, videoWidth: v?.videoWidth ?? 0, paused: v?.paused ?? true,
-        currentTime: v?.currentTime ?? 0, src: v?.currentSrc ?? '', error: player.lastError,
+        mode: player.mode, playing: player.playing, live: player.live, hls: h !== null, cinema: player.cinema,
+        readyState: v?.readyState ?? -1, videoWidth: v?.videoWidth ?? 0, paused: v?.paused ?? true, muted: v?.muted ?? true,
+        controls: v?.controls ?? false, fullscreen: !!v && fsElement() === v,
+        currentTime: v?.currentTime ?? 0, src: v?.currentSrc ?? '', error: player.lastError, events: player.events.slice(),
+        buffered: v ? Array.from({ length: v.buffered.length }, (_, i) => [v.buffered.start(i), v.buffered.end(i)]) : [],
+        mediaError: v?.error ? `${v.error.code} ${v.error.message}` : '',
+        level: h ? { current: h.currentLevel, cap: h.autoLevelCapping, heights: h.levels.map((l) => l.height) } : null,
       };
     },
   };
@@ -560,7 +737,7 @@ export function createHologram(ctx: ObjectCtx): TableObject {
     id: 'hologram',
     label: 'Hologram projector',
     group,
-    hit: [body, proxy],
+    hit: [body, proxy, screenProxy],
     anchor: new THREE.Vector3(0, CONE.h + 0.04, 0),
     hover: { lift: 0.012, tilt: 2.5 },
     focus: {
@@ -568,6 +745,7 @@ export function createHologram(ctx: ObjectCtx): TableObject {
       panel: hologramPanel(controller),
       onEnter: enter,
       onExit: exit,
+      onClickInside() { controller.cinema(); },
     },
     update(_dt, t) {
       if (firstFrame) { firstFrame = false; screen.visible = false; }
@@ -578,11 +756,12 @@ export function createHologram(ctx: ObjectCtx): TableObject {
       player.poll();
     },
     dispose() {
+      clearTimeout(prepareTimer);
       player.dispose();
       for (const t of posters.values()) t.dispose();
       snapTex.dispose(); black.dispose(); bump.dispose(); fallback?.dispose();
       body.geometry.dispose(); ring.geometry.dispose(); glow.geometry.dispose(); lens.geometry.dispose();
-      coneGeo.dispose(); ghost.geometry.dispose(); screen.geometry.dispose();
+      coneGeo.dispose(); ghost.geometry.dispose(); screen.geometry.dispose(); proxy.geometry.dispose(); screenProxy.geometry.dispose();
       bodyMat.dispose(); glowMat.dispose(); lensMat.dispose(); coneMat.dispose(); ghostMat.dispose(); screenMat.dispose();
     },
   };

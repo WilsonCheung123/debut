@@ -26,10 +26,10 @@ export const REALM = {
   kicker: 'Realm',
   title: 'An AI film studio',
   url: 'https://realmfilm.art',
-  /** Wilson's voice; anything not verified is in [brackets] for him to edit. */
+  /** Wilson's voice; the two sentences on Realm are the builder's educated guess (SPEC 0.1: nothing in brackets ships). */
   paragraphs: [
-    'Realm is my AI film studio. Cinematic films and campaigns, made with generative tools and [a small team], and held to the standard of film: [every shot directed, graded and cut, not prompted and hoped for].',
-    '[A line or two on why Realm exists and where it is going.]',
+    'Realm is my AI film studio: a small team making short films and campaigns with diffusion models, held to the standard of film rather than of demos.',
+    'Every shot is directed, graded and cut; the models are the camera, not the director.',
   ],
   listKicker: 'five films, projected without sound',
 };
@@ -38,14 +38,3 @@ export const thumbnailUrl = (film: Film, width = 480): string =>
   `https://image.mux.com/${film.id}/thumbnail.jpg?width=${width}&time=${film.thumbTime}`;
 
 export const hlsUrl = (film: Film): string => `https://stream.mux.com/${film.id}.m3u8`;
-
-/** The embedded Mux player, in the panel's paper colours, starting as soon as it can. */
-export const playerUrl = (film: Film): string => {
-  const q = new URLSearchParams({
-    autoplay: 'true',
-    'primary-color': '#f4efe6',
-    'accent-color': '#6e2a2a',
-    'metadata-video-title': film.title,
-  });
-  return `https://player.mux.com/${film.id}?${q.toString()}`;
-};
