@@ -65,8 +65,6 @@ if (!device) { console.error(`unknown viewport ${viewportName}`); process.exit(1
 const touch = !!device.hasTouch;
 
 const browser = await chromium.launch({
-  // --disable-accelerated-2d-canvas: with --ignore-gpu-blocklist Chromium "accelerates" canvas 2D through SwiftShader,
-  // and the procedural textures (hundreds of stroked polylines) then take minutes instead of milliseconds
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'],
 });
 const context = await browser.newContext({
@@ -86,14 +84,11 @@ const problems = [];
 const note = (s) => { problems.push(s); console.log(`  ! ${s}`); };
 // SwiftShader-only noise (not present on real GPUs): recorded, not counted.
 const ENV_NOISE = /KHR_parallel_shader_compile|GL Driver Message/;
-// Third-party noise: Chromium warns about the Spotify embed's own iframe markup (allow="…fullscreen" plus
-// allowfullscreen); it is Spotify's element, not ours. Recorded as [3p.warn], not counted.
-const THIRD_PARTY_NOISE = /Allow attribute will take precedence over 'allowfullscreen'/;
 page.on('console', (msg) => {
   const type = msg.type();
   const text = msg.text();
   if (type === 'error') note(`[console.error] ${text}`);
-  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : THIRD_PARTY_NOISE.test(text) ? `[3p.warn] ${text}` : `[console.warn] ${text}`);
+  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : `[console.warn] ${text}`);
 });
 page.on('pageerror', (err) => note(`[pageerror] ${err.message}`));
 page.on('requestfailed', (req) => {
@@ -356,9 +351,6 @@ try {
         case 'audit': await doAudit(s.name || 'sizes', s.minWidth ?? 60, s.clusterPrefixes || []); break;
         case 'timing': await doTiming(s.name || 'focus'); break;
         case 'mock':
-          // {"action":"mock","url":"glob","abort":true} blocks matching requests (as a blocked network would);
-          // the abort reads as net::ERR_ABORTED, which is not counted as a failed request
-          if (s.abort) { await context.route(s.url, (route) => route.abort('aborted')); break; }
           await context.route(s.url, (route) => route.fulfill({
             status: s.status || 200, contentType: s.contentType || 'application/json',
             body: fs.readFileSync(path.resolve(path.dirname(scenarioPath), s.file)),

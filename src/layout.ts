@@ -87,8 +87,10 @@ export const bookSlots: { id: string; title: string; standing: boolean; stackInd
   { id: 'book.becoming-steve-jobs', title: 'Becoming Steve Jobs',      standing: false, stackIndex: 3 },
 ];
 
-const book: FocusFrame = { dist: 0.44, az: 8, el: 26, fov: 31, targetOffset: [0, 0.01, 0] };
-const flatBook: FocusFrame = { dist: 0.42, az: 6, el: 44, fov: 31 };
+// Books slide out of the shelf / stack and lift ~8 cm when focused (books.ts
+// tweens the motion layer); the target offsets aim where the book will be.
+const book: FocusFrame = { dist: 0.5, az: 8, el: 24, fov: 31, targetOffset: [0, 0.085, 0.15] };
+const flatBook: FocusFrame = { dist: 0.6, az: 6, el: 40, fov: 31, targetOffset: [0, 0.1, 0.22] };
 
 export const focus: Record<string, FocusFrame> = {
   'book.anna-karenina': book,
