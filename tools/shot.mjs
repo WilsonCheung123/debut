@@ -48,6 +48,8 @@ const focusId = opt('--focus');
 const scenarioPath = opt('--scenario');
 const baseName = opt('--name', viewportName);
 const reduced = args.includes('--reduced-motion');
+// SHOT_TIMEOUT_SCALE=4 on a loaded machine: scales the page-load, ready and default timeouts (software GL plus other work).
+const SLOW = Math.max(1, Number(process.env.SHOT_TIMEOUT_SCALE) || 1);
 const u = new URL(url0);
 if (reduced) u.searchParams.set('motion', 'reduce');
 u.searchParams.set('qa', '1'); // headless GPUs are slow: lock the tier, wall-clock tweens (keeps any #hash)
@@ -73,7 +75,7 @@ const context = await browser.newContext({
   serviceWorkers: 'block',
 });
 const page = await context.newPage();
-page.setDefaultTimeout(20000);
+page.setDefaultTimeout(20000 * SLOW);
 // --clock installs Playwright's fake clock before the page loads, so a scenario
 // can step virtual time (clock runFor) and read choreography marks exactly.
 const useClock = args.includes('--clock');
@@ -100,7 +102,7 @@ page.on('response', (res) => { if (res.status() >= 400) note(`[http ${res.status
 const sleep = (ms) => page.waitForTimeout(ms);
 const T = () => page.evaluate(() => window.__table);
 
-async function waitReady(timeout = 30000) {
+async function waitReady(timeout = 30000 * SLOW) {
   await page.waitForFunction(() => window.__table && window.__table.ready, null, { timeout });
 }
 async function centre(id, minPx = 0) {
@@ -296,7 +298,7 @@ async function doAudit(name, minWidth, clusterPrefixes = []) {
 }
 
 try {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 * SLOW });
   await waitReady();
   await sleep(300);
 

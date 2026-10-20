@@ -151,7 +151,9 @@ export function createJar(ctx: ObjectCtx): TableObject {
     g.applyMatrix4(m);
     g.computeBoundingBox();
     g.translate(x, floorY - g.boundingBox!.min.y, z);
-    if (g.index) g.dispose();
+    const flat = g.index ? g.toNonIndexed() : g; // mergeGeometries needs them all non-indexed
+    pile.push(flat);
+    if (flat !== g) g.dispose();
   };
   const d2r = THREE.MathUtils.DEG2RAD;
   put(foldedSlip(1, 52 * d2r), 0.010, BASE, -0.004, 28 * d2r);                 // a tent on the floor
@@ -304,7 +306,7 @@ function foldedSlip(seed: number, open: number, w = 0.05, h = 0.034, crease: 'x'
 
 /** A crumpled ball: a low-poly sphere with faceted radial displacement. */
 function crumpledSlip(seed: number, r: number): THREE.BufferGeometry {
-  const g = new THREE.IcosahedronGeometry(r, 2).toNonIndexed();
+  const g = new THREE.IcosahedronGeometry(r, 2); // polyhedra are already non-indexed: flat facets
   const pos = g.attributes.position as THREE.BufferAttribute;
   const v = new THREE.Vector3();
   const q = (a: number): number => Math.round(a * 1e4);
