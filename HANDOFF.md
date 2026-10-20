@@ -10,21 +10,28 @@ Read in this order: this file, `SPEC.md` (the build contract), `docs/BRIEF-wilso
 - **QA (desktop only, `tools/qa.mjs`):** `visit-a`, `visit-b` and `reduced` PASS with zero console errors/warnings of ours; the Austen trick, the ID flip + deferred panel, the Kahneman panel and keyboard path are all verified on the assembled table. `timing` failed on a scenario bug (it clicked the FPGA and asserted the ID; fixed in the file, not yet re-run). `hologram` was running (video played natively in headless Chromium: mode "native", readyState 4) when the pass was cut; `puppet`, `jar`, `id-flip`, `deep-link`, `vinyl`, `vinyl-offline`, `vinyl-silent`, `kahneman`, `four-objects`, `visit-books` not yet run on the integrated layout (their flows passed in isolation on the builders' branches).
 - **Known visual issues on the integrated table (not yet fixed, see docs/QA.md and the integrator's report):** capo focus angle hides the coil spring (try az −70, el 32); puppet focus shows the lamp's shade mouth at the top (raise el 12 → 24, az 20); the die-cast reads as matte grey plastic, bluish under the window fill (raise metalness ~0.5, warm the base colour); the flat-book focus frame is too tight now that the FPGA/die-cast sit in front of the stack (flatBook dist 0.6 → 0.7, el 46); the puppet at rest reads grey because his camera-facing side gets only the cool fill (turn him toward the lamp, rotationY −16 → ~8). The hls.js path (`?holo=hls`) and Lighthouse are unverified.
 
-## Things Wilson must read or decide (collected from the builders)
+## Lines written in Wilson's voice for him to approve
 
-Bracketed text in `src/content/*` is copy he must write or approve. Specifically:
-- `src/content/hologram.ts`: Realm's description has three bracketed phrases; the title "An AI film studio" and the list kicker are the builder's words. Decide: hologram freezes while "watch with sound" plays (current) or keeps running muted.
-- `src/content/die-cast.ts`: only one fact is his (negotiating with Chinese hardware vendors for data); four bracketed phrases to fill or cut; the company stays unnamed.
-- `src/content/fpga.ts`: one bracketed line on what the Architect work was like.
-- `src/content/guitar.ts`: two bracketed slots (what he is learning; the capo line).
-- `src/content/id-card.ts`: nothing bracketed; confirm "First in my family to do any of it." for first-generation.
-- `src/content/principles.ts`: nine lines in his voice; lines 8 and 9 tie the section to the jar and are the builder's additions. The field placeholders and the button label "put it in the jar".
-- `src/panels/pinocchio.ts`: the three "why it matters to me" sentences, the title "The object comes first" and the three section titles are written in his voice, not bracketed.
-- `src/panels/kahneman.ts`: UI copy ("press and hold the picture", "now let go", column kickers, "1869 to 1948"); policy that returning visitors see the reveal and are not re-asked; the decision to paint A and B in one grey over the SVG (the asset renders B lighter than A).
-- `src/panels/vinyl.ts`: the panel heading and record label use the playlist's real name "lol"; one bracketed line about the playlist; "read Persuasion" links to Gutenberg #105.
-- Books: the cover uses traditional 天龍八部 (Hong Kong editions) while the label keeps 天龙八部; author credit forms; which titles are paperback vs hardcover; subtitles on three covers; the Anna Karenina quote as supplied.
-- Environment: no desk mat by default (exists behind `?mat=1`); black-enamel architect's lamp.
-- Decoration that is invented, not claims: ID back fine print, FPGA markings, the sample tag's lot number.
+SPEC 0.1: nothing in `[brackets]` ships, so the six round-2 builders wrote the lines
+below as educated guesses. Each is one edit away; none is a fact he supplied.
+
+| where | the guess |
+|---|---|
+| `src/panels/vinyl.ts` | the line under the player: "Mostly film scores. The kind of music that makes a long night of work feel like a montage." |
+| `src/content/hologram.ts` | Realm's two sentences ("Realm is my AI film studio: a small team making short films and campaigns with diffusion models, held to the standard of film rather than of demos." / "Every shot is directed, graded and cut; the models are the camera, not the director."), the title "An AI film studio" and the list kicker "five films, projected without sound" |
+| `src/content/austen.ts` | the letter's heading (the theme note: Darcy's letter, Wentworth's letter), the salutation "Dear reader," and the sign-off "Yours, / Wilson"; the body is verbatim |
+| `src/panels/shelf.ts` | the shelf hint "scroll along the shelf · click a book · esc to return" (touch: "tap a book") |
+| `src/panels/pinocchio.ts` | the panel title "Three objects"; the three item titles and descriptions ("The thing you could hold", "A photograph, a minute later", "The computer that fit a life") and the three "Why it matters to me" lines; the hint "Click the puppet, the phone or the camera." and the back link "back to the three" |
+| `src/content/id-card.ts` | the title "Wilson Cheung" and kicker "student id" (the body is verbatim) |
+| `src/content/fpga.ts` | the title "The first intern", kicker "Architect"; the link card's title/description are the post's own Open Graph tags |
+| `src/content/die-cast.ts` | the title "A sample part", kicker "a startup I can't name yet" |
+| `src/content/guitar.ts` | the capo panel's single line "learning guitar." |
+| `src/content/principles.ts` | the jar note (names Keigo Higashino's The Miracles of the Namiya General Store, English throughout) and the nine principles, written fresh in his voice |
+| `src/content/music.ts` | the 15 YouTube video ids (official uploads where one exists; The Flower Garden is a fan upload, see the comment) and the record's name "lol"; he can set `YOUTUBE_PLAYLIST` to his own playlist id instead |
+| `src/engine/quality.ts` | the DPR floor of 1.5 on a real GPU (SPEC 0.2 says "never below 1.5"; the ladder gives up dust, transmission and shadow resolution first) |
+
+Decoration that is invented, not claims: the ID back's fine print, the FPGA's silkscreen
+markings, the sample tag's lot number, the bookends.
 
 ## How to run
 
