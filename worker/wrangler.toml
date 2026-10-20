@@ -1,13 +1,21 @@
-name = "wilsons-table-api"
+name = "wilsons-table"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Production: the built site (../dist) is served as static assets from the same
+# Worker; /api/* runs the Worker first (run_worker_first), everything else is a file.
+[assets]
+directory = "../dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
 # Local dev: `npm run worker` (wrangler dev --local on 8780); Vite proxies /api there.
-# Deploy later: `npx wrangler login`, create the D1 database
-# (`npx wrangler d1 create wilsons-table`), paste its id below, apply the
-# schema (`npx wrangler d1 execute wilsons-table --remote --file=worker/schema.sql`),
-# set secrets (`npx wrangler secret put TURNSTILE_SECRET` etc.), then `npx wrangler deploy --config worker/wrangler.toml`.
+# Deploy: `npx wrangler login` once, then `npm run deploy` (builds, then deploys
+# site + API + D1 to <name>.<account>.workers.dev). First time only: create the
+# D1 database (`npx wrangler d1 create wilsons-table`), paste its id below, apply
+# the schema (`npx wrangler d1 execute wilsons-table --remote --file=worker/schema.sql --config worker/wrangler.toml`),
+# optional secrets (`npx wrangler secret put OWNER_EMAIL --config worker/wrangler.toml` etc.).
 
 [[d1_databases]]
 binding = "DB"

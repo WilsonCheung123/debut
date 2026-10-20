@@ -11,7 +11,9 @@
     "worker:init": "wrangler d1 execute wilsons-table --config worker/wrangler.toml --local --file=worker/schema.sql",
     "shots": "node tools/shot.mjs",
     "qa": "node tools/qa.mjs",
-    "images": "node tools/images.mjs"
+    "images": "node tools/images.mjs",
+    "deploy": "npm run build && wrangler deploy --config worker/wrangler.toml",
+    "deploy:db": "wrangler d1 execute wilsons-table --remote --config worker/wrangler.toml --file=worker/schema.sql"
   },
   "dependencies": {
     "@fontsource/caveat": "^5.3.0",

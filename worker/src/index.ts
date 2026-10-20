@@ -8,6 +8,8 @@
 
 export interface Env {
   DB: D1Database;
+  /** The built site (dist/), served by Workers static assets in production; absent under `wrangler dev` for the API alone. */
+  ASSETS?: { fetch(req: Request): Promise<Response> };
   TURNSTILE_SECRET?: string;
   RESEND_API_KEY?: string;
   OWNER_EMAIL?: string;
@@ -123,7 +125,7 @@ export default {
     const url = new URL(req.url);
     const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '0.0.0.0';
     try {
-      if (!url.pathname.startsWith('/api/')) return bad('not found', 404);
+      if (!url.pathname.startsWith('/api/')) return env.ASSETS ? await env.ASSETS.fetch(req) : bad('not found', 404);
       await ensureSchema(env.DB);
       if (req.method === 'POST' && url.pathname === '/api/note') return await postNote(req, env, ip);
       if (req.method === 'POST' && url.pathname === '/api/anchor') return await postAnchor(req, env);
