@@ -123,5 +123,11 @@ the solution, the full visit must reach every book's panel on the iPhone run.
 - Playwright renders through SwiftShader: frames take ~1 s, so hover/focus
   checks wait on engine marks, and timings are verified under a fake clock
   (`tests/scenarios/timing.json`), not wall-clock.
-- `PCFSoftShadowMap` no longer exists in three r186; the engine uses
-  `PCFShadowMap` with `shadow.radius = 5`.
+- `PCFSoftShadowMap` no longer exists in three r186; `PCFShadowMap` is now a
+  hardware-PCF 5-tap Vogel disk rotated per pixel, so `shadow.radius` (in
+  texels) gives a smooth penumbra. The engine sets radius, bias and normal
+  bias from the fitted frustum and the map size (`Lights.applyShadowFilter`),
+  so a map resize keeps the same look in world terms.
+- The headless rig is SwiftShader: the engine detects software GL and starts
+  its shadow map at 2048 there (4096 on a real GPU). `?qa=1` / `?tier=high`
+  lock the quality ladder at level 0.

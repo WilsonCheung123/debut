@@ -80,8 +80,10 @@ export function createJar(ctx: ObjectCtx): TableObject
   `leather()` (pebbled, with bump) and `wood({ finish: true })` (roughness map
   + fine pore bump for close-ups) are there too.
 - Textures: `makeCanvasTexture({ width, height, draw(ctx, w, h) })` returns an
-  sRGB, mipmapped, anisotropic `CanvasTexture`. Covers 512 × 768, nothing above
-  1024². `grain(ctx, w, h, alpha)` adds paper grain; `hash2(x, y, seed)` is a
+  sRGB, mipmapped, anisotropic `CanvasTexture`. Anything seen close in focus
+  (covers, the ID, the wood) is drawn at `closeUpSize()` (2048 on desktop, 1024
+  on phones; SPEC 0.2); small parts stay at 256–1024. The engine clamps at that
+  size. `grain(ctx, w, h, alpha)` adds paper grain; `hash2(x, y, seed)` is a
   stable noise. Chinese text: `ctx.font = '600 120px "PingFang SC", "Songti SC", "Noto Serif CJK SC", serif'`.
 - Budget: merge static geometry per object where you can (≤ 120 draw calls at
   rest for the whole table); one material per visual surface, not per part.
