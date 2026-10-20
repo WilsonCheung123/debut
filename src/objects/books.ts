@@ -10,7 +10,9 @@ import { metal, makeCanvasTexture } from '../materials';
 import { bookSlots } from '../layout';
 import { bookById } from '../content/books';
 import { bookPanel, type BookContent } from '../content/types';
-import type { PanelFactory, PanelSpec } from '../panels/types';
+import type { PanelSpec } from '../panels/types';
+import { kahnemanPanel } from '../panels/kahneman';
+import { austenPanel } from '../panels/austen';
 import { flags, state } from '../state';
 import { ATLAS, FONT_SPECS, designs, drawAtlas, spineWidthPx, type CoverDesign } from './book-covers';
 
@@ -23,30 +25,17 @@ import { ATLAS, FONT_SPECS, designs, drawAtlas, spineWidthPx, type CoverDesign }
 // book slides out of the shelf / stack, lifts ~8 cm and turns to face the
 // camera (the layout's targetOffset for books matches this displacement).
 
-/** Custom panel factories registered under these ids in src/panels (built by other agents). */
-const customPanels = import.meta.glob('../panels/{kahneman,austen}.ts', { eager: true }) as Record<string, Record<string, unknown>>;
-const customFor: Record<string, string> = { 'book.thinking-fast-slow': 'kahneman', 'book.pride-and-prejudice': 'austen' };
-
-/** The panel for a book: the registered custom factory when one exists, else the plain blurb + quote. */
+/** The panel for a book: the two custom panels (Kahneman's flow, the Austen-wrapped panel) by id, else the plain blurb + quote. */
 function panelFor(content: BookContent): PanelSpec {
   const plain = bookPanel(content);
-  const key = customFor[content.id];
-  const mod = key ? customPanels[`../panels/${key}.ts`] : undefined;
-  if (!mod) return plain;
-  // the named factory first, then whatever the module exports that looks like one; the factory gets
-  // the rendered panel (kicker, title, html: what panels/austen.ts documents) and the raw content on one object
-  const arg = { ...content, ...plain };
-  const candidates = [mod[`${key}Panel`], mod.default, mod.panel, ...Object.values(mod)].filter((c) => c !== undefined);
-  for (const cand of candidates) {
-    try {
-      const spec = typeof cand === 'function' ? (cand as (c: typeof arg) => unknown)(arg) : cand;
-      if (spec && typeof (spec as PanelFactory).mount === 'function') return spec as PanelFactory;
-      if (spec && typeof (spec as { html?: unknown }).html === 'string') return spec as PanelSpec;
-    } catch (e) {
-      console.error(`books: custom panel '${key}' failed, using the plain panel`, e);
-    }
+  switch (content.id) {
+    case 'book.thinking-fast-slow':
+      return kahnemanPanel({ kicker: plain.kicker, title: content.title, author: content.author, blurb: content.blurb });
+    case 'book.pride-and-prejudice':
+      return austenPanel(plain);
+    default:
+      return plain;
   }
-  return plain;
 }
 
 // Sides of a BoxGeometry / RoundedBoxGeometry in group order.

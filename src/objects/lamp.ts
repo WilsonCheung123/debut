@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { ObjectCtx, TableObject } from './types';
+import { bakeMeshes, meshesWith } from './helpers';
 import { metal, standard, makeCanvasTexture } from '../materials';
 
 // The desk lamp: an articulated architect's lamp at the back-right, head aimed
@@ -156,6 +157,10 @@ export function createLamp(ctx: ObjectCtx): LampObject {
   head.position.copy(MOUTH);
   head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), UP);
   group.add(head);
+
+  // the lamp never moves: every enamel part is one mesh, every steel part another (19 draw calls become 6)
+  bakeMeshes(meshesWith(group, enamel), enamel, group, 'lamp-enamel');
+  bakeMeshes(meshesWith(group, steel), steel, group, 'lamp-steel');
 
   // dust motes in the light (lamp space; the group is turned toward the table)
   const dust = createDust(ctx, ctx.isPhone ? 60 : 200, BULB, AIM);

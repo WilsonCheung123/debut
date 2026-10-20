@@ -133,7 +133,7 @@ export function jarPanel(): PanelFactory {
 }
 ```
 
-`src/panels/placeholder.ts` is the worked example. Styles: the panel already
+`src/panels/jar.ts` is a compact worked example. Styles: the panel already
 sets Newsreader 17/1.55, headings, small-caps `.kicker`, `blockquote`, links,
 inputs and 44 px buttons; add object-specific CSS in your panel file by
 injecting a `<style>` once (scoped by a class on your root element). The body

@@ -8,9 +8,13 @@ import { jarPanel } from '../panels/jar';
 
 // The jar (SPEC 4.10): a glass jar with a slotted metal lid and a few folded
 // and crumpled paper slips inside. Glass is a MeshPhysicalMaterial with
-// transmission (refraction of what is behind and inside it); if the quality
-// tier drops, it swaps to a cheap transparent glass with the same environment
-// reflection. The panel is the slip of paper in src/panels/jar.ts; a
+// transmission (refraction of what is behind and inside it) while the jar is
+// focused; at rest it wears a cheap transparent glass with the same
+// environment reflection, because transmission re-renders the whole scene
+// every frame (~95 draw calls at rest for a 100 px jar). Both shaders are
+// compiled at boot (the first, black frame renders the transmissive one, which
+// also allocates the transmission target), so the swaps never hitch. A low
+// quality tier keeps the cheap glass always. The panel is the slip of paper in src/panels/jar.ts; a
 // successful submit calls dropSlip(), which folds a small 3D slip through the
 // slot and lets it fall onto the pile.
 
@@ -77,6 +81,13 @@ export function createJar(ctx: ObjectCtx): TableObject {
   });
   disposables.push(glassMat, cheapGlassMat);
   const glass = solid(new THREE.Mesh(glassGeo, glassMat), 'jar-glass');
+  // a speck under the floor wearing the cheap glass: never in the frustum (no draw call), but the boot
+  // compile walks every visible mesh, so the shader exists before the first swap
+  const warmer = new THREE.Mesh(new THREE.PlaneGeometry(0.001, 0.001), cheapGlassMat);
+  warmer.name = 'jar-glass-warmer';
+  warmer.position.y = -4;
+  ctx.scene.add(warmer);
+  disposables.push(warmer.geometry);
   // half-tone shadow: a checker alpha map on the depth material, blurred by the PCF filter into a lighter shadow than an opaque body
   const dither = makeCanvasTexture({
     width: 64, height: 64, colorSpace: THREE.NoColorSpace, repeat: [48, 14], anisotropy: 1,
@@ -221,7 +232,15 @@ export function createJar(ctx: ObjectCtx): TableObject {
   }
 
   const panel = jarPanel({ drop: dropSlip });
-  let cheap = false;
+  // transmission only in focus (see the header); the first frame is rendered with it so the shader and
+  // the transmission target exist before the lamp comes on
+  let frames = 0;
+  let swapBack: gsap.core.Tween | null = null;
+  const wantTransmission = (): boolean => ctx.state.quality !== 'low' && ctx.state.focused === 'jar';
+  const setGlass = (transmissive: boolean): void => {
+    const m = transmissive ? glassMat : cheapGlassMat;
+    if (glass.material !== m) glass.material = m;
+  };
 
   return {
     id: 'jar',
@@ -234,9 +253,16 @@ export function createJar(ctx: ObjectCtx): TableObject {
     focus: {
       camera: ctx.focusPose('jar'),
       panel,
+      onEnter() { swapBack?.kill(); swapBack = null; setGlass(wantTransmission()); },
+      onExit() {
+        // after the camera has pulled back (800 ms) the jar is small again: swap under the dark
+        swapBack?.kill();
+        swapBack = gsap.delayedCall(0.85, () => { swapBack = null; setGlass(wantTransmission()); });
+      },
     },
     update() {
-      if (!cheap && ctx.state.quality === 'low') { cheap = true; glass.material = cheapGlassMat; }
+      if (frames < 2) { frames++; return; }
+      if (glass.material === glassMat && !wantTransmission() && !swapBack) setGlass(false);
     },
     dispose() {
       for (const m of extra) { m.geometry.dispose(); }

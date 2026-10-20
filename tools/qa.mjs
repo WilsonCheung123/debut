@@ -1,24 +1,38 @@
 #!/usr/bin/env node
-// npm run qa: the full scripted visit on desktop and iPhone (plus a reduced-
-// motion pass), failing on any console error, page error, failed assert,
-// audit finding or timing miss. Needs the dev server on 5180 (and the worker
-// on 8780 for API steps).
+// npm run qa: the scripted desktop visit (SPEC 0.1: desktop first), failing on
+// any console error, page error, failed assert, audit finding or timing miss.
+// Needs the dev server on 5180 (and the worker on 8780 for API steps).
+// Under software GL a run must stay well under ten minutes, so the full visit
+// is two halves and every builder flow is its own run. `npm run qa a b` runs
+// only the named runs.
 import { spawnSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const url = process.env.QA_URL || 'http://localhost:5180/';
 const outdir = process.env.QA_OUT || 'shots/qa';
+const D = ['--viewport', 'desktop'];
 const runs = [
-  { name: 'desktop', args: ['--viewport', 'desktop', '--scenario', 'tests/scenarios/full-visit.json'] },
-  { name: 'iphone', args: ['--viewport', 'iphone', '--scenario', 'tests/scenarios/full-visit.json'] },
-  { name: 'desktop-reduced', args: ['--viewport', 'desktop', '--reduced-motion', '--scenario', 'tests/scenarios/reduced-motion.json'] },
+  { name: 'visit-a', args: [...D, '--scenario', 'tests/scenarios/full-visit-a.json'] },   // rest, API, hovers, the ID flip, the nine books
+  { name: 'visit-b', args: [...D, '--scenario', 'tests/scenarios/full-visit-b.json'] },   // the other objects, the Austen trick, keyboard
+  { name: 'reduced', args: [...D, '--reduced-motion', '--scenario', 'tests/scenarios/reduced-motion.json'] },
   // choreography timings under a fake clock: panel at +450 ms, camera settled at +900 ms, exit at +800 ms
-  { name: 'timing', args: ['--viewport', 'desktop', '--clock', '--scenario', 'tests/scenarios/timing.json'] },
+  { name: 'timing', args: [...D, '--clock', '--scenario', 'tests/scenarios/timing.json'] },
   // deep link: /#jar focuses the jar after the warm-up; back/Escape clears the hash
-  { name: 'deep-link', url: '#jar', args: ['--viewport', 'desktop', '--scenario', 'tests/scenarios/deep-link.json'] },
+  { name: 'deep-link', url: '#jar', args: [...D, '--scenario', 'tests/scenarios/deep-link.json'] },
+  // the builders' flows
+  { name: 'hologram', args: [...D, '--scenario', 'tests/scenarios/hologram.json'] },
+  { name: 'puppet', args: [...D, '--scenario', 'tests/scenarios/puppet.json'] },
+  { name: 'vinyl', args: [...D, '--scenario', 'tests/scenarios/vinyl.json'] },
+  { name: 'vinyl-offline', args: [...D, '--scenario', 'tests/scenarios/vinyl-offline.json'] },
+  { name: 'vinyl-silent', args: [...D, '--scenario', 'tests/scenarios/vinyl-silent.json'] },
+  { name: 'jar', args: [...D, '--scenario', 'tests/scenarios/jar.json'] },
+  { name: 'kahneman', args: [...D, '--scenario', 'tests/scenarios/kahneman.json'] },
+  { name: 'four-objects', args: [...D, '--scenario', 'tests/scenarios/four-objects.json'] },
+  { name: 'id-flip', args: [...D, '--clock', '--scenario', 'tests/scenarios/id-flip.json'] },
 ];
-const only = process.argv[2];
+const only = process.argv.slice(2);
+for (const n of only) if (!runs.some((r) => r.name === n)) { console.error(`unknown run ${n}; runs: ${runs.map((r) => r.name).join(' ')}`); process.exit(2); }
 
 // The full visit posts to /api through the Vite proxy; make sure the worker is up.
 let worker = null;
@@ -32,16 +46,21 @@ if (!(await apiUp())) {
 process.on('exit', () => { if (worker) try { process.kill(-worker.pid); } catch { /* gone */ } });
 
 let failed = false;
+const t0 = Date.now();
 for (const run of runs) {
-  if (only && run.name !== only) continue;
+  if (only.length && !only.includes(run.name)) continue;
   console.log(`\n=== ${run.name} ===`);
-  const r = spawnSync('node', ['tools/shot.mjs', url + (run.url || ''), outdir, '--name', run.name, ...run.args], { stdio: 'inherit' });
+  const t = Date.now();
+  // shotlock serialises headless Chromium across parallel runs on this machine (two slots)
+  const r = spawnSync('bash', ['tools/shotlock.sh', 'node', 'tools/shot.mjs', url + (run.url || ''), outdir, '--name', run.name, ...run.args], { stdio: 'inherit' });
   const file = path.join(outdir, `${run.name}-problems.txt`);
   const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '(missing)';
   const bad = text.split('\n').filter((l) => /^\[(console\.error|console\.warn|pageerror|assert|audit|timing|hover|focus|exit|scenario|requestfailed|http )/.test(l));
+  const secs = Math.round((Date.now() - t) / 1000);
   if (r.status !== 0 || bad.length) {
     failed = true;
-    console.log(`FAIL ${run.name}: ${bad.length} problem(s)\n${bad.map((l) => '  ' + l).join('\n')}`);
-  } else console.log(`PASS ${run.name}`);
+    console.log(`FAIL ${run.name} (${secs} s): ${bad.length} problem(s)\n${bad.map((l) => '  ' + l).join('\n')}`);
+  } else console.log(`PASS ${run.name} (${secs} s)`);
 }
+console.log(`\n${failed ? 'FAILED' : 'ALL PASS'} in ${Math.round((Date.now() - t0) / 60000)} min`);
 process.exit(failed ? 1 : 0);

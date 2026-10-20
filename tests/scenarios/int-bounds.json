@@ -1,0 +1,6 @@
+[
+  {"action":"wait","ready":true},
+  {"action":"log","name":"info","js":"(()=>{const i=window.__table.info();return {drawCalls:i.drawCalls,triangles:i.triangles,rest:i.rest}})()"},
+  {"action":"log","name":"bounds","js":"window.__table.ids.map(id=>{const b=window.__table.bounds(id);const r=window.__table.rect(id);const f=v=>Math.round(v*1000)/1000;return [id,b?b.min.map(f):null,b?b.max.map(f):null,r?[Math.round(r.x),Math.round(r.y),Math.round(r.w),Math.round(r.h)]:null]})"},
+  {"action":"audit","name":"sizes","minWidth":60,"clusterPrefixes":["book."]}
+]

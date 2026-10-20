@@ -42,11 +42,18 @@ export class CameraRig {
   private readonly v = new THREE.Vector3();
   private readonly q = new THREE.Quaternion();
   private readonly right = new THREE.Vector3();
+  /** Points the rest pose must frame (set from the objects' bounds at boot). */
+  private mustSee: THREE.Vector3[] = camLayout.rest.mustSee.map((p) => new THREE.Vector3(...p));
 
   get portrait(): boolean { return this.height > this.width; }
   get aspect(): number { return this.width / this.height; }
 
-  /** Recomputes the rest pose for a viewport so the whole table fits with a margin. */
+  /** Replaces the points the rest pose frames (the objects' real bounds). Call fitRest afterwards. */
+  setMustSee(points: THREE.Vector3[]): void {
+    if (points.length) this.mustSee = points.map((p) => p.clone());
+  }
+
+  /** Recomputes the rest pose for a viewport so everything in mustSee fits with a margin. */
   fitRest(width: number, height: number): void {
     this.width = width;
     this.height = height;
@@ -54,7 +61,7 @@ export class CameraRig {
     const cfg = this.portrait ? camLayout.rest.portrait : camLayout.rest.landscape;
     const target = new THREE.Vector3(...camLayout.rest.target);
     const dir = dirFrom(cfg.az, cfg.el);
-    const pts = camLayout.rest.mustSee.map((p) => new THREE.Vector3(...p));
+    const pts = this.mustSee;
     const cam = this.fitCam;
     cam.aspect = this.camera.aspect;
     cam.fov = cfg.fov;

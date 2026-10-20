@@ -61,6 +61,41 @@ export function mergeParts(parts: THREE.BufferGeometry[], colors?: THREE.ColorRe
   return merged;
 }
 
+/**
+ * Bakes several meshes that share one material into one mesh in `parent`
+ * space (their transforms relative to `parent` are applied to clones of their
+ * geometries), removes the originals and adds the result to `parent`. For
+ * static parts only. Shadow flags come from the first mesh.
+ */
+export function bakeMeshes(meshes: THREE.Mesh[], material: THREE.Material, parent: THREE.Object3D, name = 'baked'): THREE.Mesh | null {
+  if (meshes.length === 0) return null;
+  parent.updateWorldMatrix(true, true);
+  const inv = parent.matrixWorld.clone().invert();
+  const parts: THREE.BufferGeometry[] = [];
+  for (const m of meshes) {
+    const rel = inv.clone().multiply(m.matrixWorld);
+    const g = m.geometry.clone().applyMatrix4(rel);
+    parts.push(g);
+  }
+  const merged = new THREE.Mesh(mergeParts(parts), material);
+  merged.name = name;
+  merged.castShadow = meshes[0].castShadow;
+  merged.receiveShadow = meshes[0].receiveShadow;
+  for (const m of meshes) { m.removeFromParent(); m.geometry.dispose(); }
+  parent.add(merged);
+  return merged;
+}
+
+/** Direct or nested meshes under `root` wearing exactly `material` (and not instanced). */
+export function meshesWith(root: THREE.Object3D, material: THREE.Material): THREE.Mesh[] {
+  const out: THREE.Mesh[] = [];
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh && !(m as THREE.InstancedMesh).isInstancedMesh && m.material === material) out.push(m);
+  });
+  return out;
+}
+
 export interface ContactBlob { mesh: THREE.Mesh; update(group: THREE.Object3D): void; dispose(): void }
 
 /**

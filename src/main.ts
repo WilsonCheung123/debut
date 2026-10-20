@@ -27,7 +27,7 @@ import { Bubble } from './ui/bubble';
 import { A11yList } from './ui/a11y';
 import { registry } from './objects/index';
 import { isCluster, type TableObject, type ObjectCtx, type FocusCamera } from './objects/types';
-import { rest as restPoses } from './layout';
+import { rest as restPoses, camera as camLayout } from './layout';
 import { music } from './music';
 import type { LampObject } from './objects/lamp';
 
@@ -87,6 +87,23 @@ async function boot(): Promise<void> {
   for (const o of objects) hover.register(o);
   const interactive = objects.filter((o) => o.hit.length > 0);
   picker.register(interactive);
+  // The rest camera frames the things on the desk (and the lamp's head), not the table's edges:
+  // each object's own padded corners, so a tall thing at the back does not push the front edge down.
+  {
+    const pts: THREE.Vector3[] = [];
+    const b = new THREE.Box3();
+    const pad = camLayout.rest.fitPad;
+    const corners = (box: THREE.Box3): void => {
+      for (const x of [box.min.x, box.max.x]) for (const z of [box.min.z, box.max.z]) for (const y of [box.min.y, box.max.y]) pts.push(new THREE.Vector3(x, y, z));
+    };
+    for (const o of interactive) {
+      picker.worldBounds(o, b);
+      b.min.x -= pad; b.min.z -= pad; b.max.x += pad; b.max.z += pad; b.max.y += 0.02;
+      corners(b);
+    }
+    if (lamp) corners(b.setFromCenterAndSize(lamp.headWorld(), new THREE.Vector3(0.2, 0.2, 0.2)));
+    rig.setMustSee(pts);
+  }
   if (lamp) {
     lights.attachToLamp(lamp.headWorld(), lamp.aimWorld());
     const l = lamp;
@@ -229,6 +246,8 @@ async function boot(): Promise<void> {
     get ready() { return state.ready; },
     rect(id: string, minPx = 0) { const o = byId.get(id); return o ? picker.rectOf(o, minPx) : null; },
     visibleRect(id: string) { const o = byId.get(id); return o ? picker.visibleRect(o) : null; },
+    /** World-space bounds of an object (min/max arrays), for layout tuning. */
+    bounds(id: string) { const o = byId.get(id); if (!o) return null; const b = picker.worldBounds(o, new THREE.Box3()); return { min: b.min.toArray(), max: b.max.toArray() }; },
     anchor(id: string) { const o = byId.get(id); return o ? anchorScreen(o) : null; },
     pickAt(x: number, y: number) { return hover.atRest(() => picker.pickAt(x, y, state.isTouch ? 44 : 0))?.obj.id ?? null; },
     hover(id: string | null) { setHover(id ? byId.get(id) ?? null : null); },

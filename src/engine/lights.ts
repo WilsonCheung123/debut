@@ -60,7 +60,7 @@ export class Lights {
     sun.shadow.normalBias = 0.01;
     sun.shadow.radius = 4;
     const cam = sun.shadow.camera;
-    cam.left = -1.05; cam.right = 1.05; cam.top = 0.9; cam.bottom = -0.9;
+    cam.left = -0.85; cam.right = 0.85; cam.top = 0.75; cam.bottom = -0.75;
     cam.near = 0.1; cam.far = 3.2;
     sun.target = this.keyTarget;
     scene.add(sun);

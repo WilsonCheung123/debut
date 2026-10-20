@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { wood, matte, leather, standard, setMaxAnisotropy } from '../materials';
 
 export interface SceneBundle {
@@ -9,7 +10,8 @@ export interface SceneBundle {
   maxAnisotropy: number;
 }
 
-export const TABLE = { w: 1.6, d: 0.9, thickness: 0.03, height: 0.74 } as const;
+// 1.3 x 0.8: a desk, not a conference table. The rest camera fits the things on it, not its edges (SPEC 0.1 composition).
+export const TABLE = { w: 1.3, d: 0.8, thickness: 0.03, height: 0.74 } as const;
 
 /**
  * The desk mat: leather, under the writing area at the front-left (the ID
@@ -91,15 +93,19 @@ export function createScene(canvas: HTMLCanvasElement): SceneBundle {
   apron.position.y = -TABLE.thickness - 0.035;
   apron.receiveShadow = true;
   table.add(apron);
-  const legGeo = new THREE.CylinderGeometry(0.024, 0.02, TABLE.height - TABLE.thickness - 0.07, 14);
   const legMat = matte(0x241a12, 0.8);
+  const legParts: THREE.BufferGeometry[] = [];
   for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
-    const leg = new THREE.Mesh(legGeo, legMat);
-    leg.position.set(sx * (TABLE.w / 2 - 0.08), -(TABLE.height + TABLE.thickness + 0.07) / 2 - 0.0, sz * (TABLE.d / 2 - 0.08));
-    leg.castShadow = true;
-    leg.receiveShadow = true;
-    table.add(leg);
+    const g = new THREE.CylinderGeometry(0.024, 0.02, TABLE.height - TABLE.thickness - 0.07, 14);
+    g.translate(sx * (TABLE.w / 2 - 0.08), -(TABLE.height + TABLE.thickness + 0.07) / 2, sz * (TABLE.d / 2 - 0.08));
+    legParts.push(g);
   }
+  const legs = new THREE.Mesh(mergeGeometries(legParts), legMat); // four legs, one draw call
+  for (const g of legParts) g.dispose();
+  legs.castShadow = true;
+  legs.receiveShadow = true;
+  legs.name = 'table-legs';
+  table.add(legs);
   if (flag('mat', MAT.on)) table.add(createMat());
   scene.add(table);
 

@@ -1,6 +1,6 @@
 // Rest poses and focus poses for every object, plus the camera numbers.
 // Units: metres, degrees. Table top is y = 0, x right, z toward the camera.
-// Table: 1.60 (x) by 0.90 (z), so x in [-0.80, 0.80], z in [-0.45, 0.45].
+// Table: 1.30 (x) by 0.80 (z), so x in [-0.65, 0.65], z in [-0.40, 0.40] (TABLE in engine/scene.ts).
 //
 // Composition (one person's desk, read from the front-left camera):
 //   back-left   books cluster (five standing + stack)        hologram puck centre-back
@@ -40,12 +40,17 @@ export const camera = {
     portrait: { az: 12, el: 52, fov: 46, margin: 0.035 },
     /** Look-at point (slightly behind centre so the back row is not crowded). */
     target: [0, 0.02, -0.03] as [number, number, number],
-    /** Points that must stay inside the frame (table corners + tall things). */
+    /**
+     * Fallback points that must stay inside the frame, used until the objects
+     * exist; at boot the engine replaces them with the objects' real bounds
+     * (plus the lamp) expanded by `fitPad`, so the camera frames the things on
+     * the desk and the table's edges may leave the frame.
+     */
     mustSee: [
-      [-0.8, 0, 0.45], [0.8, 0, 0.45], [-0.8, 0, -0.45], [0.8, 0, -0.45],
-      [-0.8, 0.26, -0.45], [0.8, 0.26, -0.45],   // headroom for standing books / puppet
-      [0.66, 0.5, -0.33],                          // the lamp head (top of the shade)
+      [-0.65, 0, 0.4], [0.65, 0, 0.4], [-0.65, 0, -0.4], [0.65, 0, -0.4], [0.4, 0.5, -0.2],
     ] as [number, number, number][],
+    /** Metres of table kept visible around the outermost objects. */
+    fitPad: 0.06,
   },
   /** Pointer parallax, degrees (landscape, fine pointer only). */
   parallaxDeg: 1.2,
@@ -55,17 +60,20 @@ export const camera = {
 };
 
 export const rest: Record<string, RestPose> = {
-  books:    { position: [-0.46, 0, -0.22], rotationY: 0 },
-  'id-card': { position: [-0.42, 0, 0.26], rotationY: 9 },
-  guitar:   { position: [-0.12, 0, 0.30], rotationY: -22 },
-  fpga:     { position: [0.04, 0, 0.00], rotationY: -12 },
-  'die-cast': { position: [0.21, 0, 0.11], rotationY: 24 },
-  hologram: { position: [0.00, 0, -0.30], rotationY: 0 },
-  puppet:   { position: [0.16, 0, 0.00], rotationY: -16 },
-  jar:      { position: [0.56, 0, 0.22], rotationY: 0 },
-  vinyl:    { position: [0.42, 0, -0.28], rotationY: 6 },
-  /** The lamp's head points down local -z; 117° turns it toward the table centre. */
-  lamp:     { position: [0.66, 0, -0.33], rotationY: 117 },
+  // Occlusion from the rest camera (az 24): a point (x, z) hides (x + 0.445 d, z - d) for d > 0, and a thing
+  // h tall hides the table up to d = h / tan(38°) behind it. The puppet (0.26 m) is the only one that matters:
+  // its strip runs through the gap between the turntable and the lamp base.
+  books:    { position: [-0.41, 0, -0.25], rotationY: 0 },
+  hologram: { position: [-0.01, 0, -0.28], rotationY: 0 },
+  vinyl:    { position: [0.28, 0, -0.25], rotationY: 6 },
+  fpga:     { position: [-0.30, 0, 0.06], rotationY: -12 },
+  'die-cast': { position: [-0.13, 0, 0.10], rotationY: 24 },
+  puppet:   { position: [0.44, 0, 0.08], rotationY: -16 },
+  'id-card': { position: [-0.42, 0, 0.28], rotationY: 9 },
+  guitar:   { position: [0.12, 0, 0.26], rotationY: -22 },
+  jar:      { position: [0.56, 0, 0.26], rotationY: 0 },
+  /** The lamp's head points down local -z, 0.74 m out; 123° aims it at (-0.06, 0.09): the pool covers the centre-front. */
+  lamp:     { position: [0.56, 0, -0.31], rotationY: 123 },
 };
 
 /**

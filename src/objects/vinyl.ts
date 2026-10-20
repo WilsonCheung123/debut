@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import type { ObjectCtx, TableObject } from './types';
-import { roundedBox, solid } from './helpers';
+import { roundedBox, solid, bakeMeshes } from './helpers';
 import { metal, plastic, matte, makeCanvasTexture, hash2, PALETTE } from '../materials';
 import { vinylPanel } from '../panels/vinyl';
 import { music } from '../music';
@@ -175,6 +175,11 @@ export function createVinyl(ctx: ObjectCtx): TableObject {
   const button = solid(new THREE.Mesh(roundedBox(0.020, 0.004, 0.009, 0.0018), black), 'vinyl:button');
   button.position.set(-0.130, TOP_Y + 0.002, 0.100);
   group.add(restPost, restClip, lever, knob, knobMark, button);
+  // static black parts on the deck become one mesh; the lifter's gun-metal and chrome parts likewise
+  // (the headshell group is a fixed offset, so it bakes into the lifter): 22 draw calls become 13
+  bakeMeshes([armBase, restPost, restClip, lever, knobMark, button], black, group, 'vinyl:black');
+  bakeMeshes([housing, cartridge, weight], gun, lifter, 'vinyl:gun');
+  bakeMeshes([tube, fingerLift, stub], chrome, lifter, 'vinyl:chrome');
 
   // the choreography (gsap on this object; update() applies it every frame)
   const anim = { yaw: REST_YAW, lift: 0, omega: 0, progress: 0 };
