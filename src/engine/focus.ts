@@ -9,7 +9,6 @@ import type { Picker } from './picking';
 import type { Overlay } from '../ui/overlay';
 import type { Label } from '../ui/label';
 import type { Panel } from '../ui/panel';
-import type { Bubble } from '../ui/bubble';
 import type { A11yList } from '../ui/a11y';
 import { focus as focusFrames } from '../layout';
 import { state } from '../state';
@@ -24,7 +23,6 @@ interface Deps {
   overlay: Overlay;
   label: Label;
   panel: Panel;
-  bubble: Bubble;
   a11y: A11yList;
   objects: TableObject[];
   ctx: ObjectCtx;
@@ -119,7 +117,7 @@ export class Focus {
 
     obj.focus.onEnter?.(d.ctx);
     const openPanel = (): void => {
-      if (state.focused !== id || obj.focus.deferPanel) return;
+      if (state.focused !== id) return;
       this.mark('panel:open', id);
       if (obj.focus.panel) d.panel.open(obj.focus.panel, { objectId: id, onClose: () => this.dismiss() });
     };
@@ -152,8 +150,7 @@ export class Focus {
   }
 
   /**
-   * Opens a panel while `id` is focused: the object's own (objects that defer it past
-   * +450 ms: the ID after its flip) or `spec` (the shelf opening one book's panel while
+   * Opens a panel while `id` is focused: the object's own, or `spec` (the shelf opening one book's panel while
    * the cluster stays focused), with `onClose` in place of the exit.
    */
   openPanel(id: string, spec?: PanelSpec, onClose?: () => void): void {
@@ -190,7 +187,6 @@ export class Focus {
     this.mark('exit:start', id);
     state.focused = null;
     this.focusPose = null;
-    d.bubble.hide();
     d.a11y.setExpanded(null);
     obj.focus.onExit?.(d.ctx);
     d.hover.release();

@@ -26,7 +26,7 @@
   {"action":"wait","ms":900},
   {"action":"assert","name":"austen-paused","js":"window.__pauseCalled === true && window.__table.state.music.isPlaying === false"},
   {"action":"wait","ms":1200},
-  {"action":"assert","name":"austen-letter","js":"window.__austen.shown && document.querySelector('#panel .letter .hand em').textContent === 'Persuasion' && document.getElementById('bubble').hidden"},
+  {"action":"assert","name":"austen-letter","js":"window.__austen.shown && document.querySelector('#panel .letter .hand em').textContent === 'Persuasion' && !document.getElementById('bubble')"},
   {"action":"shot","name":"austen-letter"},
   {"action":"exit"},
   {"action":"assert","name":"letter-gone-on-exit","js":"document.querySelector('#panel .letter') === null"},

@@ -51,7 +51,7 @@
   {"action":"wait","selector":"#panel:not([hidden])"},
   {"action":"wait","ms":1800},
   {"action":"assert","name":"austen-paused","js":"window.__pauseCalled === true && window.__table.state.music.isPlaying === false"},
-  {"action":"assert","name":"austen-letter","js":"window.__austen.shown && document.querySelector('#panel .letter .hand em').textContent === 'Persuasion' && document.getElementById('bubble').hidden"},
+  {"action":"assert","name":"austen-letter","js":"window.__austen.shown && document.querySelector('#panel .letter .hand em').textContent === 'Persuasion' && !document.getElementById('bubble')"},
   {"action":"shot","name":"shelf-austen-letter"},
   {"action":"click","selector":"#panel .letter .fold"},
   {"action":"wait","ms":600},

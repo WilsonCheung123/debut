@@ -23,7 +23,6 @@ import { watchResize } from './engine/resize';
 import { Overlay } from './ui/overlay';
 import { Label } from './ui/label';
 import { Panel } from './ui/panel';
-import { Bubble } from './ui/bubble';
 import { A11yList } from './ui/a11y';
 import { registry } from './objects/index';
 import { isCluster, type TableObject, type ObjectCtx, type FocusCamera } from './objects/types';
@@ -53,7 +52,6 @@ async function boot(): Promise<void> {
   const overlay = new Overlay(ui);
   const label = new Label(ui);
   const panel = new Panel(ui);
-  const bubble = new Bubble(ui);
   const a11y = new A11yList(ui);
   const picker = new Picker(rig.camera, canvas);
   const hover = new Hover();
@@ -133,7 +131,7 @@ async function boot(): Promise<void> {
   const contact = createContactShadows(scene);
   for (const o of interactive) if (o.contactShadow !== false) contact.add(o);
 
-  focusCtl = new Focus({ rig, lights, hover, picker, overlay, label, panel, bubble, a11y, objects: interactive, ctx });
+  focusCtl = new Focus({ rig, lights, hover, picker, overlay, label, panel, a11y, objects: interactive, ctx });
   const focus = focusCtl;
 
   // Keyboard path: focusing a hidden button shows the hover state; Enter focuses.

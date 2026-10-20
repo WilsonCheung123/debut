@@ -10,7 +10,7 @@
 //
 // Scenario: JSON array of steps, in order:
 //   {"action":"wait","ready":true}               wait until the lamp has warmed up
-//   {"action":"wait","ms":500} | {"action":"wait","selector":"#panel:not([hidden])"}
+//   {"action":"wait","ms":500} | {"action":"wait","selector":"#panel:not([hidden])"} | {"action":"wait","frames":2}
 //   {"action":"hover","id":"book.inferno"}        move the mouse onto the object (no-op on touch)
 //   {"action":"focus","id":"id-card","frames":0}  click/tap it, wait for focus:settled; frames>0 grabs a burst mid-move
 //   {"action":"focus","id":"book.demi-gods","cluster":true}  on touch, a member hidden behind a sibling is focused via the hook (noted)
@@ -332,6 +332,7 @@ try {
         case 'wait':
           if (s.ready) await waitReady();
           else if (s.selector) await page.locator(s.selector).first().waitFor({ timeout: s.timeout || 15000 });
+          else if (s.frames) await settle(s.frames); // n rendered frames past idle (per-frame work such as the puppet's in-focus hover resolves in update())
           else await sleep(s.ms || 500);
           break;
         case 'hover': await doHover(s.id); break;

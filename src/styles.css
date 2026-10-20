@@ -109,40 +109,4 @@
 #panel.sheet .body { padding: 4px 22px calc(28px + env(safe-area-inset-bottom, 0px)); }
 #panel.sheet h1 { font-size: 24px; }
 
-/* Message bubble (Austen trick): a received-message bubble, our own drawing. */
-#bubble {
-  position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%);
-  max-width: min(420px, calc(100vw - 32px)); font-family: var(--sans); font-size: 15px; line-height: 1.42;
-  transform-origin: 14% 100%; box-sizing: border-box;
-  filter: drop-shadow(0 14px 24px rgba(0,0,0,.34)) drop-shadow(0 1px 2px rgba(0,0,0,.16));
-  -webkit-font-smoothing: auto;
-}
-#bubble[hidden] { display: none; }
-#bubble .tail { position: absolute; left: -5px; bottom: 0; width: 20px; height: 20px; }
-#bubble .box { position: relative; border-radius: 20px; overflow: hidden; box-sizing: border-box; transition: height .24s cubic-bezier(.2,.7,.2,1); }
-#bubble .box.growing { transition: none; }
-#bubble.ask .box { background: #e9e9eb; color: #111; padding: 4px; white-space: nowrap; }
-#bubble.ask .tail path { fill: #e9e9eb; }
-#bubble .ask-btn {
-  font: inherit; font-size: 15px; color: #1a6ce0; background: transparent; border: 0; padding: 10px 16px; min-height: 44px;
-  border-radius: 16px; cursor: pointer;
-}
-#bubble .ask-btn:hover { background: rgba(0,0,0,.05); }
-#bubble .ask-btn:focus-visible { outline: 2px solid #1a6ce0; outline-offset: -2px; }
-#bubble.answer { width: min(420px, calc(100vw - 32px)); }
-#bubble.answer .box { background: #fff; color: #111; }
-#bubble.answer .tail path { fill: #fff; }
-#bubble .inner { padding: 14px 18px 14px; }
-#bubble .typed { margin: 0; }
-#bubble .caret { display: inline-block; width: 0; height: 1.05em; vertical-align: -0.16em; margin-left: 1px; box-shadow: 0 0 0 1px #111; animation: caret 1s steps(1) infinite; }
-#bubble .caret.done { animation: none; opacity: 0; }
-#bubble .after { margin: 10px 0 0; opacity: 0; transition: opacity .45s ease .25s; }
-#bubble .after.shown { opacity: 1; }
-#bubble .after a { display: inline-block; color: #1a6ce0; text-decoration: none; font-size: 14px; padding: 13px 6px; margin: -13px -6px; }
-#bubble .after a:hover { text-decoration: underline; }
-@keyframes caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-
-@media (prefers-reduced-motion: reduce) {
-  #bubble .caret { animation: none; }
-  #bubble .box, #bubble .after { transition: none; }
 }

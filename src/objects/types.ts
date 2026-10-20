@@ -46,9 +46,8 @@ export interface ObjectCtx {
   /** Re-runs the camera tween to the object's current focus pose (e.g. after a flip). */
   reframe(id: string, duration?: number): void;
   /**
-   * Opens a panel while `id` is focused: the object's own panel by default (objects with
-   * `focus.deferPanel`, e.g. the ID after its flip), or `spec` (the books' shelf opens one
-   * book's panel while the cluster stays focused). `onClose` replaces the default exit
+   * Opens a panel while `id` is focused: the object's own panel by default, or `spec` (the
+   * books' shelf opens one book's panel while the cluster stays focused). `onClose` replaces the default exit
    * (the back chevron). No-op unless `id` is focused.
    */
   openPanel(id: string, spec?: PanelSpec, onClose?: () => void): void;
@@ -84,8 +83,6 @@ export interface TableObject {
     onExit?(ctx: ObjectCtx): void;
     /** Clicks on this object's hit meshes while it is focused. hitName = mesh.name. */
     onClickInside?(hitName: string, ctx: ObjectCtx): void;
-    /** When true the engine does not open the panel at +450 ms; the object opens it later with ctx.openPanel(id). */
-    deferPanel?: boolean;
     /**
      * Esc, a click outside the panel, or the panel's chevron while focused: return true to
      * consume it (the shelf closes its open book and stays), false to let the engine exit.
