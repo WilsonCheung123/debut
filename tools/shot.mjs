@@ -74,7 +74,10 @@ const context = await browser.newContext({
   serviceWorkers: 'block',
 });
 const page = await context.newPage();
-page.setDefaultTimeout(20000);
+// SHOT_TIMEOUT_SCALE=4 stretches every wait (a loaded machine with several
+// software-GL browsers boots the page in minutes, not seconds).
+const SLOW = Math.max(1, Number(process.env.SHOT_TIMEOUT_SCALE || 1));
+page.setDefaultTimeout(20000 * SLOW);
 // --clock installs Playwright's fake clock before the page loads, so a scenario
 // can step virtual time (clock runFor) and read choreography marks exactly.
 const useClock = args.includes('--clock');
@@ -102,7 +105,7 @@ const sleep = (ms) => page.waitForTimeout(ms);
 const T = () => page.evaluate(() => window.__table);
 
 async function waitReady(timeout = 30000) {
-  await page.waitForFunction(() => window.__table && window.__table.ready, null, { timeout });
+  await page.waitForFunction(() => window.__table && window.__table.ready, null, { timeout: timeout * SLOW });
 }
 async function centre(id, minPx = 0) {
   const r = await page.evaluate(([id, m]) => window.__table.rect(id, m), [id, minPx]);
@@ -297,7 +300,7 @@ async function doAudit(name, minWidth, clusterPrefixes = []) {
 }
 
 try {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 * SLOW });
   await waitReady();
   await sleep(300);
 

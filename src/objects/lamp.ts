@@ -221,13 +221,15 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
   sprite.generateMipmaps = false;
   sprite.minFilter = THREE.LinearFilter;
   const radiusAt = (along: number): number => 0.03 + along * 0.26;
+  // the first 12% of the cone is inside the shade: motes live below the mouth
+  const ALONG0 = 0.13;
   const place = (i: number, along: number): void => {
     const r = Math.sqrt(Math.random());
     seed[i * 4] = along; seed[i * 4 + 1] = r; seed[i * 4 + 2] = Math.random() * Math.PI * 2; seed[i * 4 + 3] = 0.6 + Math.random() * 0.8;
-    sizes[i] = 0.0035 + Math.random() * Math.random() * 0.0065;
+    sizes[i] = 0.004 + Math.random() * Math.random() * 0.007;
     alphas[i] = (1 - r * r * 0.85) * (0.35 + Math.random() * 0.65);
   };
-  for (let i = 0; i < n; i++) place(i, Math.random());
+  for (let i = 0; i < n; i++) place(i, ALONG0 + Math.random() * (1 - ALONG0));
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
@@ -269,6 +271,8 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
       .addScaledVector(u, Math.cos(a) * r + sway)
       .addScaledVector(w, Math.sin(a) * r + bob);
     pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z;
+    // fade in just below the mouth so none pops into being against the shade
+    alphas[i] = (1 - seed[i * 4 + 1] * seed[i * 4 + 1] * 0.85) * Math.min(1, (along - ALONG0) / 0.1 + 0.15) * (0.5 + 0.5 * Math.sin(i * 12.9898));
   };
   let active = n;
   let opacity = 0;
@@ -278,7 +282,7 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
       for (let i = 0; i < active; i++) {
         // drift slowly down the light toward the table; wrap back near the head
         seed[i * 4] += dt * 0.01 * seed[i * 4 + 3];
-        if (seed[i * 4] > 1) place(i, 0.06);
+        if (seed[i * 4] > 1) place(i, ALONG0);
         write(i, t);
       }
       geo.attributes.position.needsUpdate = true;
@@ -287,7 +291,7 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
       // pixels per metre at unit distance: screen height / (2 tan(fov/2))
       const h = ctx.renderer.getDrawingBufferSize(size2).y;
       mat.uniforms.uScale.value = h / (2 * Math.tan(THREE.MathUtils.degToRad(ctx.camera.fov) / 2));
-      mat.uniforms.uOpacity.value = 0.3 * opacity;
+      mat.uniforms.uOpacity.value = 0.42 * opacity;
     },
     setCount(c) {
       active = Math.max(0, Math.min(n, c));

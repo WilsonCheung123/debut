@@ -85,7 +85,7 @@ function drawWalnut(ctx: CanvasRenderingContext2D, w: number, h: number, seed: n
     }
     // grain: long streaks that wander with integer-cycle sines (seamless in x)
     // and fade in and out along their length
-    const n = Math.round(bh * 0.6);
+    const n = Math.round(bh * 0.42);
     for (let i = 0; i < n; i++) {
       const s = i * 7 + b.i * 1000;
       const y0 = b.y0 + R(s, 10) * bh;
@@ -291,9 +291,9 @@ export function leatherTexture(seed = 9, size = 512): THREE.CanvasTexture {
       ctx.fillStyle = '#2b221d';
       ctx.fillRect(0, 0, w, h);
       // pebbles: a lit rim toward the top-left, a shadowed pit toward the bottom-right
-      const n = Math.round((w * h) / 95);
+      const n = Math.round((w * h) / 150);
       for (let i = 0; i < n; i++) {
-        const x = R(i, 1) * w, y = R(i, 2) * h, r = 2.2 + R(i, 3) * 4.5;
+        const x = R(i, 1) * w, y = R(i, 2) * h, r = 2.6 + R(i, 3) * 5;
         const hi = (0.05 + R(i, 4) * 0.09).toFixed(3), lo = (0.08 + R(i, 5) * 0.14).toFixed(3);
         for (const [dx, dy] of [[0, 0], [-w, 0], [w, 0], [0, -h], [0, h]]) {
           const cx = x + dx, cy = y + dy;

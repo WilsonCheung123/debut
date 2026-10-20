@@ -24,6 +24,17 @@ const flag = (name: string, dflt: boolean): boolean => {
   return v === null || v === undefined ? dflt : v !== '0';
 };
 
+/**
+ * Height of the surface an object stands on at (x, z): the mat's top where
+ * the mat is, else the wood. The engine seats each object's rest pose on it,
+ * so a 1 mm card on the mat is not buried by a 3.5 mm mat.
+ */
+export function surfaceHeightAt(x: number, z: number): number {
+  if (!flag('mat', MAT.on)) return 0;
+  const inside = Math.abs(x - MAT.x) <= MAT.w / 2 - 0.01 && Math.abs(z - MAT.z) <= MAT.d / 2 - 0.01;
+  return inside ? MAT.thickness : 0;
+}
+
 /** Renderer + the room + the table. Table top is the plane y = 0. */
 export function createScene(canvas: HTMLCanvasElement): SceneBundle {
   const renderer = new THREE.WebGLRenderer({
@@ -52,7 +63,7 @@ export function createScene(canvas: HTMLCanvasElement): SceneBundle {
   floor.position.y = -TABLE.height;
   floor.receiveShadow = true;
   room.add(floor);
-  const wallMat = matte(0x1a1713, 0.97);
+  const wallMat = matte(0x252019, 0.97);
   const back = new THREE.Mesh(new THREE.PlaneGeometry(12, 4.5), wallMat);
   back.position.set(0, 1.4, -1.15);
   back.receiveShadow = true;
@@ -73,7 +84,7 @@ export function createScene(canvas: HTMLCanvasElement): SceneBundle {
   top.castShadow = true;
   top.name = 'table-top';
   table.add(top);
-  const apronMat = wood({ tone: 0x8f7a68, seed: 5 });
+  const apronMat = wood({ tone: 0x8f7a68, seed: 3 }); // same figure as the top (one 1024 draw, not two); darker tone
   const apron = new THREE.Mesh(new RoundedBoxGeometry(TABLE.w - 0.12, 0.07, TABLE.d - 0.12, 2, 0.004), apronMat);
   apron.position.y = -TABLE.thickness - 0.035;
   apron.receiveShadow = true;

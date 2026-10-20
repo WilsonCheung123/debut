@@ -63,8 +63,8 @@ export class Overlay {
     const s = this.vignette.style;
     // rest: a wide, gentle fall-off that leaves the table's corners readable;
     // focus: the eye tightens on the object and the rest goes down to ~10%
-    const inner = Math.max(4, 30 - 14 * Math.min(d, 1));
-    const outerAlpha = Math.min(0.97, 0.5 + 0.38 * d);
+    const inner = Math.max(4, 34 - 18 * Math.min(d, 1));
+    const outerAlpha = Math.min(0.97, 0.4 + 0.48 * d);
     s.setProperty('--vx', `${this.eye.x}%`);
     s.setProperty('--vy', `${this.eye.y}%`);
     s.setProperty('--vin', `${inner}%`);

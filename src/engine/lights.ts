@@ -21,10 +21,10 @@ const FINAL_KEY = new THREE.Color(0xffc48e);   // ~2900 K after ACES: warm, not 
 const AMBER = new THREE.Color(0xff8a2a);       // warm-up start, like a filament coming on
 const FILL = new THREE.Color(0xb8cdf5);        // ~6500 K
 
-const BASE = { key: 6.4, sun: 0.42, spill: 0.32, fill: 4.2, hemi: 0.2, ambient: 0.08, keeper: 1.0 };
+const BASE = { key: 8.6, sun: 0.6, spill: 0.75, fill: 6.2, hemi: 0.32, ambient: 0.12, keeper: 1.0 };
 
 export class Lights {
-  readonly key = new THREE.SpotLight(FINAL_KEY.clone(), 0, 0, 1.02, 0.86, 1.55);
+  readonly key = new THREE.SpotLight(FINAL_KEY.clone(), 0, 0, 1.06, 0.62, 1.5);
   readonly sun = new THREE.DirectionalLight(FINAL_KEY.clone(), 0);
   readonly spill = new THREE.PointLight(FINAL_KEY.clone(), 0, 2.6, 2);
   readonly fill = new THREE.SpotLight(FILL, 0, 0, 0.78, 1, 1.25);

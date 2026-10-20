@@ -17,7 +17,7 @@ export interface ContactShadows {
   update(): void;
 }
 
-interface Blob { obj: TableObject; cx: number; cz: number; sx: number; sz: number; strength: number }
+interface Blob { obj: TableObject; cx: number; cz: number; sx: number; sz: number; strength: number; baseY: number }
 
 const BASE_Y = 0.0009;
 const MAX = 48;
@@ -92,13 +92,13 @@ export function createContactShadows(scene: THREE.Scene): ContactShadows {
       });
       if (box.isEmpty()) return;
       obj.group.getWorldPosition(pos);
-      if (pos.y + box.min.y > 0.012) return; // sits on something else, not on the wood
+      if (pos.y + box.min.y > 0.012) return; // sits on another object, not on the desk
       box.getSize(size);
       box.getCenter(centre);
       // tall or stubby things press harder; thin cards barely at all
       const h = size.y;
       const st = THREE.MathUtils.clamp(0.22 + h * 2.2, 0.16, 0.5);
-      blobs.push({ obj, cx: centre.x, cz: centre.z, sx: size.x * 1.18 + 0.02, sz: size.z * 1.18 + 0.02, strength: st });
+      blobs.push({ obj, cx: centre.x, cz: centre.z, sx: size.x * 1.18 + 0.02, sz: size.z * 1.18 + 0.02, strength: st, baseY: pos.y });
       mesh.count = blobs.length;
     },
     update() {
@@ -109,14 +109,14 @@ export function createContactShadows(scene: THREE.Scene): ContactShadows {
         q.setFromRotationMatrix(g.matrixWorld);
         xAxis.set(1, 0, 0).applyQuaternion(q);
         const yaw = Math.atan2(-xAxis.z, xAxis.x);
-        const lift = Math.max(0, pos.y);
+        const lift = Math.max(0, pos.y - b.baseY);
         const k = THREE.MathUtils.clamp(1 - lift / 0.04, 0.12, 1);
         const grow = 1 + lift * 5;
         e.set(0, yaw, 0);
         q.setFromEuler(e);
         const cx = b.cx * Math.cos(yaw) + b.cz * Math.sin(yaw);
         const cz = -b.cx * Math.sin(yaw) + b.cz * Math.cos(yaw);
-        pos.set(pos.x + cx, BASE_Y, pos.z + cz);
+        pos.set(pos.x + cx, b.baseY + BASE_Y, pos.z + cz);
         s.set(b.sx * grow, 1, b.sz * grow);
         m.compose(pos, q, s);
         mesh.setMatrixAt(i, m);

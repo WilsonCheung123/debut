@@ -10,7 +10,7 @@ import gsap from 'gsap';
 import { state, refreshMedia, flags } from './state';
 import { api } from './api';
 import { materials } from './materials';
-import { createScene } from './engine/scene';
+import { createScene, surfaceHeightAt } from './engine/scene';
 import { Lights } from './engine/lights';
 import { createContactShadows } from './engine/contact';
 import { CameraRig } from './engine/camera';
@@ -70,7 +70,8 @@ async function boot(): Promise<void> {
     const pose = restPoses[entry.key];
     const root = isCluster(r) ? r.root : r.group;
     if (pose) {
-      root.position.set(pose.position[0], pose.position[1], pose.position[2]);
+      // seated on whatever is under it (the mat's top where the mat is)
+      root.position.set(pose.position[0], pose.position[1] + surfaceHeightAt(pose.position[0], pose.position[2]), pose.position[2]);
       root.rotation.y = THREE.MathUtils.degToRad(pose.rotationY ?? 0);
     } else {
       console.warn(`layout.rest has no pose for ${entry.key}`);
