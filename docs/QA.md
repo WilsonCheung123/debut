@@ -65,7 +65,9 @@ npm run qa visit-a jar   # only the named runs
 Runs: `visit-a` (rest, API, hovers, the ID flip), `visit-books` (the nine
 books' panels), `visit-b`
 (the other objects, the Austen trick with a stubbed player, keyboard),
-`reduced`, `timing` (fake clock), `deep-link`, `hologram`, `puppet`, `vinyl`,
+`reduced`, `timing` (fake clock), `deep-link`, `hologram`, `hologram-hls`,
+`hologram-again` (the sheet keeps advancing on a second focus, after a film
+switch and after cinema: texture uploads counted per rendered frame), `puppet`, `vinyl`,
 `vinyl-offline`, `vinyl-silent`, `jar`, `kahneman`, `four-objects`, `id-flip`
 (fake clock). `tests/scenarios/vinyl-live.json` drives the real YouTube player
 (network; play, next, pause, the Austen pause hook, no auto-resume) and is run

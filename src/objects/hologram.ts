@@ -217,6 +217,10 @@ class Player {
   private preparedFor: string | null = null;
   private hlsMod: Promise<typeof Hls | null> | null = null;
   private token = 0;
+  /** One fresh-instance retry per start() after hls.js gives up (a fatal error would otherwise leave the sheet dark). */
+  private retried = false;
+  /** The video time of the last frame handed to the GPU (`poll` uploads on every new one, independent of rVFC). */
+  private uploadedAt = -1;
   private readonly t0 = performance.now();
 
   constructor(
@@ -226,7 +230,13 @@ class Player {
     private readonly onLive: (tex: THREE.VideoTexture) => void,
     private readonly onCinema: (on: boolean) => void,
   ) {
-    const onFsChange = (): void => { if (this.cinema && fsElement() !== this.video) this.leaveCinema(); };
+    const onFsChange = (): void => {
+      const ours = fsElement() === this.video;
+      this.trace(`fullscreenchange ${ours ? 'in' : 'out'}`);
+      if (this.cinema && !ours) this.leaveCinema();
+      // a grant that lands after the visitor already left (a slow compositor): never a fullscreen hidden video
+      else if (!this.cinema && ours) this.exitFullscreen();
+    };
     document.addEventListener('fullscreenchange', onFsChange);
     document.addEventListener('webkitfullscreenchange', onFsChange);
     // Escape while the fullscreen player (or its fallback overlay) is up closes only that, never the focus
@@ -271,7 +281,7 @@ class Player {
     return this.hlsMod;
   }
 
-  private newHls(HlsCtor: typeof Hls, autoStartLoad: boolean): Hls {
+  private newHls(HlsCtor: typeof Hls, autoStartLoad: boolean, film: Film): Hls {
     const hls = new HlsCtor({
       enableWorker: true, autoStartLoad,
       // a 32 cm sheet of light: ~20 s ahead is plenty (the default maxBufferSize would fetch whole films)
@@ -292,9 +302,13 @@ class Player {
       if (data.type === HlsCtor.ErrorTypes.NETWORK_ERROR && !retriedNet) { retriedNet = true; hls.startLoad(); return; }
       if (data.type === HlsCtor.ErrorTypes.MEDIA_ERROR && !retriedMedia) { retriedMedia = true; hls.recoverMediaError(); return; }
       this.lastError = data.details;
-      this.playing = false;
       hls.destroy();
-      if (this.hls === hls) { this.hls = null; this.preparedFor = null; }
+      if (this.hls !== hls) return; // already replaced
+      this.hls = null;
+      this.preparedFor = null;
+      // while the sheet is up, one more go with a fresh instance rather than a dark screen
+      if (this.playing && !this.retried) { this.retried = true; this.trace('retry: fresh hls'); void this.start(film, true); return; }
+      this.playing = false;
     });
     return hls;
   }
@@ -310,7 +324,7 @@ class Player {
     if (!HlsCtor.isSupported()) { this.lastError = 'hls-unsupported'; return; }
     this.detach();
     this.mode = 'hls';
-    const hls = this.newHls(HlsCtor, false);
+    const hls = this.newHls(HlsCtor, false, film);
     this.hls = hls;
     hls.attachMedia(v);
     hls.loadSource(hlsUrl(film));
@@ -318,13 +332,16 @@ class Player {
     this.trace(`prepared ${film.id.slice(0, 8)}`);
   }
 
-  async start(film: Film): Promise<void> {
+  async start(film: Film, retry = false): Promise<void> {
     const token = ++this.token;
     const v = this.ensureVideo();
-    this.trace(`start ${film.id.slice(0, 8)}${this.preparedFor === film.id ? ' (prepared)' : ''}`);
+    // prepared, and still attached to this element (a destroyed or detached instance would never buffer)
+    const prepared = this.hls !== null && this.preparedFor === film.id && this.hls.media === v;
+    this.trace(`start ${film.id.slice(0, 8)}${prepared ? ' (prepared)' : ''}${retry ? ' (retry)' : ''}`);
     this.live = false;
     this.playing = true;
     this.lastError = '';
+    if (!retry) this.retried = false;
     if (this.fileOverride) {
       this.detach();
       this.mode = 'file';
@@ -333,7 +350,7 @@ class Player {
       this.detach();
       this.mode = 'native';
       v.src = hlsUrl(film);
-    } else if (this.hls && this.preparedFor === film.id) {
+    } else if (prepared && this.hls) {
       this.hls.startLoad();
     } else {
       this.detach();
@@ -342,7 +359,7 @@ class Player {
       if (!HlsCtor) { this.playing = false; return; }
       if (!HlsCtor.isSupported()) { this.lastError = 'hls-unsupported'; this.playing = false; return; }
       this.mode = 'hls';
-      const hls = this.newHls(HlsCtor, true);
+      const hls = this.newHls(HlsCtor, true, film);
       this.hls = hls;
       hls.attachMedia(v);
       hls.loadSource(hlsUrl(film));
@@ -356,22 +373,34 @@ class Player {
     if (p) p.catch((e: unknown) => { this.lastError = e instanceof Error ? e.name : String(e); this.trace(`play rejected ${this.lastError}`); });
   }
 
-  /** Called every frame: attaches the VideoTexture once the first frame exists (never before: an empty video would log a WebGL warning). */
+  /**
+   * Called every frame. Creates the VideoTexture once the first frame exists (never before: an
+   * empty video would log a WebGL warning), then marks it for upload whenever the video has a
+   * newer frame. three's own VideoTexture relies on requestVideoFrameCallback, which does not
+   * fire for a 2 px, near-invisible element in every Chromium and is cancelled for good by
+   * `dispose()`; the video clock is the reliable signal.
+   */
   poll(): void {
     const v = this.video;
-    if (this.live || !this.playing || !v) return;
+    if (!this.playing || !v) return;
     if (v.readyState < 2 || v.videoWidth === 0) return;
-    if (!this.texture) {
-      this.texture = new THREE.VideoTexture(v);
-      this.texture.colorSpace = THREE.SRGBColorSpace;
-      this.texture.minFilter = THREE.LinearFilter;
-      this.texture.magFilter = THREE.LinearFilter;
-      this.texture.generateMipmaps = false;
+    if (!this.live) {
+      if (!this.texture) {
+        this.texture = new THREE.VideoTexture(v);
+        this.texture.colorSpace = THREE.SRGBColorSpace;
+        this.texture.minFilter = THREE.LinearFilter;
+        this.texture.magFilter = THREE.LinearFilter;
+        this.texture.generateMipmaps = false;
+      }
+      this.uploadedAt = -1;
+      this.live = true;
+      this.trace(`live ${v.videoWidth}x${v.videoHeight}`);
+      this.onLive(this.texture);
     }
-    this.texture.needsUpdate = true;
-    this.live = true;
-    this.trace(`live ${v.videoWidth}x${v.videoHeight}`);
-    this.onLive(this.texture);
+    if (this.texture && v.currentTime !== this.uploadedAt) {
+      this.uploadedAt = v.currentTime;
+      this.texture.needsUpdate = true;
+    }
   }
 
   /**
@@ -410,14 +439,16 @@ class Player {
       v.muted = true;
       v.controls = false;
       v.classList.remove('cinema');
-      if (fsElement() === v) {
-        const d = document as FsDocument;
-        const p = d.exitFullscreen ? d.exitFullscreen() : d.webkitExitFullscreen?.();
-        if (p && typeof (p as Promise<void>).catch === 'function') (p as Promise<void>).catch(() => { /* already out */ });
-      }
+      if (fsElement() === v) this.exitFullscreen();
       if (this.playing && v.paused) this.play(v); // the visitor may have paused it in fullscreen; the hologram runs
     }
     this.onCinema(false);
+  }
+
+  private exitFullscreen(): void {
+    const d = document as FsDocument;
+    const p = d.exitFullscreen ? d.exitFullscreen() : d.webkitExitFullscreen?.();
+    if (p && typeof (p as Promise<void>).catch === 'function') (p as Promise<void>).catch((e: unknown) => this.trace(`exit fullscreen refused ${e instanceof Error ? e.message : String(e)}`));
   }
 
   /** Draws the current frame into `canvas`; false when there is no frame (or the canvas would be tainted). */
@@ -446,7 +477,9 @@ class Player {
     this.playing = false;
     this.live = false;
     this.detach();
-    this.texture?.dispose(); // the GPU copy goes; the object is reused next time
+    // the GPU copy goes with the texture: a disposed VideoTexture never updates again (its frame callback is cancelled), so the next start makes a new one
+    this.texture?.dispose();
+    this.texture = null;
   }
 
   dispose(): void {
@@ -718,6 +751,8 @@ export function createHologram(ctx: ObjectCtx): TableObject {
     get ghostOpacity() { return gu.opacity.value; },
     get liveMix() { return (su.mapB.value === player.texture && player.texture) ? su.mixT.value : 0; },
     get posterFallback() { return posterFallback; },
+    /** The VideoTexture's upload counter: it must keep climbing while the sheet is live (a frozen frame does not). */
+    get textureVersion() { return player.texture?.version ?? -1; },
     status() {
       const v = player.video;
       const h = player.hls;
