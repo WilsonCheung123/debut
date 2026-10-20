@@ -2,24 +2,27 @@
 
 Read in this order: this file, `SPEC.md` (the build contract), `docs/BRIEF-wilson-verbatim.md` (Wilson's own words; blurbs and quotes must stay verbatim), `docs/OBJECT-GUIDE.md`, `docs/QA.md`. `docs/VISION-v1-light-table.md` is an earlier, superseded concept kept for history only.
 
-## State as of 2026-10-20 (stopped on Wilson's instruction)
+## State as of 2026-10-20 05:00 (all eight objects merged)
 
-- **main** = engine complete (scene, camera rig, hover/focus choreography, paper panels, bubble, keyboard list, worker with local D1, Playwright shot tool). Objects on main are still placeholder boxes.
-- **Eight builder branches**, all pushed to GitHub (`origin`), each with real but unfinished object work. Every branch's last commit is either the builder's own or a `wip: salvage` commit made at stop time, so nothing is lost. Branch -> job (SPEC section):
+- **main** has every object merged (last merge `0253285`): books, Kahneman panel, ID card + FPGA + die-cast + capo, hologram, puppet, turntable + Spotify + Austen bubble, jar + principles, environment. `npm run build` and `tsc` are clean. Branches `worktree-agent-*` are kept on GitHub for history only; nothing on them is unmerged.
+- **In progress:** integration QA on main (full scripted visit, layout retune for the real objects, draw-call budget, the items each builder left unverified), then the four critics (taste, glitch, a11y/perf, content) with fix rounds. Desktop only per SPEC 0.1.
+- **Not done:** Turnstile widget on the jar slip (keep `TURNSTILE_SECRET` unset until it exists, or every submit is rejected); deployment to Cloudflare (owner runs `wrangler login`); a real-GPU check of frame times (`__table.info().lastMove.max` in Chrome) and of the jar's glass transmission; the hls.js path in real Chrome/Firefox for the hologram.
 
-| Branch | Job | State at stop |
-|---|---|---|
-| `worktree-agent-a75f3648453584236` | Books 4.1 | content (nine blurbs/quotes) + procedural cover-design module; object not yet wired |
-| `worktree-agent-a093b530b35c69f45` | Thinking, Fast and Slow flow 4.2 | checker-shadow press-and-hold proof + anchoring panel drafted; needs end-to-end test against worker |
-| `worktree-agent-a1c800077036819b8` | ID card, FPGA, die-cast, capo 4.3-4.6 | all four objects first versions (ID flip + deferred panel); needs screenshots/QA |
-| `worktree-agent-aa879965708220422` | Hologram projector + films 4.7 | wip salvage; check `src/objects/hologram.ts`, `src/panels/hologram.ts` |
-| `worktree-agent-a83bb075904774d8f` | Puppet + Think Different page 4.8 | marionette geometry, painted head, strings to cross bar; panel copy to verify |
-| `worktree-agent-a6f534a90d0a4c31a` | Turntable, Spotify, Austen bubble 4.9 | wip salvage; check `src/objects/vinyl.ts`, `src/panels/vinyl.ts`, `src/panels/austen.ts` |
-| `worktree-agent-a08fb61d0872017eb` | Jar + slip + principles 4.10 | glass jar (transmission), slotted lid, slip pile, slip-of-paper panel; principles copy |
-| `worktree-agent-a43b9640003202166` | Environment polish 4.11 | articulate lamp, walnut maps, leather mat, light rig WIP; before/after shots under `shots/env/` |
+## Things Wilson must read or decide (collected from the builders)
 
-Each branch may have made small additive edits to engine files; diff against main before merging. Worktrees live under `.claude/worktrees/` (ignored by git); they share one `node_modules` via symlink. Another agent can simply `git checkout <branch>` instead of using the worktrees.
-- **Not started:** integration (merge the eight branches into main one at a time, retune `src/layout.ts`), the desktop QA loop (taste, glitch, a11y, content critics per `docs/QA.md`), Lighthouse, deployment.
+Bracketed text in `src/content/*` is copy he must write or approve. Specifically:
+- `src/content/hologram.ts`: Realm's description has three bracketed phrases; the title "An AI film studio" and the list kicker are the builder's words. Decide: hologram freezes while "watch with sound" plays (current) or keeps running muted.
+- `src/content/die-cast.ts`: only one fact is his (negotiating with Chinese hardware vendors for data); four bracketed phrases to fill or cut; the company stays unnamed.
+- `src/content/fpga.ts`: one bracketed line on what the Architect work was like.
+- `src/content/guitar.ts`: two bracketed slots (what he is learning; the capo line).
+- `src/content/id-card.ts`: nothing bracketed; confirm "First in my family to do any of it." for first-generation.
+- `src/content/principles.ts`: nine lines in his voice; lines 8 and 9 tie the section to the jar and are the builder's additions. The field placeholders and the button label "put it in the jar".
+- `src/panels/pinocchio.ts`: the three "why it matters to me" sentences, the title "The object comes first" and the three section titles are written in his voice, not bracketed.
+- `src/panels/kahneman.ts`: UI copy ("press and hold the picture", "now let go", column kickers, "1869 to 1948"); policy that returning visitors see the reveal and are not re-asked; the decision to paint A and B in one grey over the SVG (the asset renders B lighter than A).
+- `src/panels/vinyl.ts`: the panel heading and record label use the playlist's real name "lol"; one bracketed line about the playlist; "read Persuasion" links to Gutenberg #105.
+- Books: the cover uses traditional 天龍八部 (Hong Kong editions) while the label keeps 天龙八部; author credit forms; which titles are paperback vs hardcover; subtitles on three covers; the Anna Karenina quote as supplied.
+- Environment: no desk mat by default (exists behind `?mat=1`); black-enamel architect's lamp.
+- Decoration that is invented, not claims: ID back fine print, FPGA markings, the sample tag's lot number.
 
 ## How to run
 
