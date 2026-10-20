@@ -6,7 +6,7 @@
 //
 // Usage:
 //   node tools/shot.mjs <url> <outdir> [--viewport desktop|iphone|pixel] [--hover <id>] [--focus <id>]
-//                       [--scenario file.json] [--name base] [--reduced-motion] [--clock] [--headed]
+//                       [--scenario file.json] [--name base] [--reduced-motion] [--clock]
 //
 // Scenario: JSON array of steps, in order:
 //   {"action":"wait","ready":true}               wait until the lamp has warmed up
@@ -49,8 +49,6 @@ const focusId = opt('--focus');
 const scenarioPath = opt('--scenario');
 const baseName = opt('--name', viewportName);
 const reduced = args.includes('--reduced-motion');
-// --headed: a visible Chromium on the real GPU (no SwiftShader flags): for the live YouTube check and profiling.
-const headed = args.includes('--headed');
 // SHOT_TIMEOUT_SCALE=4 on a loaded machine: scales the page-load, ready and default timeouts (software GL plus other work).
 const SLOW = Math.max(1, Number(process.env.SHOT_TIMEOUT_SCALE) || 1);
 const u = new URL(url0);
@@ -70,7 +68,7 @@ const device = VIEWPORTS[viewportName];
 if (!device) { console.error(`unknown viewport ${viewportName}`); process.exit(1); }
 const touch = !!device.hasTouch;
 
-const browser = await chromium.launch(headed ? { headless: false } : {
+const browser = await chromium.launch({
   // --disable-accelerated-2d-canvas: with --ignore-gpu-blocklist Chromium "accelerates" canvas 2D through SwiftShader,
   // and the procedural textures (hundreds of stroked polylines) then take minutes instead of milliseconds
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'],

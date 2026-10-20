@@ -67,7 +67,11 @@ books' panels), `visit-b`
 (the other objects, the Austen trick with a stubbed player, keyboard),
 `reduced`, `timing` (fake clock), `deep-link`, `hologram`, `puppet`, `vinyl`,
 `vinyl-offline`, `vinyl-silent`, `jar`, `kahneman`, `four-objects`, `id-flip`
-(fake clock). Two `npm run qa` invocations can run side by side: every shot
+(fake clock). `tests/scenarios/vinyl-live.json` drives the real YouTube player
+(network; play, next, pause, the Austen pause hook, no auto-resume) and is run
+by hand, not by `npm run qa`: `npm run shots -- http://localhost:5180/ shots/x --scenario tests/scenarios/vinyl-live.json`.
+YouTube's own console noise (its widget script's postMessage warning, an ad
+beacon failing CORS inside its frame) is recorded as `[3p.*]` and not counted. Two `npm run qa` invocations can run side by side: every shot
 goes through `tools/shotlock.sh` (two slots on this 4-core machine).
 
 Outputs land in `shots/qa/`: PNGs plus `<run>-problems.txt`. QA fails on any
