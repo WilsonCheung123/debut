@@ -233,6 +233,8 @@ async function boot(): Promise<void> {
     focus(id: string) { return focus.focus(id); },
     exit() { return focus.exit(); },
     liftOf(id: string) { return hover.liftOf(id); },
+    /** Environment tuning handles for scripted comparisons (several variants per run). */
+    env: { lights, renderer, scene, overlay },
     info() {
       return {
         drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
