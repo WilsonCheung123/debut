@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ObjectCtx, TableObject } from './types';
-import { roundedBox, hitProxy, solid, mergeParts } from './helpers';
+import { roundedBox, hitProxy, solid, mergeParts, contactBlob } from './helpers';
+import { rest as restPoses } from '../layout';
 import { makeCanvasTexture, hash2, metal, plastic } from '../materials';
 import { guitar as content } from '../content/guitar';
 
@@ -113,6 +114,9 @@ export function createGuitar(ctx: ObjectCtx): TableObject {
   pick.position.set(0.064, 0, 0.012);
   pick.rotation.y = 0.75;
   group.add(pick);
+  const restYaw = THREE.MathUtils.degToRad(restPoses[ID]?.rotationY ?? 0);
+  const blob = contactBlob(0.03, 0.031, restYaw, { x: 0.064, z: 0.012, yaw: 0.75, strength: 0.4 });
+  group.add(blob.mesh);
 
   const proxy = hitProxy(0.15, 0.035, 0.1, `${ID}:proxy`);
   proxy.position.set(0.018, 0.0175, 0.0);
@@ -126,7 +130,9 @@ export function createGuitar(ctx: ObjectCtx): TableObject {
     anchor: new THREE.Vector3(0, box.max.y - box.min.y + 0.004, 0),
     hover: { lift: 0.012, tilt: 3 },
     focus: { camera: ctx.focusPose(ID), panel: content },
+    update() { blob.update(group); },
     dispose() {
+      blob.dispose();
       for (const g of [blackMesh.geometry, rubberMesh.geometry, steelMesh.geometry, pickGeo]) g.dispose();
       pickTex.dispose();
       pickMat.dispose();

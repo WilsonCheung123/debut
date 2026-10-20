@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import type { ObjectCtx, TableObject } from './types';
-import { hitProxy, solid } from './helpers';
+import { hitProxy, solid, contactBlob } from './helpers';
 import { makeCanvasTexture, grain, hash2 } from '../materials';
 import { focus as focusFrames, rest as restPoses } from '../layout';
 import { dirFrom } from '../engine/camera';
@@ -56,6 +56,10 @@ export function createIdCard(ctx: ObjectCtx): TableObject {
   const dir = dirFrom(frame.az, frame.el).applyAxisAngle(new THREE.Vector3(0, 1, 0), -restYaw);
   const alpha = Math.acos(THREE.MathUtils.clamp(dir.y, -1, 1));
   const beta = Math.atan2(dir.x, dir.z);
+
+  // a thin card casts nothing the shadow map can show near the table: a soft contact shadow stays on the table as it lifts
+  const blob = contactBlob(W, H, restYaw, { strength: 0.42 });
+  group.add(blob.mesh);
 
   const pose = { y: 0, rx: 0, ry: 0, rz: 0 };
   let flips = 0;
@@ -122,8 +126,9 @@ export function createIdCard(ctx: ObjectCtx): TableObject {
       },
       onClickInside() { flip(); },
     },
-    update() { apply(); },
+    update() { apply(); blob.update(group); },
     dispose() {
+      blob.dispose();
       geo.dispose();
       frontTex.dispose();
       backTex.dispose();
