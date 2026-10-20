@@ -74,7 +74,7 @@ ok('success shows the Namiya line', (await page.textContent('#panel .jar-done'))
 ok('success hides the slip', (await page.evaluate(() => getComputedStyle(document.querySelector('#panel .jar-wrap')).display)) === 'none');
 ok('the 3D slip landed', true);
 console.log(`submit → landed in ${((Date.now() - t0) / 1000).toFixed(1)} s (SwiftShader frames are slow)`);
-await page.screenshot({ path: 'shots/jar/flow-done.png' });
+try { await page.screenshot({ path: 'shots/jar/flow-done.png', timeout: 60000 }); } catch { console.log('(no flow-done.png: the screenshot timed out waiting for a frame; not a failure)'); }
 
 // closing the panel while a request is in flight must not throw
 await page.evaluate(() => window.__table.exit());
