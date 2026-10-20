@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { ObjectCtx, TableObject } from './types';
 import { roundedBox, solid } from './helpers';
 import { metal, plastic, matte, makeCanvasTexture, hash2, PALETTE } from '../materials';
@@ -64,16 +63,15 @@ export function createVinyl(ctx: ObjectCtx): TableObject {
   });
   disposables.push(vinyl);
 
-  // feet, plinth, top plate
+  // feet (one instanced draw), plinth, top plate
   const inset = 0.024;
-  const feetGeo = mergeGeometries(
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => {
-      const g = new THREE.CylinderGeometry(0.010, 0.0115, FOOT_H, 20);
-      g.translate(sx * (PLINTH.w / 2 - inset), FOOT_H / 2, sz * (PLINTH.d / 2 - inset));
-      return g;
-    }),
-  )!;
-  const feet = solid(new THREE.Mesh(feetGeo, rubber), 'vinyl:feet');
+  const feetGeo = new THREE.CylinderGeometry(0.010, 0.0115, FOOT_H, 20);
+  const feet = solid(new THREE.InstancedMesh(feetGeo, rubber, 4), 'vinyl:feet');
+  const m4 = new THREE.Matrix4();
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], i) => {
+    feet.setMatrixAt(i, m4.makeTranslation(sx * (PLINTH.w / 2 - inset), FOOT_H / 2, sz * (PLINTH.d / 2 - inset)));
+  });
+  feet.instanceMatrix.needsUpdate = true;
   const plinth = solid(new THREE.Mesh(roundedBox(PLINTH.w, PLINTH.h, PLINTH.d, PLINTH.r), veneer), 'vinyl:plinth');
   plinth.position.y = FOOT_H + PLINTH.h / 2;
   const plate = solid(new THREE.Mesh(roundedBox(PLINTH.w - 0.007, PLATE_H, PLINTH.d - 0.007, 0.0014), deck), 'vinyl:deck');
