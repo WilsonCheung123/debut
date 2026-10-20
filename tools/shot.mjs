@@ -321,7 +321,7 @@ try {
           break;
         }
         case 'clock': // {"action":"clock","pause":true} | {"action":"clock","runFor":450}
-          if (s.pause) await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 1);
+          if (s.pause) await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 50); // a margin: under load the fake clock passes now+1 before pauseAt lands ("Cannot fast-forward to the past")
           if (s.runFor) await page.clock.runFor(s.runFor);
           if (s.resume) await page.clock.resume();
           break;
