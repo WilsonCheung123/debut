@@ -47,9 +47,9 @@ const CONE_FRAG = /* glsl */ `
 uniform float intensity; uniform float time; uniform vec3 colorA; uniform vec3 colorB;
 varying vec2 vUv; varying vec3 vN; varying vec3 vV;
 void main() {
-  float h = 1.0 - vUv.y;                       // 0 at the lens, 1 at the top
+  float h = vUv.y;                             // CylinderGeometry: uv.y is 0 at the bottom (the lens), 1 at the open top
   float rim = pow(abs(dot(normalize(vN), normalize(vV))), 1.6);   // thin at the silhouette: reads as volume
-  float fall = pow(1.0 - h, 1.5) * (0.3 + 0.7 * smoothstep(0.0, 0.10, h)) * smoothstep(1.0, 0.6, h);
+  float fall = pow(1.0 - h, 1.2) * (0.35 + 0.65 * smoothstep(0.0, 0.08, h)) * smoothstep(1.0, 0.7, h); // brightest at the lens, gone by the top
   float bands = 0.93 + 0.07 * sin(h * 24.0 - time * 1.1 + sin(vUv.x * 12.566 + time * 0.3));
   float flick = 1.0 + 0.02 * sin(time * 9.0) * sin(time * 3.1);
   vec3 col = mix(colorA, colorB, h);
@@ -501,7 +501,8 @@ export function createHologram(ctx: ObjectCtx): TableObject {
 
   const enter = (): void => {
     focused = true;
-    poster(selected, (t) => { if (focused && su.mapA.value === black) showStatic(t); });
+    // a late poster fills a still-black screen; it never interrupts a video that has already gone live
+    poster(selected, (t) => { if (focused && !player.live && su.mapA.value === black && su.mapB.value === black) showStatic(t); });
     const have = posters.get(selected);
     showStatic(have ?? black);
     screen.visible = true;
