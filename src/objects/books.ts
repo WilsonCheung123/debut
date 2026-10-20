@@ -131,14 +131,27 @@ const LYING = new THREE.Matrix4().set(
 
 interface Book extends TableObject {
   redraw(): void;
+  /** Lying books: the books under this one in the stack (bottom first). */
+  below: Book[];
+  /** The engine's hover lift of this book right now (metres), read back from its group. */
+  hoverLiftNow(): number;
+  /** 0 while the book is in its slot, 1 once it has slid clear of its neighbours. */
+  clearance(): number;
 }
 
-function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: BookContent, label: string): Book {
+interface Placement {
+  position: [number, number, number];
+  rotationY?: number;
+  /** Cursor tilt in degrees for lying books (0 for books with others on top of them). */
+  tilt?: number;
+}
+
+function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: BookContent, label: string, at: Placement): Book {
   const atlasSize = ctx.isPhone ? 512 : 1024;
   const tex = makeCanvasTexture({ width: atlasSize, height: atlasSize, anisotropy: 16, draw: (c, w) => drawAtlas(c, w, d) });
   const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: d.roughness, metalness: 0 });
   const geo = bookGeometry(d);
-  const [T, H] = d.size;
+  const [T, H, D] = d.size;
   if (!standing) {
     geo.applyMatrix4(LYING);
     geo.translate(0, T / 2, H / 2);
@@ -148,45 +161,74 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: 
   const group = new THREE.Group();
   group.name = d.id;
   group.add(mesh);
+  group.position.set(...at.position);
+  group.rotation.y = at.rotationY ?? 0;
+  const baseY = at.position[1];
 
-  // focus motion: out of the shelf / stack, up ~8 cm, turned to the camera
+  // Focus motion, in two phases so nothing passes through a neighbour: slide
+  // clear of the shelf / the books above, then rise ~8 cm and turn to the
+  // camera. `pose` is tweened and copied into the engine's motion layer each
+  // frame (update), on top of the ride-along lift from a lifted book below.
   const m = () => ctx.motion(d.id);
-  const target = standing
-    ? { lift: 0.08, z: 0.13, yaw: -(Math.PI / 2 + THREE.MathUtils.degToRad(4)), roll: 0.26, pitch: -THREE.MathUtils.degToRad(8) }
-    : { lift: 0.08, z: 0.14, pitch: 0.6 };
-  const ease = 'power3.inOut';
-  // reduced motion: the engine cuts to black (100 ms in); the pose changes under the black
+  const pose = { lift: 0, z: 0, yaw: 0, roll: 0, pitch: 0 };
+  const slide = standing ? D + 0.01 : H * 1.05;
+  const turned = standing
+    ? { lift: 0.08, yaw: -(Math.PI / 2 + THREE.MathUtils.degToRad(4)), roll: 0.26, pitch: -THREE.MathUtils.degToRad(8) }
+    : { lift: 0.08, pitch: 0.6 };
+  const home = { lift: 0, z: 0, yaw: 0, roll: 0, pitch: 0 };
+  let tl: gsap.core.Timeline | null = null;
   let pending: gsap.core.Tween | null = null;
-  const setUnderCut = (delay: number, pose: Partial<Record<string, number>>): void => {
-    pending?.kill();
-    pending = gsap.delayedCall(delay, () => { pending = null; gsap.set(m(), pose); });
+  const stop = (): void => { tl?.kill(); tl = null; pending?.kill(); pending = null; };
+  // reduced motion: the engine cuts to black (100 ms in); the pose changes under the black
+  const setUnderCut = (delay: number, values: Partial<typeof pose>): void => {
+    pending = gsap.delayedCall(delay, () => { pending = null; Object.assign(pose, values); });
   };
+  const applied = { lift: 0 };
+  let hoverNow = 0;
 
-  return {
+  const self: Book = {
     id: d.id,
     label,
     group,
     hit: [mesh],
     anchor: new THREE.Vector3(0, standing ? H : T, 0),
-    hover: standing ? { lift: 0.012, tilt: 8, tiltMode: 'forward' } : { lift: 0.012, tilt: 3 },
+    hover: standing ? { lift: 0.012, tilt: 8, tiltMode: 'forward' } : { lift: 0.012, tilt: at.tilt ?? 3 },
+    below: [],
     focus: {
       camera: ctx.focusPose(d.id),
       panel: panelFor(content),
       onEnter() {
-        gsap.killTweensOf(m());
-        pending?.kill();
-        if (state.reducedMotion) { setUnderCut(0.1, target); return; }
-        gsap.to(m(), { ...target, duration: 0.9, ease, overwrite: true });
+        stop();
+        if (state.reducedMotion) { setUnderCut(0.1, { z: slide, ...turned }); return; }
+        tl = gsap.timeline();
+        tl.to(pose, { z: slide, duration: 0.45, ease: 'power2.inOut' }, 0);
+        tl.to(pose, { ...turned, duration: 0.48, ease: 'power3.inOut' }, 0.42);
       },
       onExit() {
-        gsap.killTweensOf(m());
-        pending?.kill();
-        const rest = { lift: 0, z: 0, x: 0, yaw: 0, roll: 0 };
-        if (state.reducedMotion) { setUnderCut(0.34, { ...rest, pitch: 0 }); return; } // after the panel's 240 ms fade, under the cut
-        gsap.to(m(), { ...rest, duration: 0.8, ease, overwrite: 'auto' });
-        // the hover tilt settles over 450 ms power2.out (engine); the pitch that cancelled it follows the same curve
-        gsap.to(m(), { pitch: 0, duration: standing ? 0.45 : 0.8, ease: standing ? 'power2.out' : ease, overwrite: 'auto' });
+        stop();
+        if (state.reducedMotion) { setUnderCut(0.34, home); return; } // after the panel's 240 ms fade, under the cut
+        tl = gsap.timeline();
+        // standing: the engine settles the 8° hover tilt over 450 ms power2.out; the pitch that cancelled it follows the same curve
+        if (standing) tl.to(pose, { pitch: 0, duration: 0.45, ease: 'power2.out' }, 0);
+        tl.to(pose, { lift: 0, yaw: 0, roll: 0, ...(standing ? {} : { pitch: 0 }), duration: 0.4, ease: 'power2.inOut' }, 0);
+        tl.to(pose, { z: 0, duration: 0.45, ease: 'power2.inOut' }, 0.35);
       },
+    },
+    hoverLiftNow() { return hoverNow; },
+    clearance() { return THREE.MathUtils.smoothstep(pose.z, slide * 0.88, slide); },
+    update() {
+      // the engine composed base + hover spring + last frame's motion into the group before this runs
+      hoverNow = Math.max(0, group.position.y - baseY - applied.lift);
+      // a lifted lower book carries the books on top of it (a real stack); the ride ends once it has slid clear
+      let ride = 0;
+      for (const b of self.below) ride = Math.max(ride, b.hoverLiftNow() * (1 - b.clearance()));
+      const mo = m();
+      mo.lift = pose.lift + ride;
+      mo.z = pose.z;
+      mo.yaw = pose.yaw;
+      mo.roll = pose.roll;
+      mo.pitch = pose.pitch;
+      applied.lift = mo.lift;
     },
     redraw() {
       const canvas = tex.image as HTMLCanvasElement;
@@ -194,11 +236,13 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: 
       tex.needsUpdate = true;
     },
     dispose() {
+      stop();
       geo.dispose();
       tex.dispose();
       mat.dispose();
     },
   };
+  return self;
 }
 
 export function createBooks(ctx: ObjectCtx): ObjectCluster {
@@ -214,21 +258,26 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
   // stack: bottom to top, each a little offset and turned
   const stackPose: Record<number, [number, number, number]> = { 0: [0.168, 0.0, 0.03], 1: [0.176, -0.008, -0.05], 2: [0.158, 0.014, 0.085], 3: [0.174, -0.004, -0.03] };
   let stackY = 0;
+  const stack: Book[] = [];
+  const lastStack = Math.max(...bookSlots.map((s) => s.stackIndex ?? -1));
 
   for (const slot of bookSlots) {
     const d = designs[slot.id];
     const content = bookById[slot.id];
     if (!d || !content) throw new Error(`books: no design/content for ${slot.id}`);
-    const book = createBook(ctx, d, slot.standing, content, slot.title);
     const [T, , D] = d.size;
+    let book: Book;
     if (slot.standing) {
       const end = slot.id === standingIds[0] || slot.id === standingIds[standingIds.length - 1];
-      book.group.position.set(cursor + T / 2, end ? BASE_T : 0, FRONT - D / 2);
+      book = createBook(ctx, d, true, content, slot.title, { position: [cursor + T / 2, end ? BASE_T : 0, FRONT - D / 2] });
       cursor += T + GAP;
     } else {
-      const [sx, sz, ry] = stackPose[slot.stackIndex ?? 0];
-      book.group.position.set(sx, stackY, sz);
-      book.group.rotation.y = ry;
+      const i = slot.stackIndex ?? 0;
+      const [sx, sz, ry] = stackPose[i];
+      // only the top book tilts toward the cursor; a lower one lifts straight up, carrying the ones above it
+      book = createBook(ctx, d, false, content, slot.title, { position: [sx, stackY, sz], rotationY: ry, tilt: i === lastStack ? 3 : 0 });
+      book.below = stack.slice();
+      stack.push(book);
       stackY += T + 0.0003;
     }
     root.add(book.group);
