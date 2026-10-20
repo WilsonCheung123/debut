@@ -19,13 +19,15 @@ const CHAR_MS = 28;
  * caret. The box follows the text the way a message composer does: its
  * height eases to each new line instead of jumping. Then a quiet link.
  *
- * Typing is wall-clock driven (setTimeout), not frame driven, so the cadence
- * holds when frames are slow, and a tap on the bubble completes it.
+ * Typing, the growth and the fade-out run on the wall clock (setTimeout),
+ * not on animation frames, so the cadence and the end states hold when
+ * frames stall; a tap on the bubble completes the typing.
  */
 export class Bubble {
   static instance: Bubble | null = null;
   readonly el: HTMLDivElement;
   private typing: { complete(): void; cancel(): void } | null = null;
+  private cancels: (() => void)[] = [];
   private outside: ((e: PointerEvent) => void) | null = null;
   private readonly listeners = new Set<(ev: BubbleEvent) => void>();
   visible = false;
@@ -89,9 +91,12 @@ export class Bubble {
     const reduced = state.reducedMotion;
     if (reduced) box.style.transition = 'none';
 
-    // the box's height follows the content (the CSS transition eases each new line)
+    // while growing, the growth owns the box; afterwards its height follows the content
+    // (the CSS transition eases each new line)
+    let growing = !reduced;
     let lastH = 0;
     const fit = (): void => {
+      if (growing) return;
       const h = inner.offsetHeight;
       if (h !== lastH) { lastH = h; box.style.height = `${h}px`; }
     };
@@ -103,9 +108,7 @@ export class Bubble {
       after.classList.add('shown');
     };
     let timer = 0;
-    let started = false;
     const startTyping = (): void => {
-      started = true;
       const t0 = performance.now();
       let shown = 0;
       const step = (): void => {
@@ -122,24 +125,27 @@ export class Bubble {
     };
     if (reduced) {
       box.classList.remove('growing');
-      gsap.fromTo(inner, { opacity: 0 }, { opacity: 1, duration: 0.2 });
+      inner.style.opacity = '0';
+      this.cancels.push(tween(200, linear, (k) => { inner.style.opacity = String(k); }));
       startTyping();
     } else {
       // grow from the ask bubble's box to the answer's first line, then type
       box.style.width = `${from.width}px`;
       box.style.height = `${from.height}px`;
-      gsap.set(inner, { opacity: 0 });
-      gsap.to(box, {
-        width: to.width, height: to.height, duration: 0.42, ease: 'power3.out',
-        onComplete: () => {
-          box.style.width = '';
-          box.classList.remove('growing');
-          lastH = to.height;
-          if (this.typing && !started) fit();
-        },
-      });
-      gsap.to(inner, { opacity: 1, duration: 0.25, delay: 0.16 });
-      timer = window.setTimeout(() => { if (this.typing) startTyping(); }, 220);
+      inner.style.opacity = '0';
+      this.cancels.push(tween(420, easeOut3, (k) => {
+        box.style.width = `${from.width + (to.width - from.width) * k}px`;
+        box.style.height = `${from.height + (to.height - from.height) * k}px`;
+      }, () => {
+        box.style.width = '';
+        box.classList.remove('growing');
+        growing = false;
+        lastH = to.height;
+        fit();
+      }));
+      const fade = window.setTimeout(() => { this.cancels.push(tween(250, linear, (k) => { inner.style.opacity = String(k); })); }, 160);
+      const start = window.setTimeout(() => { if (this.typing) startTyping(); }, 220);
+      this.cancels.push(() => { clearTimeout(fade); clearTimeout(start); });
     }
     // a click on the bubble while typing completes it (bound on the next tick so the
     // click that opened the answer does not count)
@@ -157,16 +163,41 @@ export class Bubble {
     this.visible = false;
     if (this.outside) { window.removeEventListener('pointerdown', this.outside, true); this.outside = null; }
     this.typing?.cancel();
-    const done = (): void => { this.el.hidden = true; this.el.innerHTML = ''; this.el.style.cssText = ''; };
+    for (const c of this.cancels) c();
+    this.cancels = [];
     gsap.killTweensOf(this.el);
+    const done = (): void => { this.el.hidden = true; this.el.innerHTML = ''; this.el.style.cssText = ''; };
     if (instant || state.reducedMotion) { done(); this.emit('hide'); return; }
-    gsap.to(this.el, { opacity: 0, y: 8, duration: 0.2, ease: 'power2.in', overwrite: true, onComplete: done });
+    const o0 = Number(getComputedStyle(this.el).opacity) || 1;
+    this.cancels.push(tween(200, easeIn2, (k) => { this.el.style.opacity = String(o0 * (1 - k)); }, done));
     this.emit('hide');
   }
 }
 
 /** The bubble's tail, drawn here rather than borrowed: a small curl at the bottom-left. */
 const TAIL = '<svg class="tail" viewBox="0 0 20 20" aria-hidden="true"><path d="M12 2 C12 10, 8 15.5, 0.5 19 C6 19.5, 14 18, 18 12 Z"/></svg>';
+
+const linear = (t: number): number => t;
+const easeOut3 = (t: number): number => 1 - Math.pow(1 - t, 3);
+const easeIn2 = (t: number): number => t * t;
+
+/**
+ * A small wall-clock tween (setTimeout at ~16 ms, progress from
+ * performance.now()): the bubble's size and fade land on time even when
+ * animation frames stall. Returns a cancel function.
+ */
+function tween(ms: number, ease: (t: number) => number, update: (k: number) => void, done?: () => void): () => void {
+  const t0 = performance.now();
+  let timer = 0;
+  const step = (): void => {
+    const t = Math.min(1, (performance.now() - t0) / ms);
+    update(ease(t));
+    if (t < 1) timer = window.setTimeout(step, 16);
+    else done?.();
+  };
+  step();
+  return () => clearTimeout(timer);
+}
 
 function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
