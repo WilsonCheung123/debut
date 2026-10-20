@@ -4,9 +4,9 @@
 export type QualityTier = 'high' | 'low';
 
 export interface MusicState {
-  /** True while the Spotify embed reports playback. Set by the vinyl panel. */
+  /** True while the music plays (the YouTube player reports it; the visitor sets it when the player is unreachable). */
   isPlaying: boolean;
-  /** Pauses the embed. Registered by the vinyl panel once the iFrame API is up. */
+  /** Pauses the player. Registered by music.ts; the engine calls it for the Austen trick. */
   pause: (() => void) | null;
 }
 

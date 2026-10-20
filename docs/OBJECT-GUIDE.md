@@ -115,7 +115,7 @@ Plain content: build it in `src/content/<id>.ts` with the helpers in
 `focus.panel = { kicker, title, html }`. Anything Wilson must edit stays in
 `[brackets]` (rendered as a quiet highlight). No lorem ipsum.
 
-Custom behaviour (kahneman flow, jar form, hologram film list, vinyl embed,
+Custom behaviour (kahneman flow, jar form, hologram film list, vinyl player,
 pinocchio sections): export a `PanelFactory` from `src/panels/<id>.ts`:
 
 ```ts
@@ -139,8 +139,8 @@ inputs and 44 px buttons; add object-specific CSS in your panel file by
 injecting a `<style>` once (scoped by a class on your root element). The body
 scrolls; on portrait it is a bottom sheet (`ctx.isSheet`), max 70% of the height.
 
-Music: the vinyl panel sets `state.music.isPlaying` and `state.music.pause`
-from the Spotify iFrame API; the engine performs the Austen trick itself
+Music: `src/music.ts` sets `state.music.isPlaying` and `state.music.pause`
+from the YouTube IFrame Player API (playlist in `src/content/music.ts`); the engine performs the Austen trick itself
 (SPEC 4.9) and owns the bubble.
 
 ## 6. Animating your object

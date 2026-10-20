@@ -6,7 +6,7 @@
 //
 // Usage:
 //   node tools/shot.mjs <url> <outdir> [--viewport desktop|iphone|pixel] [--hover <id>] [--focus <id>]
-//                       [--scenario file.json] [--name base] [--reduced-motion] [--clock]
+//                       [--scenario file.json] [--name base] [--reduced-motion] [--clock] [--headed]
 //
 // Scenario: JSON array of steps, in order:
 //   {"action":"wait","ready":true}               wait until the lamp has warmed up
@@ -49,6 +49,8 @@ const focusId = opt('--focus');
 const scenarioPath = opt('--scenario');
 const baseName = opt('--name', viewportName);
 const reduced = args.includes('--reduced-motion');
+// --headed: a visible Chromium on the real GPU (no SwiftShader flags): for the live YouTube check and profiling.
+const headed = args.includes('--headed');
 // SHOT_TIMEOUT_SCALE=4 on a loaded machine: scales the page-load, ready and default timeouts (software GL plus other work).
 const SLOW = Math.max(1, Number(process.env.SHOT_TIMEOUT_SCALE) || 1);
 const u = new URL(url0);
@@ -68,7 +70,7 @@ const device = VIEWPORTS[viewportName];
 if (!device) { console.error(`unknown viewport ${viewportName}`); process.exit(1); }
 const touch = !!device.hasTouch;
 
-const browser = await chromium.launch({
+const browser = await chromium.launch(headed ? { headless: false } : {
   // --disable-accelerated-2d-canvas: with --ignore-gpu-blocklist Chromium "accelerates" canvas 2D through SwiftShader,
   // and the procedural textures (hundreds of stroked polylines) then take minutes instead of milliseconds
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'],
@@ -92,8 +94,8 @@ const problems = [];
 const note = (s) => { problems.push(s); console.log(`  ! ${s}`); };
 // SwiftShader-only noise (not present on real GPUs): recorded, not counted.
 const ENV_NOISE = /KHR_parallel_shader_compile|GL Driver Message/;
-// Third-party noise: Chromium warns about the Spotify embed's own iframe markup (allow="…fullscreen" plus
-// allowfullscreen); it is Spotify's element, not ours. Recorded as [3p.warn], not counted.
+// Third-party noise: Chromium warns about the YouTube player's own iframe markup (allow="…fullscreen" plus
+// allowfullscreen); it is YouTube's element, not ours. Recorded as [3p.warn], not counted.
 const THIRD_PARTY_NOISE = /Allow attribute will take precedence over 'allowfullscreen'/;
 page.on('console', (msg) => {
   const type = msg.type();

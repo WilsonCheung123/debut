@@ -10,7 +10,7 @@ human with the dev server open.
 
 1. **Zero console errors or warnings** in a full scripted visit: load, hover
    each object, focus each object, exit, flip the ID, open the jar, run the
-   anchoring flow against the local worker, switch films, open the Spotify
+   anchoring flow against the local worker, switch films, open the YouTube
    panel, trigger the Austen bubble with a stubbed `isPlaying = true`.
    `tests/scenarios/full-visit-{a,books,b}.json` cover everything the engine owns
    (three parts so a run stays under ten minutes on software GL); each

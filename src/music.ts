@@ -1,74 +1,98 @@
-// The music state and the Spotify integration (SPEC 4.9).
+// The music state and the YouTube integration (SPEC 0.2 "Music", 4.9).
 //
-// One Spotify playlist embed, driven through Spotify's iFrame API, lives in a
+// One YouTube player, driven through the IFrame Player API, lives in a
 // "dock": a fixed element in #ui that is laid over the turntable panel's slot
 // while that panel is open and parked offscreen (still alive, still playing)
 // when it is not. The iframe never moves in the DOM, so closing the panel
 // does not reload it and the music keeps going: the record spins at rest,
 // and the Austen trick (engine/focus.ts) has something to pause.
 //
-// Verified against developer.spotify.com (iFrame API reference, 2026-10):
-//   script  https://open.spotify.com/embed/iframe-api/v1   (async)
-//   window.onSpotifyIframeApiReady(IFrameAPI)
-//   IFrameAPI.createController(element, { uri, width, height }, cb)  — element is REPLACED by the iframe
-//   controller.addListener('ready' | 'playback_started' | 'playback_update', e => e.data)
-//   playback_update: { playingURI, isPaused, isBuffering, duration, position }
-//   controller.play() / pause() / resume() / togglePlay() / destroy()
+// Verified against developers.google.com/youtube/iframe_api_reference (2026-10):
+//   script  https://www.youtube.com/iframe_api   (async)
+//   window.onYouTubeIframeAPIReady()
+//   new YT.Player(element, { width, height, videoId, playerVars, events })  — element is REPLACED by the iframe
+//   playerVars: playsinline, rel, origin, enablejsapi, iv_load_policy, playlist (comma ids), list + listType ('playlist')
+//   events: onReady, onStateChange (data: -1 unstarted, 0 ENDED, 1 PLAYING, 2 PAUSED, 3 BUFFERING, 5 CUED),
+//           onError (2, 5, 100, 101, 150, 153), onAutoplayBlocked
+//   player.playVideo() / pauseVideo() / nextVideo() / previousVideo() / getPlayerState() /
+//          getPlaylist() / getPlaylistIndex() / getVideoData() / destroy()
+//   (modestbranding is deprecated since 2023 and does nothing.)
+//
+// Autoplay policy: the player is CUED, never loaded; the first play is the
+// visitor's click (our toggle, the record, or the player's own button).
 //
 // state.music.isPlaying is the single source of truth (the engine writes it
-// directly for the trick; QA stubs it). The embed's playback_update events set
-// it; the visitor's own toggle sets it when the embed cannot report state.
+// directly for the trick; QA stubs it). The player's onStateChange sets it;
+// the visitor's own toggle sets it when the player cannot be reached.
 
 import { state } from './state';
+import { TRACKS, YOUTUBE_PLAYLIST, type Track } from './content/music';
 
-export const PLAYLIST_ID = '2UsGkMoSFLxP51roLefR0v';
-export const PLAYLIST_URI = `spotify:playlist:${PLAYLIST_ID}`;
-export const PLAYLIST_URL = `https://open.spotify.com/playlist/${PLAYLIST_ID}`;
-export const EMBED_HEIGHT = 352;
-const API_SRC = 'https://open.spotify.com/embed/iframe-api/v1';
-/** How long to wait for the API / the embed before falling back to the visitor's toggle. */
+export { PLAYLIST_URL, PLAYLIST_TITLE } from './content/music';
+const API_SRC = 'https://www.youtube.com/iframe_api';
+/** How long to wait for the API / the player before falling back to the visitor's toggle. */
 const API_TIMEOUT = 9000;
+/** A video ending inside a playlist reports ENDED, then the next one buffers: wait this long before lifting the arm. */
+const ENDED_GRACE = 1500;
 
 export type MusicStatus = 'idle' | 'loading' | 'ready' | 'fallback';
 export type MusicSource = 'embed' | 'visitor' | 'engine';
 
-interface PlaybackEvent { data: { playingURI?: string; isPaused?: boolean; isBuffering?: boolean; duration?: number; position?: number } }
-interface EmbedController {
-  play(): void; pause(): void; resume(): void; togglePlay(): void; destroy(): void;
-  addListener(event: 'ready' | 'playback_started' | 'playback_update', fn: (e: PlaybackEvent) => void): void;
+export const PlayerState = { UNSTARTED: -1, ENDED: 0, PLAYING: 1, PAUSED: 2, BUFFERING: 3, CUED: 5 } as const;
+
+interface YTPlayer {
+  playVideo(): void; pauseVideo(): void; nextVideo(): void; previousVideo(): void; destroy(): void;
+  getPlayerState(): number;
+  getPlaylist(): string[] | null;
+  getPlaylistIndex(): number;
+  getVideoData?(): { video_id?: string; title?: string; author?: string } | undefined;
+  getIframe(): HTMLIFrameElement;
 }
-interface IFrameAPI {
-  createController(el: HTMLElement, opts: { uri: string; width?: string | number; height?: string | number }, cb: (c: EmbedController) => void): void;
+interface YTEvent { data: number; target: YTPlayer }
+interface YTNamespace {
+  Player: new (el: HTMLElement | string, opts: {
+    width?: string | number; height?: string | number; videoId?: string;
+    playerVars?: Record<string, string | number>;
+    events?: { onReady?(e: YTEvent): void; onStateChange?(e: YTEvent): void; onError?(e: YTEvent): void; onAutoplayBlocked?(e: YTEvent): void };
+  }) => YTPlayer;
 }
 declare global {
-  interface Window { onSpotifyIframeApiReady?: (api: IFrameAPI) => void }
+  interface Window { onYouTubeIframeAPIReady?: () => void; YT?: YTNamespace }
 }
 
 type Listener = (playing: boolean, source: MusicSource) => void;
 type StatusListener = (status: MusicStatus) => void;
+type TrackListener = (track: TrackInfo) => void;
+export interface TrackInfo { index: number; count: number; title: string; artist: string }
 
 class Music {
   status: MusicStatus = 'idle';
-  /** True once the embed has reported playback state at least once (then the record follows Spotify). */
+  /** True once the player has reported a playback state at least once (then the record follows YouTube). */
   reportsState = false;
-  private controller: EmbedController | null = null;
+  /** The last onError code (101/150: embedding disallowed for that video; the player moves on). */
+  lastError: number | null = null;
+  private player: YTPlayer | null = null;
   private dock: HTMLDivElement | null = null;
   private slot: HTMLElement | null = null;
   private raf = 0;
   private timer = 0;
+  private endedTimer = 0;
+  private expectTimer = 0;
   private readonly listeners = new Set<Listener>();
   private readonly statusListeners = new Set<StatusListener>();
-  /** What the embed last said (null until it has said anything). */
-  private embedPaused: boolean | null = null;
-  private expectTimer = 0;
+  private readonly trackListeners = new Set<TrackListener>();
+  /** What the player last said (null until it has said anything). */
+  private playerState: number | null = null;
+  private trackInfo: TrackInfo = { index: 0, count: YOUTUBE_PLAYLIST ? 0 : TRACKS.length, title: TRACKS[0]?.title ?? '', artist: TRACKS[0]?.artist ?? '' };
 
   constructor() {
     state.music.pause = () => this.pause();
   }
 
   get playing(): boolean { return state.music.isPlaying; }
+  get track(): TrackInfo { return this.trackInfo; }
 
-  /** Sets the playing state (the embed, the visitor's toggle, or the engine) and tells listeners. */
+  /** Sets the playing state (the player, the visitor's toggle, or the engine) and tells listeners. */
   setPlaying(v: boolean, source: MusicSource = 'visitor'): void {
     state.music.isPlaying = v;
     this.notify(source);
@@ -80,6 +104,7 @@ class Music {
 
   onChange(fn: Listener): () => void { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; }
   onStatus(fn: StatusListener): () => void { this.statusListeners.add(fn); return () => { this.statusListeners.delete(fn); }; }
+  onTrack(fn: TrackListener): () => void { this.trackListeners.add(fn); return () => { this.trackListeners.delete(fn); }; }
 
   private setStatus(s: MusicStatus): void {
     if (s === this.status) return;
@@ -87,35 +112,40 @@ class Music {
     for (const fn of this.statusListeners) { try { fn(s); } catch (e) { console.error(e); } }
   }
 
-  /** Pauses the embed (if it is up) and marks the music stopped. The Austen trick calls this. */
+  /** Pauses the player (if it is up) and marks the music stopped. The Austen trick calls this. */
   pause(): void {
-    try { this.controller?.pause(); } catch (e) { console.error(e); }
+    clearTimeout(this.expectTimer);
+    try { this.player?.pauseVideo(); } catch (e) { console.error(e); }
     this.setPlaying(false, 'engine');
   }
 
   /**
-   * Resume / play through the API. The state is set optimistically and
-   * corrected by playback_update; if the embed has been reporting state and
-   * stays paused (Safari blocks play() without a gesture inside the iframe),
-   * the optimism is withdrawn after a moment.
+   * Play through the API. The state is set optimistically (the record starts
+   * at once) and corrected by onStateChange / onAutoplayBlocked; if the
+   * player has been reporting state and stays silent, the optimism is
+   * withdrawn after a moment.
    */
   resume(): void {
-    // forget the last report: only a report that arrives after this call counts as a refusal
-    this.embedPaused = null;
-    try { this.controller?.resume(); } catch (e) { console.error(e); }
+    try { this.player?.playVideo(); } catch (e) { console.error(e); }
     this.setPlaying(true, 'visitor');
     clearTimeout(this.expectTimer);
-    this.expectTimer = window.setTimeout(() => {
-      if (this.reportsState && this.embedPaused === true && state.music.isPlaying) this.setPlaying(false, 'embed');
-    }, 4000);
+    if (this.player) {
+      this.expectTimer = window.setTimeout(() => {
+        const s = this.playerState;
+        if (state.music.isPlaying && s !== PlayerState.PLAYING && s !== PlayerState.BUFFERING) this.setPlaying(false, 'embed');
+      }, 4000);
+    }
   }
 
   toggle(): void {
     if (this.playing) this.pause(); else this.resume();
   }
 
+  next(): void { try { this.player?.nextVideo(); } catch (e) { console.error(e); } }
+  previous(): void { try { this.player?.previousVideo(); } catch (e) { console.error(e); } }
+
   /**
-   * Loads the iFrame API and creates the embed, once, on first call (the
+   * Loads the IFrame API and creates the player, once, on first call (the
    * turntable's first focus). Safe to call again: it only re-attaches.
    */
   load(): void {
@@ -127,33 +157,35 @@ class Music {
     const giveUp = (): void => { if (this.status === 'loading') this.setStatus('fallback'); };
     this.timer = window.setTimeout(giveUp, API_TIMEOUT);
 
-    window.onSpotifyIframeApiReady = (api) => {
-      if (this.status !== 'loading') return;
+    const create = (): void => {
+      if (this.status !== 'loading' || !window.YT?.Player) return;
       try {
-        api.createController(target, { uri: PLAYLIST_URI, width: '100%', height: EMBED_HEIGHT }, (controller) => {
-          this.controller = controller;
-          controller.addListener('ready', () => {
-            clearTimeout(this.timer);
-            this.setStatus('ready');
-          });
-          controller.addListener('playback_update', (e) => {
-            const paused = e?.data?.isPaused;
-            if (typeof paused !== 'boolean') return;
-            this.reportsState = true;
-            this.embedPaused = paused;
-            if (paused === state.music.isPlaying) this.setPlaying(!paused, 'embed');
-          });
-          controller.addListener('playback_started', () => {
-            this.reportsState = true;
-            this.embedPaused = false;
-            if (!state.music.isPlaying) this.setPlaying(true, 'embed');
-          });
+        const playerVars: Record<string, string | number> = { playsinline: 1, rel: 0, iv_load_policy: 3, enablejsapi: 1, origin: location.origin };
+        let videoId: string | undefined;
+        if (YOUTUBE_PLAYLIST) { playerVars.listType = 'playlist'; playerVars.list = YOUTUBE_PLAYLIST; }
+        else { videoId = TRACKS[0]?.id; if (TRACKS.length > 1) playerVars.playlist = TRACKS.slice(1).map((t) => t.id).join(','); }
+        this.player = new window.YT.Player(target, {
+          width: '100%', height: '100%', videoId, playerVars,
+          events: {
+            onReady: () => {
+              clearTimeout(this.timer);
+              this.setStatus('ready');
+              this.syncTrack();
+            },
+            onStateChange: (e) => this.onStateChange(e.data),
+            onError: (e) => { this.lastError = e.data; },
+            onAutoplayBlocked: () => { this.playerState = PlayerState.CUED; if (state.music.isPlaying) this.setPlaying(false, 'embed'); },
+          },
         });
       } catch (e) {
         console.error(e);
         giveUp();
       }
     };
+
+    if (window.YT?.Player) { create(); return; }
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { prev?.(); create(); };
     const script = document.createElement('script');
     script.src = API_SRC;
     script.async = true;
@@ -161,12 +193,53 @@ class Music {
     document.head.append(script);
   }
 
+  private onStateChange(s: number): void {
+    this.reportsState = true;
+    this.playerState = s;
+    clearTimeout(this.endedTimer);
+    if (s === PlayerState.PLAYING) {
+      clearTimeout(this.expectTimer);
+      if (!state.music.isPlaying) this.setPlaying(true, 'embed');
+    } else if (s === PlayerState.PAUSED || s === PlayerState.CUED) {
+      if (state.music.isPlaying) this.setPlaying(false, 'embed');
+    } else if (s === PlayerState.ENDED) {
+      // inside a playlist the next video follows within a second; only a real end stops the record
+      this.endedTimer = window.setTimeout(() => {
+        if (this.playerState === PlayerState.ENDED && state.music.isPlaying) this.setPlaying(false, 'embed');
+      }, ENDED_GRACE);
+    }
+    // BUFFERING: no change (a stall mid-track must not lift the arm)
+    this.syncTrack();
+  }
+
+  /** Reads which video is up and tells the panel (title from the config when the id is ours, else from the player). */
+  private syncTrack(): void {
+    const p = this.player;
+    if (!p) return;
+    let info: TrackInfo | null = null;
+    try {
+      const ids = p.getPlaylist() ?? [];
+      const index = Math.max(0, p.getPlaylistIndex());
+      const data = p.getVideoData?.();
+      const id = data?.video_id ?? ids[index];
+      const known: Track | undefined = TRACKS.find((t) => t.id === id);
+      info = {
+        index, count: ids.length || TRACKS.length,
+        title: known?.title ?? data?.title ?? this.trackInfo.title,
+        artist: known?.artist ?? data?.author ?? '',
+      };
+    } catch { return; }
+    if (!info || (info.index === this.trackInfo.index && info.title === this.trackInfo.title && info.count === this.trackInfo.count)) return;
+    this.trackInfo = info;
+    for (const fn of this.trackListeners) { try { fn(info); } catch (e) { console.error(e); } }
+  }
+
   private ensureDock(): HTMLDivElement {
     if (this.dock) return this.dock;
     const dock = document.createElement('div');
-    dock.id = 'spotify-dock';
+    dock.id = 'music-dock';
     dock.setAttribute('aria-hidden', 'true');
-    dock.style.cssText = 'position:absolute;left:0;top:0;width:384px;height:352px;overflow:hidden;border-radius:12px;visibility:hidden;pointer-events:none;transform:translate(-200vw,0);will-change:transform;z-index:3;';
+    dock.style.cssText = 'position:absolute;left:0;top:0;width:384px;height:216px;overflow:hidden;border-radius:12px;background:#111;visibility:hidden;pointer-events:none;transform:translate(-200vw,0);will-change:transform;z-index:3;';
     (document.getElementById('ui') ?? document.body).append(dock);
     this.dock = dock;
     return dock;
@@ -187,7 +260,7 @@ class Music {
         dock.style.transform = `translate(${Math.round(r.left)}px, ${Math.round(r.top)}px)`;
         dock.style.width = `${Math.round(r.width)}px`;
         dock.style.height = `${Math.round(r.height)}px`;
-        // clip to the scrolling body so the embed does not float over the panel's header or edge
+        // clip to the scrolling body so the player does not float over the panel's header or edge
         if (body) {
           const b = body.getBoundingClientRect();
           const top = Math.max(0, b.top - r.top), bottom = Math.max(0, r.bottom - b.bottom);
@@ -216,18 +289,22 @@ class Music {
     this.dock.setAttribute('aria-hidden', 'true');
   }
 
-  /** Test hooks (window.__table.music): QA drives the trick without Spotify. */
+  /** Test hooks (window.__table.music): QA drives the trick without YouTube. */
   get hooks() {
     return {
       setPlaying: (v: boolean) => this.setPlaying(v, 'visitor'),
       get playing() { return state.music.isPlaying; },
       status: () => this.status,
       reportsState: () => this.reportsState,
-      hasController: () => this.controller !== null,
-      /** What the embed itself last reported (null before its first playback_update). */
-      embedPaused: () => this.embedPaused,
+      hasController: () => this.player !== null,
+      /** What the player itself last reported (YT.PlayerState number; null before its first onStateChange). */
+      playerState: () => this.playerState,
+      lastError: () => this.lastError,
+      track: () => this.trackInfo,
       resume: () => this.resume(),
       pause: () => this.pause(),
+      next: () => this.next(),
+      previous: () => this.previous(),
     };
   }
 }
