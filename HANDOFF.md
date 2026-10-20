@@ -2,13 +2,47 @@
 
 Read in this order: this file, `SPEC.md` (the build contract), `docs/BRIEF-wilson-verbatim.md` (Wilson's own words; blurbs and quotes must stay verbatim), `docs/OBJECT-GUIDE.md`, `docs/QA.md`. `docs/VISION-v1-light-table.md` is an earlier, superseded concept kept for history only.
 
-## State as of 2026-10-20 (integration pass on main)
+## State as of 2026-10-20 (round-2 integration on main, cut short for the owner's look)
 
-- **main** has every object merged and the assembled table integrated (`1b7a14f`, `b3a77f3`, then this commit): table shrunk to 1.3 × 0.8 m, the objects re-spread so the front half is used (ID front-left, capo and pick front-centre, FPGA and die-cast together left-centre, puppet right of centre in the gap between turntable and lamp, jar front-right), the lamp aimed at the centre-front and scaled 0.9, and the rest camera fitted to the objects' own bounds (centred and iterated) rather than the table's edges. Smallest object (FPGA) is 105 px wide at 1440; ID 127; capo 144. `npm run build` and `tsc` are clean.
-- **Draw calls:** 276 → 145 at rest (85 main pass + 60 shadow casters): lamp enamel/steel baked into two meshes, vinyl statics and tonearm parts baked, table legs merged, and the jar's transmission now only while the jar is focused (cheap fresnel glass at rest; both shaders compiled at boot). The scripted assert is 160 with the reasoning in docs/QA.md.
-- **Panel routing** on the real books is by direct import (`kahnemanPanel`, `austenPanel`) in `src/objects/books.ts`; the glob lookup and the two placeholder files are gone.
-- **QA (desktop only, `tools/qa.mjs`):** `visit-a`, `visit-b` and `reduced` PASS with zero console errors/warnings of ours; the Austen trick, the ID flip + deferred panel, the Kahneman panel and keyboard path are all verified on the assembled table. `timing` failed on a scenario bug (it clicked the FPGA and asserted the ID; fixed in the file, not yet re-run). `hologram` was running (video played natively in headless Chromium: mode "native", readyState 4) when the pass was cut; `puppet`, `jar`, `id-flip`, `deep-link`, `vinyl`, `vinyl-offline`, `vinyl-silent`, `kahneman`, `four-objects`, `visit-books` not yet run on the integrated layout (their flows passed in isolation on the builders' branches).
-- **Known visual issues on the integrated table (not yet fixed, see docs/QA.md and the integrator's report):** capo focus angle hides the coil spring (try az −70, el 32); puppet focus shows the lamp's shade mouth at the top (raise el 12 → 24, az 20); the die-cast reads as matte grey plastic, bluish under the window fill (raise metalness ~0.5, warm the base colour); the flat-book focus frame is too tight now that the FPGA/die-cast sit in front of the stack (flatBook dist 0.6 → 0.7, el 46); the puppet at rest reads grey because his camera-facing side gets only the cool fill (turn him toward the lamp, rotationY −16 → ~8). The hls.js path (`?holo=hls`) and Lighthouse are unverified.
+Six round-2 branches are merged (graphics, books, puppet, hologram, texts, music) and the
+assembled table boots clean: `npm run build` and `tsc` pass, the rest frames at 1440 × 900 and
+1920 × 1080 (`shots/int/rest-1440.png`, `rest-1920.png`) read as one set under one lamp; the
+only light outside the engine is the hologram's cyan point light (intended). Dead code removed:
+the message bubble (the Austen letter replaced it), `focus.deferPanel` (the ID no longer flips).
+
+**Scripted QA, this pass (SwiftShader, desktop):**
+- Green: `visit-a`, `visit-b`, `visit-books` (nine panels through the shelf, zero problems),
+  `reduced` (from the merge-time runs, re-confirmed on the merged main for books).
+- Verified in part, then the run was cut: `hologram` with `?holo=hls`: prepared at idle, five films,
+  goes live (1470 × 630, frames advance 2.0 s in 2 s), film switch, second click enters cinema
+  (overlay fallback headless, unmuted, controls), Escape returns to the hologram. The cinema
+  frames-advance assert and the later steps failed on a machine at load average 30–38 (hls
+  `bufferStalledError`, 60 s screenshot timeouts): environmental, re-run on a quiet machine.
+- Unverified on the merged main: `shelf` (its first run was broken by my own source edits
+  reloading the dev page; the scenario is rewritten to poll on shelf state and the re-run was
+  killed at the deadline), `puppet` (scenario fixed: frame waits), `id-flip`, `four-clock`,
+  `vinyl` (rewritten for the letter), `timing`, `texts` (new), the real-GPU `gfx-audit`,
+  `vinyl-live` headed.
+
+**Process lesson, encoded:** a source edit makes Vite reload every open page, which kills a
+scenario in progress. `npm run qa` now runs against the static preview on 5181 when it is up
+(`npm run build && npm run preview`), with page waits stretched 3× (`SHOT_TIMEOUT_SCALE`), and
+`{"action":"wait","frames":n}` replaces fixed-millisecond waits where work resolves in an
+object's `update()` (a SwiftShader frame is ~1 s). Never run more than one SwiftShader browser
+while measuring anything.
+
+**Open items for the next pass** (all with a plan, none started):
+1. Shelf by eye: the end books show more perspective than press.stripe.com's long lens; the
+   fov is at the engine's clamp (rest − 4° = 30). Prepared change: a `longLens` flag on
+   `FocusFrame` that skips the clamp, shelf frame fov ~22 (the fit raises `dist` itself).
+2. Puppet focus: confirm the lamp-shade rim sliver top-left on `shots/qa/puppet-puppet-focus.png`
+   and fix with a small `targetOffset` or fov change in `layout.ts`.
+3. The jar's lid (metalness 1, its own env map at 0.75) is the brightest thing on the table
+   after the lamp in both rest shots; judge on the real GPU before touching it.
+4. `node tools/gfx-audit.mjs http://localhost:5180/ shots/audit` on a quiet machine; tune the
+   30 ms ladder threshold from the real frame times; docs/QA.md numbers table.
+5. `vinyl-live` in one headed window; the Austen letter with the real player.
+6. Draw calls at rest and in the heaviest focus (hologram, jar, shelf) against the ≤ 160 assert.
 
 ## Lines written in Wilson's voice for him to approve
 
