@@ -52,15 +52,16 @@ below as educated guesses. Each is one edit away; none is a fact he supplied.
 | where | the guess |
 |---|---|
 | `src/panels/vinyl.ts` | the line under the player: "Mostly film scores. The kind of music that makes a long night of work feel like a montage." |
-| `src/content/hologram.ts` | Realm's two sentences ("Realm is my AI film studio: a small team making short films and campaigns with diffusion models, held to the standard of film rather than of demos." / "Every shot is directed, graded and cut; the models are the camera, not the director."), the title "An AI film studio" and the list kicker "five films, projected without sound" |
+| `src/content/hologram.ts` | the title "An AI film studio" and the list kicker "five films, projected without sound" (the description is his, round 3) |
 | `src/content/austen.ts` | the letter's heading (the theme note: Darcy's letter, Wentworth's letter), the salutation "Dear reader," and the sign-off "Yours, / Wilson"; the body is verbatim |
-| `src/panels/shelf.ts` | the shelf hint "scroll along the shelf · click a book · esc to return" (touch: "tap a book") |
-| `src/panels/pinocchio.ts` | the panel title "Three objects"; the three item titles and descriptions ("The thing you could hold", "A photograph, a minute later", "The computer that fit a life") and the three "Why it matters to me" lines; the hint "Click the puppet, the phone or the camera." and the back link "back to the three" |
+| `src/panels/shelf.ts` | the shelf hint "scroll along the shelf · click a book · esc to return" (touch: "tap a book"); the row's hover label "nine books · click to see them all" (`src/objects/books.ts`) |
+| `src/content/papers.ts` | the stack of paper's panel: kicker "the papers", title "Blog", body "More to come." (his words, round 3) |
+| `src/panels/pinocchio.ts` | the camera's and phone's item titles ("A photograph, a minute later", "The computer that fit a life") and the three small kickers; the hint "Click the puppet, the phone or the camera." and the back link "back to the three" (the panel title, the puppet's title and all three descriptions are his, round 3) |
 | `src/content/id-card.ts` | the title "Wilson Cheung" and kicker "student id" (the body is verbatim) |
 | `src/content/fpga.ts` | the title "The first intern", kicker "Architect"; the link card's title/description are the post's own Open Graph tags |
 | `src/content/die-cast.ts` | the title "A sample part", kicker "a startup I can't name yet" |
-| `src/content/guitar.ts` | the capo panel's single line "learning guitar." |
-| `src/content/principles.ts` | the jar note (names Keigo Higashino's The Miracles of the Namiya General Store, English throughout) and the nine principles, written fresh in his voice |
+| `src/content/guitar.ts` | the heading "learning guitar" (the line under it is his, round 3) |
+| `src/content/principles.ts` | the jar note (names Keigo Higashino's The Miracles of the Namiya General Store, English throughout); the "notes on focus" paragraphs are his, round 3 |
 | `src/content/music.ts` | the 15 YouTube video ids (official uploads where one exists; The Flower Garden is a fan upload, see the comment) and the record's name "lol"; he can set `YOUTUBE_PLAYLIST` to his own playlist id instead |
 | `src/engine/quality.ts` | the DPR floor of 1.5 on a real GPU (SPEC 0.2 says "never below 1.5"; the ladder gives up dust, transmission and shadow resolution first) |
 
