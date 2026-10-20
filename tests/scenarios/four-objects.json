@@ -13,7 +13,7 @@
   {"action":"shot","name":"hover-guitar"},
   {"action":"eval","js":"window.__table.hover(null)"},
   {"action":"focus","id":"id-card"},
-  {"action":"assert","name":"id-panel-text","js":"(function(){const t=document.querySelector('#panel .content').textContent;return t.startsWith('Howdy guys, my name is Wilson.') && /student card\\.\\.\\.$/.test(t.trim()) && document.querySelectorAll('#panel .content p').length === 4;})()"},
+  {"action":"assert","name":"id-panel-text","js":"(function(){const t=document.querySelector('#panel .content').textContent;return t.startsWith('Howdy guys, my name is Wilson.') && /enjoy chatting!$/.test(t.trim()) && /three Chinese languages/.test(t) && document.querySelectorAll('#panel .content p').length === 4;})()"},
   {"action":"wait","ms":600},
   {"action":"shot","name":"focus-id-card"},
   {"action":"exit"},

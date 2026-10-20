@@ -24,7 +24,7 @@
   {"action":"shot","name":"jar-notes"},
   {"action":"exit"},
   {"action":"focus","id":"puppet"},
-  {"action":"assert","name":"puppet-intro-order","js":"(function(){const t=document.querySelector('#panel .content').textContent;const h=document.getElementById('panel-title').textContent;return h==='insanely great product' && t.indexOf('A puppet, an iphone')<t.indexOf('My goal is') && t.indexOf('My goal is')<t.indexOf('Click the puppet') && t.indexOf('Click the puppet')<t.indexOf('Life needs to be more') && t.indexOf('reminder of the pursuit')<0 && t.indexOf('Why it matters')<0;})()"},
+  {"action":"assert","name":"puppet-intro-order","js":"(function(){const t=document.querySelector('#panel .content').textContent;const h=document.getElementById('panel-title').textContent;return h==='insanely great product' && t.indexOf('They are one thing')>0 && t.indexOf('A puppet, an iphone')<t.indexOf('faster horses') && t.indexOf('faster horses')<t.indexOf('Nobody actually knows') && t.indexOf('Nobody actually knows')<t.indexOf('a little magic') && t.indexOf('a little magic')<t.indexOf('Life needs to be more') && t.indexOf('Life needs to be more')<t.indexOf('Click the puppet') && t.indexOf('reminder of the pursuit')<0 && t.indexOf('Why it matters')<0 && t.indexOf('My goal is')<0;})()"},
   {"action":"shot","name":"puppet-intro"},
   {"action":"click","selector":"#panel button.pin-link[data-item=\"puppet\"]"},
   {"action":"assert","name":"puppet-item-text","js":"window.__until(() => { const h=document.querySelector('#panel .pin-item h2'); const t=document.querySelector('#panel .pin-item')?.textContent||''; return h && h.textContent==='Animated characters in real life' && /Disney’s attention to detail/.test(t) && !/Why it matters/.test(t); }, 6000)"},

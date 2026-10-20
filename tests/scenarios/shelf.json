@@ -215,8 +215,21 @@
   },
   {
     "action": "assert",
+    "name": "envelope-arrives",
+    "js": "(window.__until || (window.__until = async (f, ms) => { const t0 = Date.now(); for (;;) { try { if (f()) return true; } catch {} if (Date.now() - t0 > ms) return false; await new Promise((r) => setTimeout(r, 200)); } }))(() => window.__austen && window.__austen.sealed, 20000)"
+  },
+  {
+    "action": "shot",
+    "name": "austen-envelope"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .envelope"
+  },
+  {
+    "action": "assert",
     "name": "austen-letter",
-    "js": "window.__until(() => { return window.__austen && window.__austen.shown && document.querySelector('#panel .letter .hand em').textContent === 'Persuasion' && !document.getElementById('bubble'); }, 15000)"
+    "js": "(window.__until || (window.__until = async (f, ms) => { const t0 = Date.now(); for (;;) { try { if (f()) return true; } catch {} if (Date.now() - t0 > ms) return false; await new Promise((r) => setTimeout(r, 200)); } }))(() => window.__austen.shown && document.querySelector('#panel .letter .hand em').textContent === 'Persuasion' && !document.querySelector('#panel .letter .why') && !document.querySelector('#panel .letter .after'), 15000)"
   },
   {
     "action": "wait",

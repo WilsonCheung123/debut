@@ -1,7 +1,8 @@
 // The puppet's panel (SPEC 0.2 "Puppet"): an intro view (the verbatim intro,
-// Wilson's goal, a hint to click one of the three, the Elon quote last; order
-// and texts are his, round 3) and three item views (the puppet, the instant
-// camera, the phone), each with a back link to the intro. The puppet's in-focus clicks call
+// the "faster horses" line with its unknown author, Wilson's line on magic,
+// the Elon quote, then the hint to click one of the three; order and texts
+// are his, round 4) and three item views (the puppet, the instant camera, the
+// phone), each with a back link to the intro. The puppet's in-focus clicks call
 // goTo(item); the hint's three names do the same from the keyboard.
 //
 // Facts checked 2026-10-20: Disney's Character Model Department was set up in
@@ -29,10 +30,12 @@ const STYLE_ID = 'pinocchio-style';
 const CSS = `
 .pinocchio .pin-view { will-change: opacity, transform; }
 .pinocchio .pin-intro-text p { font-size: 19px; line-height: 1.5; }
-.pinocchio .pin-coda { margin-top: 2em; padding-top: 1.4em; border-top: 1px solid var(--paper-line); }
-.pinocchio .pin-coda blockquote { margin-top: 0; }
-.pinocchio .pin-goal { margin-top: 1.4em; }
-.pinocchio .pin-hint { margin-top: 1.6em; color: var(--ink-faint); font-style: italic; }
+.pinocchio blockquote.pin-ford, .pinocchio blockquote.pin-elon { margin: 1.5em 0 0; }
+.pinocchio .pin-goal { margin-top: 1.5em; font-size: 19px; line-height: 1.5; }
+.pinocchio .pin-hint { margin-top: 2em; padding-top: 1.4em; border-top: 1px solid var(--paper-line); color: var(--ink-faint); font-style: italic; }
+.pinocchio .pin-item figure { margin: 0 0 1.1em; }
+.pinocchio .pin-item figure img { display: block; width: 100%; height: auto; border-radius: 4px; }
+.pinocchio .pin-item figure[hidden] { display: none; }
 #panel .content .pinocchio button.pin-link {
   display: inline-block; min-height: 0; min-width: 0; padding: 12px 0; margin: -12px 0; line-height: 20px; border: 0; border-radius: 0; background: none;
   font: inherit; color: var(--ink-soft); cursor: pointer; letter-spacing: 0; text-transform: none; font-variant-caps: normal;
@@ -51,7 +54,7 @@ const CSS = `
 interface Section { item: PuppetItem; kicker: string; title: string; body: string }
 
 /** SPEC 0.2, verbatim (including its lowercase product names). */
-const INTRO = 'A puppet, an iphone, a polaroid. A puppet, an iphone, a polaroid. A puppet, an iphone... are you getting it? These are not three separate things. This is one thing, and we are calling it an insanely great product.';
+const INTRO = 'A puppet, an iphone, a polaroid. A puppet, an iphone, a polaroid. A puppet, an iphone... are you getting it? These are not three separate things. They are one thing, and we are calling it an insanely great product.';
 
 const SECTIONS: Section[] = [
   {
@@ -69,16 +72,20 @@ const SECTIONS: Section[] = [
   {
     item: 'phone',
     kicker: 'the phone · Apple, 2007',
-    title: 'The computer that fit a life',
+    title: 'The computer that fits in a hand',
     body: 'In 2007, Steve Jobs introduced the iPhone: an iPod, a phone, and an internet device in one. It has no physical keyboard. Just a screen. Apple shrinks a computer into the size of your palm, empowering everyone with this incredible technology.',
   },
 ];
 
 const CODA = {
+  ford: 'If I had asked people what they wanted, they would have said faster horses.',
+  fordCite: 'Henry Ford, supposedly. Nobody actually knows who said it.',
+  goal: 'I want to make insanely great products that bring a little magic into everyday life.',
   quote: 'Life needs to be more than just solving problems every day. You need to wake up and be excited about the future.',
   cite: 'Elon Musk',
-  goal: 'My goal is to make products that are so insanely good that one day, walking down a random street, I’ll see someone using one. If you know anyone I should talk to, or have anything cool, send them my way.',
 };
+/** Shown on the puppet's own page once the owner drops the file in public/ (hidden until then). */
+const PUPPET_IMAGE = { src: '/puppet-maquette.webp', alt: 'The puppet' };
 
 function ensureStyle(): void {
   if (document.getElementById(STYLE_ID)) return;
@@ -100,11 +107,12 @@ export function pinocchioPanel(opts: { onSelect?(item: PuppetItem): void } = {})
     if (next === 'intro') {
       el.innerHTML =
         `<div class="pin-intro-text"><p>${INTRO}</p></div>` +
+        `<blockquote class="pin-ford"><p>${CODA.ford}</p><cite>${CODA.fordCite}</cite></blockquote>` +
         `<p class="pin-goal">${CODA.goal}</p>` +
+        `<blockquote class="pin-elon"><p>${CODA.quote}</p><cite>${CODA.cite}</cite></blockquote>` +
         `<p class="pin-hint">Click <button type="button" class="pin-link" data-item="puppet">the puppet</button>, ` +
         `<button type="button" class="pin-link" data-item="phone">the phone</button> or ` +
-        `<button type="button" class="pin-link" data-item="camera">the camera</button>.</p>` +
-        `<div class="pin-coda"><blockquote><p>${CODA.quote}</p><cite>${CODA.cite}</cite></blockquote></div>`;
+        `<button type="button" class="pin-link" data-item="camera">the camera</button>.</p>`;
       for (const b of el.querySelectorAll<HTMLButtonElement>('button[data-item]')) {
         b.addEventListener('click', () => { const item = b.dataset.item as PuppetItem; show(item, true); opts.onSelect?.(item); });
       }
@@ -112,8 +120,16 @@ export function pinocchioPanel(opts: { onSelect?(item: PuppetItem): void } = {})
       const s = SECTIONS.find((x) => x.item === next)!;
       el.innerHTML =
         `<button type="button" class="pin-back">back to the three</button>` +
-        `<section class="pin-item" id="pin-${s.item}"><p class="kicker">${s.kicker}</p><h2>${s.title}</h2><p>${s.body}</p></section>`;
+        `<section class="pin-item" id="pin-${s.item}"><p class="kicker">${s.kicker}</p><h2>${s.title}</h2>` +
+        (s.item === 'puppet' ? `<figure hidden><img src="${PUPPET_IMAGE.src}" alt="${PUPPET_IMAGE.alt}" loading="lazy" decoding="async" /></figure>` : '') +
+        `<p>${s.body}</p></section>`;
       el.querySelector('button.pin-back')!.addEventListener('click', () => show('intro', true));
+      const fig = el.querySelector<HTMLElement>('figure');
+      const img = fig?.querySelector('img');
+      if (fig && img) { // the owner's image, once it exists in public/: shown when it loads, never a broken icon
+        img.addEventListener('load', () => { fig.hidden = false; });
+        if (img.complete && img.naturalWidth > 0) fig.hidden = false;
+      }
     }
     root.replaceChildren(el);
     ctx.body.scrollTop = 0;

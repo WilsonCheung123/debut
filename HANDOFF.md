@@ -61,6 +61,16 @@ fatal hls error). Verified on the real GPU with `node tools/holo-probe.mjs <url>
 ~60 uploads per 2 s on the first, second and third focus, after a film switch and after
 fullscreen and back. Scenario: `hologram-again` in `npm run qa`.
 
+## Round 4 (2026-10-20, later)
+
+Puppet page: his new intro ("They are one thing"), the "faster horses" line credited "Henry Ford,
+supposedly. Nobody actually knows who said it.", his "little magic" line, the Elon quote, then the
+click hint. The phone's title is "The computer that fits in a hand". The puppet's own page has a
+slot for his image: drop it at `public/puppet-maquette.webp` and it shows (hidden until the file
+exists; the image never arrived with the request). ID text replaced verbatim. Pride and Prejudice:
+five seconds after the book opens a sealed envelope slides up; a click lifts the flap and the
+letter rises out; no heading, no Persuasion link. Verified in a real browser (`tests/scenarios/round4.json --headed`).
+
 ## Lines written in Wilson's voice for him to approve
 
 SPEC 0.1: nothing in `[brackets]` ships, so the six round-2 builders wrote the lines
