@@ -11,7 +11,11 @@ reclaim() { # $1 = slot dir
   [ -d "$d" ] || return 0
   pid=$(cat "$d/pid" 2>/dev/null)
   age=$(( $(date +%s) - $(stat -f %m "$d" 2>/dev/null || echo 0) ))
-  if { [ -n "$pid" ] && ! alive "$pid"; } || [ "$age" -gt 900 ]; then rm -rf "$d"; fi
+  if [ -n "$pid" ]; then
+    alive "$pid" || rm -rf "$d"          # holder recorded and dead: reclaim
+  elif [ "$age" -gt 900 ]; then
+    rm -rf "$d"                           # no holder recorded (pre-upgrade run): assume stale after 15 min
+  fi
 }
 HELD=""
 n=0
