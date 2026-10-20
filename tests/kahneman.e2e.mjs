@@ -39,7 +39,9 @@ const ENV_NOISE = /KHR_parallel_shader_compile|GL Driver Message/;
 let apiDown = false; // the API-down step expects exactly one kind of network error
 
 const browser = await chromium.launch({
-  args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync'],
+  // --disable-accelerated-2d-canvas: with the GPU blocklist ignored, headless Chromium would route canvas 2D
+  // through SwiftShader and the engine's procedural textures take minutes instead of milliseconds.
+  args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'],
 });
 
 async function openPage({ clock }) {
