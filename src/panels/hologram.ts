@@ -20,6 +20,7 @@ export interface HologramController {
 }
 
 const CSS = `
+#panel .content .holo .site a { display: inline-block; padding: 12px 0; margin: -12px 0; }
 #panel .content .holo .films { list-style: none; margin: 0 0 14px; padding: 0; }
 #panel .content .holo .films li { margin: 0; }
 #panel .content .holo .film {
@@ -69,7 +70,7 @@ export function hologramPanel(ctl: HologramController): PanelFactory {
       injectCss();
       const root = document.createElement('div');
       root.className = 'holo';
-      root.innerHTML = REALM.paragraphs.map(p).join('') + `<p>${link(REALM.url, 'realmfilm.art')}</p>`;
+      root.innerHTML = REALM.paragraphs.map(p).join('') + `<p class="site">${link(REALM.url, 'realmfilm.art')}</p>`;
 
       // the list
       const listWrap = document.createElement('div');
@@ -129,7 +130,7 @@ export function hologramPanel(ctl: HologramController): PanelFactory {
         const f = ctl.films[ctl.selected];
         watch.innerHTML =
           kicker(f.title) +
-          `<div class="frame"><iframe src="${esc(playerUrl(f))}" title="${esc(f.title)}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` +
+          `<div class="frame"><iframe src="${esc(playerUrl(f))}" title="${esc(f.title)}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe></div>` +
           `<p class="actions"><button type="button" class="back-to-films">back to the films</button></p>`;
         const back = watch.querySelector<HTMLButtonElement>('.back-to-films')!;
         back.addEventListener('click', closePlayer);

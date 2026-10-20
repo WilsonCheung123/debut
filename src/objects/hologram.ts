@@ -290,7 +290,7 @@ class Player {
   snapshot(canvas: HTMLCanvasElement): boolean {
     const v = this.video;
     if (!v || !this.live || v.readyState < 2 || v.videoWidth === 0) return false;
-    const c = canvas.getContext('2d');
+    const c = canvas.getContext('2d', { willReadFrequently: true });
     if (!c) return false;
     try {
       c.drawImage(v, 0, 0, canvas.width, canvas.height);

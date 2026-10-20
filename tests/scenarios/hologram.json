@@ -27,7 +27,7 @@
   {"action":"click","selector":"#panel .back-to-films"},
   {"action":"assert","name":"list-back","js":"document.querySelectorAll('#panel .films .film').length === 5 && !document.querySelector('#panel iframe') && window.__hologram.held === false"},
   {"action":"exit"},
-  {"action":"assert","name":"released-on-exit","js":"(function(){ const s = window.__hologram.status(); return window.__hologram.screenVisible === false && s.playing === false && s.hls === false && s.src === ''; })()"},
+  {"action":"assert","name":"released-on-exit","js":"(function(){ const s = window.__hologram.status(); return window.__hologram.screenVisible === false && s.playing === false && s.hls === false && s.readyState === 0; })()"},
   {"action":"wait","ms":800},
   {"action":"assert","name":"ghost-back","js":"window.__hologram.ghostOpacity > 0.9"},
   {"action":"shot","name":"after-exit"},
