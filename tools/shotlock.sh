@@ -4,7 +4,7 @@
 # Two slots (two concurrent runs), holder PID recorded; a slot whose holder is
 # dead or older than 15 min is reclaimed. Waits print nothing; run with
 # SHOTLOCK_VERBOSE=1 to see queue messages on stderr.
-SLOTS=(/tmp/wilson-table-shot.lock /tmp/wilson-table-shot.lock.2 /tmp/wilson-table-shot.lock.3)
+SLOTS=(/tmp/wilson-table-shot.lock /tmp/wilson-table-shot.lock.2)
 alive() { kill -0 "$1" 2>/dev/null; }
 reclaim() { # $1 = slot dir
   local d="$1" pid age
