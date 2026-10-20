@@ -54,7 +54,8 @@ const LIFT = 0.10;
 /** The hovered book: out toward the viewer and leaning. */
 const HOVER = { z: 0.034, pitch: THREE.MathUtils.degToRad(11) };
 /** The open book: pulled off the shelf toward the camera, cover turned to it at a casual angle. */
-const OPEN = { z: 0.165, yaw: -(Math.PI / 2 + THREE.MathUtils.degToRad(16)), pitch: -THREE.MathUtils.degToRad(5), roll: THREE.MathUtils.degToRad(3) };
+// (yaw -90 deg turns the front cover to +z, the camera; a little less so the cover squares up to a camera that sits right of the book)
+const OPEN = { z: 0.165, yaw: -(Math.PI / 2 - THREE.MathUtils.degToRad(12)), pitch: -THREE.MathUtils.degToRad(5), roll: THREE.MathUtils.degToRad(3) };
 /** The other books while one is open: a step back. */
 const RECEDE_Z = -0.018;
 /** Metres of shelf per CSS pixel of wheel travel. */
@@ -292,15 +293,14 @@ export class Shelf {
 
   // ----------------------------------------------------------------- per frame
 
-  /** Half the visible width (metres) at the row's depth. */
+  private readonly edge = new THREE.Vector3();
+  private readonly mid = new THREE.Vector3();
+  /** Half the visible width (metres) at the row's depth: the view's centre to its right edge. */
   private visibleHalf(): number {
-    const cam = this.ctx.camera;
-    this.v.set(1, 0, 0.5).unproject(cam);
-    this.ray.origin.copy(cam.position);
-    this.ray.direction.copy(this.v).sub(cam.position).normalize();
-    this.plane.set(new THREE.Vector3(0, 0, 1), -this.rowWorldZ());
-    const p = this.ray.intersectPlane(this.plane, this.v);
-    return p ? Math.max(0.1, Math.abs(p.x - this.rootWorld.x - this.opts.rowCentreX + this.scroll.pos)) : 0.27;
+    const z = this.rowWorldZ();
+    const e = this.pointAt(1, 0.5, z, this.edge);
+    const m = this.pointAt(0.5, 0.5, z, this.mid);
+    return e && m ? Math.max(0.1, Math.abs(e.x - m.x)) : 0.27;
   }
 
   private rowWorldZ(): number {
@@ -366,7 +366,8 @@ export class Shelf {
       const fy = state.portrait ? 0.3 : 0.5;
       const z = this.rootWorld.z + b.group.position.z + OPEN.z;
       const p = this.pointAt(fx, fy, z, this.v);
-      if (p) { openX = p.x - this.rootWorld.x + s.pos - b.restX; openY = p.y - this.rootWorld.y - b.size[1] / 2 - root.lift; }
+      // the root's world position already carries the scroll shift and the lift
+      if (p) { openX = p.x - this.rootWorld.x - b.restX; openY = p.y - this.rootWorld.y - b.size[1] / 2; }
     }
 
     for (let i = 0; i < this.books.length; i++) {
@@ -380,7 +381,7 @@ export class Shelf {
       const o = THREE.MathUtils.smoothstep(c.open, 0, 1);
       const shelfX = (this.spreadX[i] - b.restX) * sp;
       p.x = shelfX + (openX - shelfX) * o;
-      p.z = (c.z + s.lean * 0) * sp + OPEN.z * o;
+      p.z = c.z * sp + OPEN.z * o;
       p.lift = openY * o;
       p.yaw = OPEN.yaw * o;
       p.pitch = c.pitch * sp * (1 - o) + OPEN.pitch * o;
@@ -434,7 +435,7 @@ export class Shelf {
     const b = this.books[this.hovered];
     this.v.set(0, 0, b.size[2] / 2);
     b.group.localToWorld(this.v);
-    this.v.y = this.rootWorld.y + this.ctx.motion('books').lift - 0.012;
+    this.v.y = this.rootWorld.y - 0.012;
     this.v.project(this.ctx.camera);
     const x = (this.v.x + 1) / 2 * innerWidth;
     const y = (1 - this.v.y) / 2 * innerHeight + 22;
