@@ -100,12 +100,14 @@ class Music {
    * the optimism is withdrawn after a moment.
    */
   resume(): void {
+    // forget the last report: only a report that arrives after this call counts as a refusal
+    this.embedPaused = null;
     try { this.controller?.resume(); } catch (e) { console.error(e); }
     this.setPlaying(true, 'visitor');
     clearTimeout(this.expectTimer);
     this.expectTimer = window.setTimeout(() => {
       if (this.reportsState && this.embedPaused === true && state.music.isPlaying) this.setPlaying(false, 'embed');
-    }, 1800);
+    }, 4000);
   }
 
   toggle(): void {
