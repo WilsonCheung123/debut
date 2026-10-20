@@ -18,6 +18,7 @@
 //
 // Usage: node tests/kahneman.e2e.mjs [url] [outdir]      (dev server + worker up)
 //   E2E_SLOW=4 multiplies every timeout (a shared, loaded machine).
+//   E2E_PART=A or E2E_PART=B runs one part only.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,6 +29,7 @@ const outdir = process.argv[3] || 'shots/kahneman-e2e';
 fs.mkdirSync(outdir, { recursive: true });
 const SLOW = Number(process.env.E2E_SLOW) || 1;
 const T = (ms) => ms * SLOW;
+const PART = (process.env.E2E_PART || '').toUpperCase(); // '' = both
 const BOOK = 'book.thinking-fast-slow';
 const K = '#panel .kahneman';
 const BRIDGE_HIDDEN = 33.78; // stroke-dashoffset of the undrawn bridge (src/panels/kahneman.ts)
@@ -94,7 +96,7 @@ const promptJs = (K) => document.querySelector(`${K} .prompt`).textContent;
 const bridgeJs = (K) => +document.querySelector(`${K} .bridge`).getAttribute('stroke-dashoffset');
 
 // =============================== A. real time ===============================
-{
+if (PART !== 'B') {
   const { context, page, cdp } = await openPage({ clock: false });
   const focusBook = async () => {
     const t0 = await page.evaluate(() => performance.now());
@@ -209,13 +211,14 @@ const bridgeJs = (K) => +document.querySelector(`${K} .bridge`).getAttribute('st
 }
 
 // ========================= B. the hold, frame by frame =========================
-{
+if (PART !== 'A') {
   const { context, page, cdp } = await openPage({ clock: true });
   const tick = () => page.clock.runFor(4);
   const at = (fn) => page.evaluate(fn, K);
   try {
     check('B-table-ready', await load(page));
-    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1);
+    // the clock has been ticking since install(): pause a little ahead of it (an instant already passed is refused)
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 2000);
     await page.evaluate((id) => { window.__table.focus(id); }, BOOK);
     await page.clock.runFor(1500); // camera 900 ms, panel at 450 + 420 ms
     check('B-panel-open', await at((K) => window.__table.state.focused === 'book.thinking-fast-slow' && !!document.querySelector(K) && !document.getElementById('panel').hidden));
