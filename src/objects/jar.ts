@@ -30,6 +30,7 @@ export function createJar(ctx: ObjectCtx): TableObject {
   const disposables: { dispose(): void }[] = [];
 
   // --- environment for the glass and the lid: a dark room with the lamp as one warm highlight
+  performance.mark('jar:start');
   const envTex = makeCanvasTexture({
     width: 256, height: 128, anisotropy: 1,
     draw(c, w, h) {
@@ -55,6 +56,7 @@ export function createJar(ctx: ObjectCtx): TableObject {
   pmrem.dispose();
   envTex.dispose();
   const envMap = envRT.texture;
+  performance.mark('jar:env');
   disposables.push(envRT);
 
   // --- glass
@@ -149,8 +151,7 @@ export function createJar(ctx: ObjectCtx): TableObject {
     g.applyMatrix4(m);
     g.computeBoundingBox();
     g.translate(x, floorY - g.boundingBox!.min.y, z);
-    pile.push(g.toNonIndexed());
-    g.dispose();
+    if (g.index) g.dispose();
   };
   const d2r = THREE.MathUtils.DEG2RAD;
   put(foldedSlip(1, 52 * d2r), 0.010, BASE, -0.004, 28 * d2r);                 // a tent on the floor
@@ -199,7 +200,11 @@ export function createJar(ctx: ObjectCtx): TableObject {
     geo.computeBoundingBox();
     tmpB.copy(geo.boundingBox!).applyMatrix4(tmpM);
     const landY = spot.floor - tmpB.min.y;
-    const done = (): void => { m.position.set(spot.x, landY, spot.z); m.rotation.set(restRot.x, restRot.y, restRot.z, 'YXZ'); };
+    const done = (): void => {
+      m.position.set(spot.x, landY, spot.z);
+      m.rotation.set(restRot.x, restRot.y, restRot.z, 'YXZ');
+      window.dispatchEvent(new CustomEvent('jar:dropped', { detail: { slips: extra.length } })); // QA hook: the slip has landed
+    };
     if (ctx.state.reducedMotion) { done(); return Promise.resolve(); }
     // start above the slot, edge-on: the crease runs along x, the halves nearly shut
     m.position.set(0, LID.top + 0.028, 0);

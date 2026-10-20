@@ -277,7 +277,7 @@ function injectStyle(): void {
     radial-gradient(ellipse at 30% 40%, rgba(0,0,0,.14), transparent 60%),
     radial-gradient(ellipse at 75% 70%, rgba(0,0,0,.12), transparent 55%); }
 .jar-body { position: relative; z-index: 2; }
-.jar-note { font-size: 15.5px; line-height: 1.5; color: var(--ink-soft); margin: 0 0 14px; }
+#panel .content .jar-note { font-size: 15.5px; line-height: 1.5; color: var(--ink-soft); margin: 0 0 14px; }
 .jar-field { position: relative; display: block; margin: 0 0 4px; }
 .jar-field:nth-of-type(1) { transform: rotate(-0.35deg); }
 .jar-field:nth-of-type(2) { transform: rotate(0.3deg); }
@@ -295,17 +295,17 @@ function injectStyle(): void {
 .jar-hint { display: block; min-height: 0; font-family: var(--sans); font-size: 12px; letter-spacing: .02em; color: var(--maroon); margin: 2px 0 0 4px; }
 .jar-hint:empty { display: none; }
 .jar-field-note .jar-hint { margin-top: 6px; }
-.jar-error { font-family: var(--sans); font-size: 13px; line-height: 1.45; color: var(--maroon); margin: 8px 0 0 !important; }
+#panel .content .jar-error { font-family: var(--sans); font-size: 13px; line-height: 1.45; color: var(--maroon); margin: 8px 0 0; }
 .jar-error:empty { display: none; }
 .jar-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
 #panel .content .jar-actions button { background: transparent; border-color: rgba(70,60,50,.4); color: var(--inkh); }
 #panel .content .jar-actions button:hover { background: rgba(255,255,255,.55); }
 #panel .content .jar-actions button:disabled { opacity: .55; cursor: default; }
 .jar-status { font-family: var(--sans); font-size: 12px; letter-spacing: .06em; text-transform: lowercase; font-variant-caps: all-small-caps; color: var(--ink-faint); }
-.jar-done { display: none; margin: 0; font-size: 17px; line-height: 1.55; color: var(--ink); padding: 6px 0 0; }
-.jar-done.show { display: block; }
-.jar-done.measure { display: block; position: absolute; visibility: hidden; left: 0; right: 0; }
-.jar-more { margin: 6px 0 0; }
+#panel .content .jar-done { display: none; margin: 0; font-size: 17px; line-height: 1.55; color: var(--ink); padding: 6px 0 0; }
+#panel .content .jar-done.show { display: block; }
+#panel .content .jar-done.measure { display: block; position: absolute; visibility: hidden; left: 0; right: 0; }
+#panel .content .jar-more { margin: 6px 0 0; }
 #panel .content .jar-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; margin: -6px -2px 0; border: 0; border-radius: 0; background: transparent;
   font-family: var(--serif); font-style: italic; font-size: 16px; letter-spacing: 0; text-transform: none; font-variant-caps: normal; color: var(--ink-faint);
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: rgba(29,26,23,.3); cursor: pointer; }
@@ -313,7 +313,7 @@ function injectStyle(): void {
 .jar-principles { display: none; overflow: hidden; }
 .jar-principles.open { display: block; }
 .jar-principles h2 { margin-top: 0.9em !important; }
-.jar-principles p { margin: 0 0 0.8em; }
+#panel .content .jar-principles p { margin: 0 0 0.8em; }
 @media (prefers-reduced-motion: reduce) { .jar-wrap { will-change: auto; } }
 `;
   document.head.append(style);
