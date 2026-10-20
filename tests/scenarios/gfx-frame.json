@@ -1,9 +1,0 @@
-[
-  {"action":"wait","ready":true},
-  {"action":"focus","id":"id-card","panel":false},
-  {"action":"shot","name":"focus-id-card"},
-  {"action":"exit"},
-  {"action":"focus","id":"puppet"},
-  {"action":"shot","name":"focus-puppet"},
-  {"action":"exit"}
-]
