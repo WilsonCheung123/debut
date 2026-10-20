@@ -1,0 +1,21 @@
+[
+  {"action":"wait","ready":true},
+  {"action":"focus","id":"hologram"},
+  {"action":"wait","ms":3000},
+  {"action":"log","name":"playback","js":"window.__hologram.status()"},
+  {"action":"assert","name":"local-video-decodes","js":"(function(){ const s = window.__hologram.status(); return s.mode === 'file' && s.live === true && s.videoWidth === 640 && s.paused === false; })()"},
+  {"action":"assert","name":"live-texture-on-screen","js":"window.__hologram.liveMix > 0.95"},
+  {"action":"shot","name":"focus-live"},
+  {"action":"click","selector":"#panel .films .film[data-index=\"4\"]"},
+  {"action":"wait","ms":2500},
+  {"action":"assert","name":"switch-returns-live","js":"window.__hologram.selected === 4 && window.__hologram.liveMix > 0.95"},
+  {"action":"shot","name":"switched-live"},
+  {"action":"click","selector":"#panel .sound"},
+  {"action":"wait","ms":400},
+  {"action":"assert","name":"held-pauses-video","js":"window.__hologram.status().paused === true"},
+  {"action":"click","selector":"#panel .back-to-films"},
+  {"action":"wait","ms":400},
+  {"action":"assert","name":"back-resumes-video","js":"window.__hologram.status().paused === false"},
+  {"action":"exit"},
+  {"action":"assert","name":"released","js":"window.__hologram.status().playing === false && window.__hologram.screenVisible === false"}
+]
