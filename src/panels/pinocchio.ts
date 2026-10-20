@@ -39,7 +39,7 @@ const CSS = `
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--ink-faint);
 }
 #panel .content .pinocchio button.pin-link:hover { color: var(--ink); text-decoration-color: var(--ink); }
-#panel .content .pinocchio button.pin-back { display: inline-flex; align-items: center; gap: 6px; margin: -8px 0 1.2em; padding: 12px 0; line-height: 20px;
+#panel .content .pinocchio button.pin-back { display: inline-flex; align-items: center; gap: 6px; margin: -8px 0 1.2em; padding: 12px 0; line-height: 20px; min-width: 0; border: 0; border-radius: 0; background: none;
   font-family: var(--sans); font-size: 12px; letter-spacing: 0.08em; text-transform: lowercase; font-variant-caps: all-small-caps;
   color: var(--ink-faint); text-decoration: none; }
 #panel .content .pinocchio button.pin-back:hover { color: var(--ink); }

@@ -1,5 +1,6 @@
 [
   {"action":"wait","ready":true},
+  {"action":"eval","js":"window.__until = async (f, ms) => { const t0 = Date.now(); for (;;) { try { if (f()) return true; } catch {} if (Date.now() - t0 > ms) return false; await new Promise((r) => setTimeout(r, 200)); } }"},
   {"action":"shot","name":"rest"},
   {"action":"hover","id":"books"},
   {"action":"wait","ms":700},
@@ -8,8 +9,8 @@
   {"action":"eval","js":"window.__table.hover(null)"},
   {"action":"wait","ms":600},
   {"action":"assert","name":"row-hover-settles","js":"window.__until(() => window.__books.state('book.anna-karenina').motion.lift < 0.0005, 4000)"},
-  {"action":"focus","id":"books"},
-  {"action":"wait","ms":1500},
+  {"action":"focus","id":"books","panel":false},
+  {"action":"assert","name":"shelf-active","js":"window.__until(() => { const s = window.__books.shelf(); return s.active && s.spread > 0.99; }, 15000)"},
   {"action":"assert","name":"shelf-reach","js":"(function(){const s=window.__books.shelf();return s.active && s.max > 0.12 && s.min === -s.max;})()"},
   {"action":"eval","js":"window.__books.drive.scrollBy(2)"},
   {"action":"wait","ms":1200},
