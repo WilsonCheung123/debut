@@ -137,6 +137,10 @@ interface Book extends TableObject {
   hoverLiftNow(): number;
   /** 0 while the book is in its slot, 1 once it has slid clear of its neighbours. */
   clearance(): number;
+  /** The tweened focus pose (read-only, for QA). */
+  readonly pose: { lift: number; z: number; yaw: number; roll: number; pitch: number };
+  /** Writes pose + ride-along into the engine's motion layer. Called from gsap's tick, before the engine composes transforms. */
+  sync(): void;
 }
 
 interface Placement {
@@ -167,8 +171,10 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: 
 
   // Focus motion, in two phases so nothing passes through a neighbour: slide
   // clear of the shelf / the books above, then rise ~8 cm and turn to the
-  // camera. `pose` is tweened and copied into the engine's motion layer each
-  // frame (update), on top of the ride-along lift from a lifted book below.
+  // camera. `pose` is tweened and copied into the engine's motion layer in
+  // gsap's tick (sync, see createBooks), on top of the ride-along lift from a
+  // lifted book below. The engine composes transforms before it calls
+  // update(), so writing there would land a frame late; gsap ticks first.
   const m = () => ctx.motion(d.id);
   const pose = { lift: 0, z: 0, yaw: 0, roll: 0, pitch: 0 };
   const slide = standing ? D + 0.01 : H * 1.05;
@@ -194,6 +200,7 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: 
     anchor: new THREE.Vector3(0, standing ? H : T, 0),
     hover: standing ? { lift: 0.012, tilt: 8, tiltMode: 'forward' } : { lift: 0.012, tilt: at.tilt ?? 3 },
     below: [],
+    pose,
     focus: {
       camera: ctx.focusPose(d.id),
       panel: panelFor(content),
@@ -216,8 +223,8 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: 
     },
     hoverLiftNow() { return hoverNow; },
     clearance() { return THREE.MathUtils.smoothstep(pose.z, slide * 0.88, slide); },
-    update() {
-      // the engine composed base + hover spring + last frame's motion into the group before this runs
+    sync() {
+      // the group still holds last frame's composition (base + hover spring + the motion written then)
       hoverNow = Math.max(0, group.position.y - baseY - applied.lift);
       // a lifted lower book carries the books on top of it (a real stack); the ride ends once it has slid clear
       let ride = 0;
@@ -299,6 +306,14 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
   for (const g of parts) g.dispose();
   root.add(bookends);
 
+  // motion into the engine, bottom of the stack first (the ride-along reads the books below)
+  const tick = (): void => { for (const b of books) b.sync(); };
+  gsap.ticker.add(tick);
+  for (const b of books) {
+    const own = b.dispose!;
+    b.dispose = () => { gsap.ticker.remove(tick); own(); };
+  }
+
   // covers again once the web fonts are in (the first draw may have used the fallback serif)
   if (typeof document !== 'undefined' && document.fonts?.load) {
     Promise.all(FONT_SPECS.map((f) => document.fonts.load(f, 'Anna Karenina').catch(() => [])))
@@ -309,6 +324,10 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
   if (flags.qa) {
     (window as unknown as { __books: unknown }).__books = {
       covers: () => books.map((b) => ({ id: b.id, canvas: ((b.hit[0] as THREE.Mesh).material as THREE.MeshStandardMaterial).map!.image as HTMLCanvasElement })),
+      state: (id: string) => {
+        const b = books.find((x) => x.id === id);
+        return b ? { pose: { ...b.pose }, motion: { ...ctx.motion(id) }, position: b.group.position.toArray(), hoverLift: b.hoverLiftNow(), tweens: gsap.getTweensOf(b.pose).length } : null;
+      },
     };
   }
 
