@@ -189,7 +189,7 @@ export function createJar(ctx: ObjectCtx): TableObject {
   const zero = new THREE.Vector3();
   function dropSlip(): Promise<void> {
     const open = 82 * d2r;
-    const geo = foldedSlip(100 + extra.length, open, 0.040, 0.028, 'x').toNonIndexed();
+    const geo = foldedSlip(100 + extra.length, open, 0.028, 0.032, 'x').toNonIndexed(); // 32 mm crease along the 36 mm slot, 3.9 mm thick folded
     const m = solid(new THREE.Mesh(geo, slipMat), 'jar-slip-new');
     disposables.push(geo);
     const spot = landing[extra.length % landing.length];
