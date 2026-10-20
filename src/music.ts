@@ -1,11 +1,15 @@
 // The music state and the YouTube integration (SPEC 0.2 "Music", 4.9).
 //
 // One YouTube player, driven through the IFrame Player API, lives in a
-// "dock": a fixed element in #ui that is laid over the turntable panel's slot
-// while that panel is open and parked offscreen (still alive, still playing)
-// when it is not. The iframe never moves in the DOM, so closing the panel
-// does not reload it and the music keeps going: the record spins at rest,
-// and the Austen trick (engine/focus.ts) has something to pause.
+// "dock": a fixed element in #ui that is laid over the turntable panel's
+// 200 x 200 tile while that panel is open, sits quietly in the bottom-left
+// corner while music plays with the panel closed (YouTube's API terms: the
+// player stays visible, >= 200 x 200, unobscured while it plays), and is
+// parked offscreen when paused. The iframe never moves in the DOM, so closing
+// the panel does not reload it and the music keeps going: the record spins at
+// rest, and the Austen trick (engine/focus.ts) has something to pause. The
+// turntable is the interface (a click on the record toggles play); the player
+// is the legal, functional source, not a video showcase.
 //
 // Verified against developers.google.com/youtube/iframe_api_reference (2026-10):
 //   script  https://www.youtube.com/iframe_api   (async)
@@ -101,6 +105,7 @@ class Music {
 
   private notify(source: MusicSource): void {
     for (const fn of this.listeners) { try { fn(state.music.isPlaying, source); } catch (e) { console.error(e); } }
+    if (!this.slot) this.place();
   }
 
   onChange(fn: Listener): () => void { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; }
@@ -241,7 +246,7 @@ class Music {
     const dock = document.createElement('div');
     dock.id = 'music-dock';
     dock.setAttribute('aria-hidden', 'true');
-    dock.style.cssText = 'position:absolute;left:0;top:0;width:384px;height:216px;overflow:hidden;border-radius:12px;background:#111;visibility:hidden;pointer-events:none;transform:translate(-200vw,0);will-change:transform;z-index:3;';
+    dock.style.cssText = 'position:absolute;left:0;top:0;width:200px;height:200px;overflow:hidden;border-radius:10px;background:#111;visibility:hidden;pointer-events:none;transform:translate(-200vw,0);will-change:transform;z-index:3;transition:opacity .3s ease;';
     (document.getElementById('ui') ?? document.body).append(dock);
     this.dock = dock;
     return dock;
@@ -259,6 +264,7 @@ class Music {
       const r = slot.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) { dock.style.visibility = 'hidden'; dock.style.pointerEvents = 'none'; }
       else {
+        dock.style.boxShadow = '';
         dock.style.transform = `translate(${Math.round(r.left)}px, ${Math.round(r.top)}px)`;
         dock.style.width = `${Math.round(r.width)}px`;
         dock.style.height = `${Math.round(r.height)}px`;
@@ -279,16 +285,34 @@ class Music {
     sync();
   }
 
-  /** Parks the dock offscreen (the iframe stays alive and keeps playing). */
+  /** Leaves the panel's tile: the dock goes to the corner while playing, offscreen when paused (the iframe stays alive). */
   detach(): void {
     this.slot = null;
     cancelAnimationFrame(this.raf);
-    if (!this.dock) return;
-    this.dock.style.visibility = 'hidden';
-    this.dock.style.pointerEvents = 'none';
-    this.dock.style.clipPath = '';
-    this.dock.style.transform = 'translate(-200vw, 0)';
-    this.dock.setAttribute('aria-hidden', 'true');
+    this.place();
+  }
+
+  /** Where the dock sits when no panel tile claims it. */
+  private place(): void {
+    const dock = this.dock;
+    if (!dock || this.slot) return;
+    dock.style.clipPath = '';
+    dock.style.width = '200px';
+    dock.style.height = '200px';
+    if (state.music.isPlaying && this.player) {
+      dock.style.transform = `translate(16px, ${Math.max(0, innerHeight - 216)}px)`;
+      dock.style.opacity = '1';
+      dock.style.visibility = 'visible';
+      dock.style.pointerEvents = 'auto';
+      dock.style.boxShadow = '0 12px 32px rgba(0,0,0,.45)';
+      dock.removeAttribute('aria-hidden');
+    } else {
+      dock.style.visibility = 'hidden';
+      dock.style.pointerEvents = 'none';
+      dock.style.transform = 'translate(-200vw, 0)';
+      dock.style.boxShadow = '';
+      dock.setAttribute('aria-hidden', 'true');
+    }
   }
 
   /** Test hooks (window.__table.music): QA drives the trick without YouTube. */
