@@ -10,7 +10,7 @@ human with the dev server open.
 
 1. **Zero console errors or warnings** in a full scripted visit: load, hover
    each object, focus each object, exit, flip the ID, open the jar, run the
-   anchoring flow against the local worker, switch films, open the Spotify
+   anchoring flow against the local worker, switch films, open the YouTube
    panel, trigger the Austen bubble with a stubbed `isPlaying = true`.
    `tests/scenarios/full-visit-{a,books,b}.json` cover everything the engine owns
    (three parts so a run stays under ten minutes on software GL); each
@@ -67,7 +67,11 @@ books' panels), `visit-b`
 (the other objects, the Austen trick with a stubbed player, keyboard),
 `reduced`, `timing` (fake clock), `deep-link`, `hologram`, `puppet`, `vinyl`,
 `vinyl-offline`, `vinyl-silent`, `jar`, `kahneman`, `four-objects`, `id-flip`
-(fake clock). Two `npm run qa` invocations can run side by side: every shot
+(fake clock). `tests/scenarios/vinyl-live.json` drives the real YouTube player
+(network; play, next, pause, the Austen pause hook, no auto-resume) and is run
+by hand, not by `npm run qa`: `npm run shots -- http://localhost:5180/ shots/x --scenario tests/scenarios/vinyl-live.json`.
+YouTube's own console noise (its widget script's postMessage warning, an ad
+beacon failing CORS inside its frame) is recorded as `[3p.*]` and not counted. Two `npm run qa` invocations can run side by side: every shot
 goes through `tools/shotlock.sh` (two slots on this 4-core machine).
 
 Outputs land in `shots/qa/`: PNGs plus `<run>-problems.txt`. QA fails on any

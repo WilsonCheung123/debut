@@ -255,7 +255,7 @@ async function boot(): Promise<void> {
     focus(id: string) { return focus.focus(id); },
     exit() { return focus.exit(); },
     liftOf(id: string) { return hover.liftOf(id); },
-    /** Music test hooks: __table.music.setPlaying(true) arms the Austen trick without Spotify. */
+    /** Music test hooks: __table.music.setPlaying(true) arms the Austen trick without YouTube. */
     music: music.hooks,
     /** Environment tuning handles for scripted comparisons (several variants per run). */
     env: { lights, renderer, scene, overlay, probe: () => addProbe(scene) },

@@ -6,7 +6,7 @@
 //
 // Usage:
 //   node tools/shot.mjs <url> <outdir> [--viewport desktop|iphone|pixel] [--hover <id>] [--focus <id>]
-//                       [--scenario file.json] [--name base] [--reduced-motion] [--clock]
+//                       [--scenario file.json] [--name base] [--reduced-motion] [--clock] [--headed]
 //
 // Scenario: JSON array of steps, in order:
 //   {"action":"wait","ready":true}               wait until the lamp has warmed up
@@ -49,6 +49,9 @@ const focusId = opt('--focus');
 const scenarioPath = opt('--scenario');
 const baseName = opt('--name', viewportName);
 const reduced = args.includes('--reduced-motion');
+// --headed: a visible Chromium on the real GPU (no SwiftShader flags), for the live YouTube check and
+// profiling. It puts a window on the owner's screen: only when he has allowed it.
+const headed = args.includes('--headed');
 // SHOT_TIMEOUT_SCALE=4 on a loaded machine: scales the page-load, ready and default timeouts (software GL plus other work).
 const SLOW = Math.max(1, Number(process.env.SHOT_TIMEOUT_SCALE) || 1);
 const u = new URL(url0);
@@ -68,7 +71,7 @@ const device = VIEWPORTS[viewportName];
 if (!device) { console.error(`unknown viewport ${viewportName}`); process.exit(1); }
 const touch = !!device.hasTouch;
 
-const browser = await chromium.launch({
+const browser = await chromium.launch(headed ? { headless: false } : {
   // --disable-accelerated-2d-canvas: with --ignore-gpu-blocklist Chromium "accelerates" canvas 2D through SwiftShader,
   // and the procedural textures (hundreds of stroked polylines) then take minutes instead of milliseconds
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'],
@@ -92,19 +95,27 @@ const problems = [];
 const note = (s) => { problems.push(s); console.log(`  ! ${s}`); };
 // SwiftShader-only noise (not present on real GPUs): recorded, not counted.
 const ENV_NOISE = /KHR_parallel_shader_compile|GL Driver Message/;
-// Third-party noise: Chromium warns about the Spotify embed's own iframe markup (allow="…fullscreen" plus
-// allowfullscreen); it is Spotify's element, not ours. Recorded as [3p.warn], not counted.
+// Third-party noise: anything logged from a script that is not ours (the YouTube IFrame API's
+// www-widgetapi.js warns about postMessage before its iframe answers; inside the player's own frame
+// an ad beacon to doubleclick fails CORS) or about the player's iframe markup (allow="…fullscreen" plus
+// allowfullscreen). Recorded as [3p.error] / [3p.warn] / [3p.requestfailed], not counted.
 const THIRD_PARTY_NOISE = /Allow attribute will take precedence over 'allowfullscreen'/;
+const ours = (src) => !src || src.startsWith(u.origin) || src.startsWith('blob:' + u.origin);
 page.on('console', (msg) => {
   const type = msg.type();
   const text = msg.text();
-  if (type === 'error') note(`[console.error] ${text}`);
-  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : THIRD_PARTY_NOISE.test(text) ? `[3p.warn] ${text}` : `[console.warn] ${text}`);
+  const foreign = !ours(msg.location()?.url) || THIRD_PARTY_NOISE.test(text);
+  if (type === 'error') note(foreign ? `[3p.error] ${text}` : `[console.error] ${text}`);
+  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : foreign ? `[3p.warn] ${text}` : `[console.warn] ${text}`);
 });
 page.on('pageerror', (err) => note(`[pageerror] ${err.message}`));
 page.on('requestfailed', (req) => {
   const f = req.failure();
-  if (f && f.errorText !== 'net::ERR_ABORTED') note(`[requestfailed] ${req.url()} — ${f.errorText}`);
+  if (!f || f.errorText === 'net::ERR_ABORTED') return;
+  // a request made by a third-party frame (the YouTube player's beacons) is theirs, not ours
+  const frame = req.frame();
+  const foreign = frame && frame !== page.mainFrame();
+  note(`${foreign ? '[3p.requestfailed]' : '[requestfailed]'} ${req.url()} — ${f.errorText}`);
 });
 page.on('response', (res) => { if (res.status() >= 400) note(`[http ${res.status()}] ${res.url()}`); });
 
