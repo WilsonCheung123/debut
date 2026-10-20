@@ -157,7 +157,7 @@ export function createJar(ctx: ObjectCtx): TableObject {
   };
   const d2r = THREE.MathUtils.DEG2RAD;
   put(foldedSlip(1, 52 * d2r), 0.010, BASE, -0.004, 28 * d2r);                 // a tent on the floor
-  put(foldedSlip(2, 78 * d2r), -0.013, BASE, -0.013, 80 * d2r, 0, -78 * d2r);  // folded nearly shut, lying on its side
+  put(foldedSlip(2, 78 * d2r), -0.008, BASE, -0.009, 80 * d2r, 0, -78 * d2r);  // folded nearly shut, lying on its side
   put(crumpledSlip(3, 0.0125), -0.011, BASE, 0.010, 0);
   put(crumpledSlip(4, 0.011), 0.015, BASE + 0.004, 0.014, 0);
   put(curledSlip(5), 0.003, BASE + 0.016, -0.009, 14 * d2r, 12 * d2r, 0);

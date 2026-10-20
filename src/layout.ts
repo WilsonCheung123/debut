@@ -106,6 +106,6 @@ export const focus: Record<string, FocusFrame> = {
   'die-cast': { dist: 0.30, az: 10, el: 42, fov: 31 },
   hologram:   { dist: 0.78, az: 6, el: 16, fov: 32, targetOffset: [0, 0.16, 0] },
   puppet:     { dist: 0.62, az: 10, el: 12, fov: 32, targetOffset: [0, 0.01, 0] },
-  jar:        { dist: 0.40, az: 8, el: 22, fov: 31 },
+  jar:        { dist: 0.36, az: 14, el: 30, fov: 31, targetOffset: [0, 0.008, 0] },
   vinyl:      { dist: 0.58, az: -4, el: 40, fov: 32 },
 };
