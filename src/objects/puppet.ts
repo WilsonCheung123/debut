@@ -327,7 +327,7 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
   camera.name = 'camera';
   camera.position.set(-0.002, 0, 0.013);
   handL.add(camera);
-  const CAM = { w: 0.034, h: 0.028, d: 0.024 };
+  const CAM = { w: 0.037, h: 0.030, d: 0.026 };
   const camWhite: Bucket = [];
   const camBlack: Bucket = [];
   put(camWhite, roundedBox(CAM.w, CAM.h, CAM.d, 0.003), mat(V(0, CAM.h / 2, 0)));
@@ -343,7 +343,7 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
   lens.name = 'camera';
   lens.position.set(0, CAM.h * 0.46, CAM.d / 2 + 0.0082);
   lens.rotation.x = Math.PI / 2;
-  const camProxy = hitProxy(0.042, 0.036, 0.034, 'camera:proxy');
+  const camProxy = hitProxy(0.045, 0.038, 0.036, 'camera:proxy');
   camProxy.position.set(0, CAM.h / 2, 0.003);
   camera.add(camBody, camParts, lens, camProxy);
   hit.push(camBody, camParts, lens, camProxy);
@@ -363,7 +363,7 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
   phone.name = 'phone';
   phone.position.set(0, 0.004, 0.0035);
   handR.add(phone);
-  const PH = { w: 0.019, h: 0.038, d: 0.0045 };
+  const PH = { w: 0.021, h: 0.041, d: 0.0048 };
   const phoneBody = solid(new THREE.Mesh(own(roundedBox(PH.w, PH.h, PH.d, 0.0022)), frame), 'phone');
   const glassBucket: Bucket = [];
   put(glassBucket, roundedBox(PH.w - 0.0015, PH.h - 0.0015, 0.0008, 0.0016), mat(V(0, 0, PH.d / 2 - 0.0001)));
@@ -372,7 +372,7 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
   const bump = new THREE.Mesh(own(roundedBox(0.0056, 0.0056, 0.0012, 0.0012)), black);
   bump.name = 'phone';
   bump.position.set(-0.0055, PH.h / 2 - 0.0062, -PH.d / 2 - 0.0004);
-  const phoneProxy = hitProxy(0.028, 0.046, 0.016, 'phone:proxy');
+  const phoneProxy = hitProxy(0.030, 0.049, 0.016, 'phone:proxy');
   phone.add(phoneBody, phoneGlass, bump, phoneProxy);
   hit.push(phoneBody, phoneGlass, bump, phoneProxy);
 

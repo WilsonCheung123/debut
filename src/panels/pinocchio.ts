@@ -20,7 +20,6 @@ export interface PinocchioPanel extends PanelFactory {
 
 const STYLE_ID = 'pinocchio-style';
 const CSS = `
-.pinocchio .pin-intro p:first-child::first-letter { font-size: 1.05em; }
 .pinocchio .pin-section { position: relative; margin-top: 2.1em; scroll-margin-top: 12px; }
 .pinocchio .pin-section::before {
   content: ''; position: absolute; left: -16px; top: 2px; bottom: 6px; width: 2px; border-radius: 1px;
