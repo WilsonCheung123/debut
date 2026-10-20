@@ -171,7 +171,28 @@ left of the panel on landscape and in the top band above the sheet on portrait
 by shifting the view, so aim at the object itself. `fov` is clamped to within
 4° below the rest fov.
 
-## 8. Testing
+## 8. The stack of paper (a worked example of a flat object)
+
+`src/objects/papers.ts` is the smallest complete object and a good template
+for anything flat: 36 letter-proportioned sheets (0.17 x 0.22 m, 8 mm in all),
+each a real thin box set down a fraction of a millimetre and a few tenths of
+a degree off the one below (the top three more so), merged into one body
+mesh (`mergeParts`) with UVs projected so a 256 x 512 side texture of sheet
+hairlines climbs the stack (v = y / height). The top sheet is its own mesh
+(`topFirst` on a BoxGeometry: written face, plain sides) with a 1024-wide
+grained canvas, "notes" in Caveat and three pencil squiggles, redrawn once
+`document.fonts.load('500 64px Caveat')` resolves. Roughness is 1.0 on the
+top: a letter-sized plane facing the lamp throws a broad sheen at anything
+less. A `contactBlob` keeps a shadow under it (8 mm is inside the shadow
+map's normal bias). Focus tweens `ctx.motion('papers').lift` to 0.02 m in
+`onEnter` / back in `onExit`, cutting under `state.reducedMotion`. Its panel is
+plain content (`src/content/papers.ts`). Note what a front-corner object costs:
+the rest camera frames every object's bounds, so a thing whose front edge
+reaches past the other objects' pulls the whole view back (the stack sits at
+z = 0.20, not 0.25, for that reason; at 0.25 the thin books fell under the
+60 px audit). Scenario: `tests/scenarios/papers.json`.
+
+## 9. Testing
 
 Dev server: `npm run dev` (port 5180). Worker: `npm run worker` (8780).
 

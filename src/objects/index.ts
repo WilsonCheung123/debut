@@ -5,6 +5,7 @@
 import type { ObjectCtx, CreateResult } from './types';
 import { createBooks } from './books';
 import { createIdCard } from './id-card';
+import { createPapers } from './papers';
 import { createGuitar } from './guitar';
 import { createFpga } from './fpga';
 import { createDieCast } from './die-cast';
@@ -23,6 +24,7 @@ export interface RegistryEntry {
 export const registry: RegistryEntry[] = [
   { key: 'books', create: createBooks },
   { key: 'id-card', create: createIdCard },
+  { key: 'papers', create: createPapers },
   { key: 'guitar', create: createGuitar },
   { key: 'fpga', create: createFpga },
   { key: 'die-cast', create: createDieCast },

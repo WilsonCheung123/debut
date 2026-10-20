@@ -38,6 +38,7 @@ const runs = [
   { name: 'jar', args: [...D, '--scenario', 'tests/scenarios/jar.json'] },
   { name: 'kahneman', args: [...D, '--scenario', 'tests/scenarios/kahneman.json'] },
   { name: 'four-objects', args: [...D, '--scenario', 'tests/scenarios/four-objects.json'] },
+  { name: 'papers', args: [...D, '--scenario', 'tests/scenarios/papers.json'] },   // the stack of paper: hover label, the Blog panel's one line, bounds
   { name: 'id-flip', args: [...D, '--clock', '--scenario', 'tests/scenarios/id-flip.json'] },   // the ID opens its panel at +450 ms, no flip, second click inert
   { name: 'texts', args: [...D, '--scenario', 'tests/scenarios/texts.json'] },   // every panel's rendered text: no [brackets], no email, the verbatim lines
   { name: 'four-clock', args: [...D, '--clock', '--scenario', 'tests/scenarios/four-clock.json'] },   // ID, FPGA (link card), die-cast, capo under the fake clock
