@@ -1,0 +1,18 @@
+[
+  {"action":"mock","url":"**/open.spotify.com/**","abort":true},
+  {"action":"wait","ready":true},
+  {"action":"focus","id":"vinyl"},
+  {"action":"wait","selector":".vinyl-panel .vinyl-off","timeout":15000},
+  {"action":"assert","name":"fallback-when-blocked","js":"window.__table.music.status() === 'fallback' && !window.__table.music.hasController() && !document.querySelector('#spotify-dock iframe')"},
+  {"action":"assert","name":"fallback-has-link","js":"document.querySelector('.vinyl-panel .vinyl-off a').href.includes('open.spotify.com/playlist/2UsGkMoSFLxP51roLefR0v')"},
+  {"action":"shot","name":"focus-offline"},
+  {"action":"click","selector":".vinyl-panel .vinyl-toggle"},
+  {"action":"wait","ms":2400},
+  {"action":"assert","name":"toggle-spins-record-offline","js":"window.__table.state.music.isPlaying === true"},
+  {"action":"shot","name":"focus-offline-playing"},
+  {"action":"exit"},
+  {"action":"focus","id":"book.pride-and-prejudice"},
+  {"action":"wait","ms":900},
+  {"action":"assert","name":"austen-paused-offline","js":"window.__table.state.music.isPlaying === false && !document.getElementById('bubble').hidden"},
+  {"action":"exit"}
+]

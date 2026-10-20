@@ -351,6 +351,9 @@ try {
         case 'audit': await doAudit(s.name || 'sizes', s.minWidth ?? 60, s.clusterPrefixes || []); break;
         case 'timing': await doTiming(s.name || 'focus'); break;
         case 'mock':
+          // {"action":"mock","url":"glob","abort":true} blocks matching requests (as a blocked network would);
+          // the abort reads as net::ERR_ABORTED, which is not counted as a failed request
+          if (s.abort) { await context.route(s.url, (route) => route.abort('aborted')); break; }
           await context.route(s.url, (route) => route.fulfill({
             status: s.status || 200, contentType: s.contentType || 'application/json',
             body: fs.readFileSync(path.resolve(path.dirname(scenarioPath), s.file)),

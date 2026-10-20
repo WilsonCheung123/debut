@@ -1,0 +1,10 @@
+[
+  {"action":"mock","url":"**/open.spotify.com/embed/iframe-api/v1*","file":"../fixtures/empty.js","contentType":"text/javascript"},
+  {"action":"wait","ready":true},
+  {"action":"focus","id":"vinyl"},
+  {"action":"assert","name":"loading-skeleton","js":"window.__table.music.status() === 'loading' && !!document.querySelector('.vinyl-panel .vinyl-slot .skeleton')"},
+  {"action":"wait","selector":".vinyl-panel .vinyl-off","timeout":20000},
+  {"action":"assert","name":"fallback-when-api-silent","js":"window.__table.music.status() === 'fallback' && !window.__table.music.hasController()"},
+  {"action":"shot","name":"focus-silent"},
+  {"action":"exit"}
+]
