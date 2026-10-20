@@ -28,15 +28,18 @@ const runs = [
   // deep link: /#jar focuses the jar after the warm-up; back/Escape clears the hash
   { name: 'deep-link', url: '#jar', args: [...D, '--scenario', 'tests/scenarios/deep-link.json'] },
   // the builders' flows
-  { name: 'hologram', args: [...D, '--scenario', 'tests/scenarios/hologram.json'] },
-  { name: 'puppet', args: [...D, '--scenario', 'tests/scenarios/puppet.json'] },
+  { name: 'shelf', args: [...D, '--scenario', 'tests/scenarios/shelf.json'] },   // shelf mode end to end: scroll, lean, open, keyboard, Kahneman, the Austen letter, restore
+  { name: 'hologram', args: [...D, '--scenario', 'tests/scenarios/hologram.json'] },   // native HLS path (headless Chromium plays the m3u8 itself)
+  { name: 'hologram-hls', url: '?holo=hls', args: [...D, '--scenario', 'tests/scenarios/hologram.json'] },   // the hls.js path real Chrome takes
+  { name: 'puppet', args: [...D, '--scenario', 'tests/scenarios/puppet.json'] },   // intro, hover tags, the three item views
   { name: 'vinyl', args: [...D, '--scenario', 'tests/scenarios/vinyl.json'] },
   { name: 'vinyl-offline', args: [...D, '--scenario', 'tests/scenarios/vinyl-offline.json'] },
   { name: 'vinyl-silent', args: [...D, '--scenario', 'tests/scenarios/vinyl-silent.json'] },
   { name: 'jar', args: [...D, '--scenario', 'tests/scenarios/jar.json'] },
   { name: 'kahneman', args: [...D, '--scenario', 'tests/scenarios/kahneman.json'] },
   { name: 'four-objects', args: [...D, '--scenario', 'tests/scenarios/four-objects.json'] },
-  { name: 'id-flip', args: [...D, '--clock', '--scenario', 'tests/scenarios/id-flip.json'] },
+  { name: 'id-flip', args: [...D, '--clock', '--scenario', 'tests/scenarios/id-flip.json'] },   // the ID opens its panel at +450 ms, no flip, second click inert
+  { name: 'four-clock', args: [...D, '--clock', '--scenario', 'tests/scenarios/four-clock.json'] },   // ID, FPGA (link card), die-cast, capo under the fake clock
 ];
 const only = process.argv.slice(2);
 for (const n of only) if (!runs.some((r) => r.name === n)) { console.error(`unknown run ${n}; runs: ${runs.map((r) => r.name).join(' ')}`); process.exit(2); }

@@ -1,0 +1,599 @@
+[
+  {
+    "action": "wait",
+    "ready": true
+  },
+  {
+    "action": "eval",
+    "js": "window.__until = async (f, ms) => { const t0 = Date.now(); for (;;) { try { if (f()) return true; } catch {} if (Date.now() - t0 > ms) return false; await new Promise((r) => setTimeout(r, 200)); } }"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = {}"
+  },
+  {
+    "action": "focus",
+    "id": "id-card"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "fpga"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "assert",
+    "name": "fpga-card-image-rendered",
+    "js": "window.__until(() => { const img = document.querySelector('#panel .content a.linkcard img'); return img && img.complete && img.naturalWidth > 100 && !img.closest('.linkcard').classList.contains('no-image'); }, 10000)"
+  },
+  {
+    "action": "shot",
+    "name": "fpga-card"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "die-cast"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "guitar"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "hologram"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "puppet"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .pinocchio button[data-item=\"puppet\"]"
+  },
+  {
+    "action": "assert",
+    "name": "puppet-view-puppet",
+    "js": "window.__until(() => { return document.getElementById('pin-puppet') !== null; }, 8000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .pinocchio button.pin-back"
+  },
+  {
+    "action": "assert",
+    "name": "puppet-view-intro",
+    "js": "window.__until(() => { return document.querySelector('#panel .pinocchio .pin-hint') !== null; }, 8000)"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .pinocchio button[data-item=\"camera\"]"
+  },
+  {
+    "action": "assert",
+    "name": "puppet-view-camera",
+    "js": "window.__until(() => { return document.getElementById('pin-camera') !== null; }, 8000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .pinocchio button.pin-back"
+  },
+  {
+    "action": "assert",
+    "name": "puppet-view-intro",
+    "js": "window.__until(() => { return document.querySelector('#panel .pinocchio .pin-hint') !== null; }, 8000)"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .pinocchio button[data-item=\"phone\"]"
+  },
+  {
+    "action": "assert",
+    "name": "puppet-view-phone",
+    "js": "window.__until(() => { return document.getElementById('pin-phone') !== null; }, 8000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .pinocchio button.pin-back"
+  },
+  {
+    "action": "assert",
+    "name": "puppet-view-intro",
+    "js": "window.__until(() => { return document.querySelector('#panel .pinocchio .pin-hint') !== null; }, 8000)"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "jar"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "click",
+    "selector": "#panel .jar-more button.jar-link"
+  },
+  {
+    "action": "assert",
+    "name": "principles-open",
+    "js": "window.__until(() => { const s = document.querySelector('#panel .jar-principles'); return s && s.classList.contains('open') && s.getBoundingClientRect().height > 50; }, 8000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "vinyl"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "focus",
+    "id": "books",
+    "panel": false
+  },
+  {
+    "action": "assert",
+    "name": "shelf-active",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.active && s.spread > 0.99; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.anna-karenina')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.anna-karenina"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-anna-karenina",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.anna-karenina'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-anna-karenina",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.inferno')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.inferno"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-inferno",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.inferno'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-inferno",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.becoming-steve-jobs')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.becoming-steve-jobs"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-becoming-steve-jobs",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.becoming-steve-jobs'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-becoming-steve-jobs",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.innovators-dilemma')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.innovators-dilemma"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-innovators-dilemma",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.innovators-dilemma'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-innovators-dilemma",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.three-body')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.three-body"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-three-body",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.three-body'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-three-body",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.scrollBy(0.4)"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-scrolled",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return Math.abs(s.scroll - s.min) > 0.05 || s.max - s.min < 0.06; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.power-broker')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.power-broker"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-power-broker",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.power-broker'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-power-broker",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.thinking-fast-slow')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.thinking-fast-slow"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-thinking-fast-slow",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.thinking-fast-slow'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-thinking-fast-slow",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.demi-gods')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.demi-gods"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-demi-gods",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.demi-gods'; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-demi-gods",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__table.state.music.isPlaying = true; window.__table.state.music.pause = () => {}"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.pride-and-prejudice')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.pride-and-prejudice"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "assert",
+    "name": "open-pride-and-prejudice",
+    "js": "window.__until(() => { return window.__books.shelf().open === 'book.pride-and-prejudice'; }, 15000)"
+  },
+  {
+    "action": "assert",
+    "name": "austen-letter",
+    "js": "window.__until(() => { return window.__austen && window.__austen.shown; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__texts = window.__texts || {}; window.__texts[window.__table.state.focused + (window.__books ? ':' + (window.__books.shelf().open || '') : '')] = document.getElementById('panel').innerText"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "closed-pride-and-prejudice",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "back-at-rest",
+    "js": "window.__until(() => { return window.__table.state.focused === null && window.__table.info().mode === 'rest'; }, 20000)"
+  },
+  {
+    "action": "log",
+    "name": "panels-collected",
+    "js": "Object.keys(window.__texts).length"
+  },
+  {
+    "action": "assert",
+    "name": "twenty-one-panels",
+    "js": "Object.keys(window.__texts).length >= 21"
+  },
+  {
+    "action": "assert",
+    "name": "no-bracket-placeholders",
+    "js": "(function(){ const bad = []; for (const [k, t] of Object.entries(window.__texts)) { const m = t.match(/\\[[^\\]\\n]{2,}\\]/g); if (m) bad.push(k + ': ' + m.join(' | ')); } window.__brackets = bad; return bad.length === 0; })()"
+  },
+  {
+    "action": "log",
+    "name": "brackets-found",
+    "js": "window.__brackets"
+  },
+  {
+    "action": "assert",
+    "name": "no-lorem",
+    "js": "!Object.values(window.__texts).some((t) => /lorem ipsum|TODO|TBD|placeholder/i.test(t))"
+  },
+  {
+    "action": "assert",
+    "name": "jar-names-the-book-in-english",
+    "js": "/Keigo Higashino’s The Miracles of the Namiya General Store/.test(window.__texts['jar:']) && !/解忧|解憂|雜貨店|杂货店/.test(window.__texts['jar:'])"
+  },
+  {
+    "action": "assert",
+    "name": "id-opens-with-howdy",
+    "js": "/Howdy guys, my name is Wilson\\./.test(window.__texts['id-card:'])"
+  },
+  {
+    "action": "assert",
+    "name": "capo-one-line",
+    "js": "(function(){ const lines = window.__texts['guitar:'].split('\\n').map((s) => s.trim()).filter(Boolean); return lines.length <= 3 && lines.some((l) => /learning guitar/.test(l)) && !lines.some((l) => l.length > 40); })()"
+  },
+  {
+    "action": "log",
+    "name": "capo-lines",
+    "js": "window.__texts['guitar:']"
+  },
+  {
+    "action": "assert",
+    "name": "die-cast-verbatim",
+    "js": "/Small world!/.test(window.__texts['die-cast:']) && /one of thousands of CAD files/.test(window.__texts['die-cast:'])"
+  },
+  {
+    "action": "assert",
+    "name": "puppet-intro-verbatim",
+    "js": "/are you getting it\\? These are not three separate things\\./.test(window.__texts['puppet:'])"
+  },
+  {
+    "action": "assert",
+    "name": "realm-link",
+    "js": "/realmfilm\\.art/.test(window.__texts['hologram:'])"
+  },
+  {
+    "action": "assert",
+    "name": "no-email-anywhere",
+    "js": "!Object.values(window.__texts).some((t) => /@/.test(t)) && !document.documentElement.outerHTML.includes('@college.harvard.edu')"
+  },
+  {
+    "action": "assert",
+    "name": "austen-letter-verbatim",
+    "js": "/So you noticed the music stopped when you opened this book\\./.test(window.__texts['books:book.pride-and-prejudice']) && /read Persuasion\\./.test(window.__texts['books:book.pride-and-prejudice'])"
+  }
+]
