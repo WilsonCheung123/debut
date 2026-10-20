@@ -44,6 +44,23 @@ while measuring anything.
 5. `vinyl-live` in one headed window; the Austen letter with the real player.
 6. Draw calls at rest and in the heaviest focus (hologram, jar, shelf) against the ≤ 160 assert.
 
+## Round 3 (2026-10-20, after Wilson's second look)
+
+Done and on main: puppet panel reordered (intro, his goal, the click hint, the Elon quote last;
+the "reminder" line cut) with his title and his three item texts; capo line; Realm description;
+"notes on focus" beside "Leave a slip" (his four paragraphs replace the generated principles);
+the shelf scrolls until the end book sits near the middle of the view; hovering the row lifts
+each book in a ripple and the label says a click shows them all; the ID moved right of centre;
+the hologram at 1.3x; a stack of paper in the front-left corner (panel "Blog" / "More to come.").
+
+Hologram "worked then stopped": the VideoTexture was disposed on exit and reused, so every
+focus after the first uploaded one frame and froze (three r186 cancels the video-frame
+callback on dispose). Fixed in `src/objects/hologram.ts` (fresh texture per start, uploads
+tied to `currentTime`, stale prepared hls falls through to a fresh attach, one retry on a
+fatal hls error). Verified on the real GPU with `node tools/holo-probe.mjs <url>?holo=hls --headed`:
+~60 uploads per 2 s on the first, second and third focus, after a film switch and after
+fullscreen and back. Scenario: `hologram-again` in `npm run qa`.
+
 ## Lines written in Wilson's voice for him to approve
 
 SPEC 0.1: nothing in `[brackets]` ships, so the six round-2 builders wrote the lines
