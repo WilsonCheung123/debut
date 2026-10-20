@@ -14,6 +14,7 @@
 //   {"action":"hover","id":"book.inferno"}        move the mouse onto the object (no-op on touch)
 //   {"action":"focus","id":"id-card","frames":0}  click/tap it, wait for focus:settled; frames>0 grabs a burst mid-move
 //   {"action":"focus","id":"book.demi-gods","cluster":true}  on touch, a member hidden behind a sibling is focused via the hook (noted)
+//   {"action":"focus","id":"id-card","panel":false}  do not wait for the panel (objects that defer it until an in-focus click)
 //   {"action":"exit"}                             Escape, wait for exit:settled
 //   {"action":"click","selector":"..."} | {"action":"tap","selector":"..."} | {"action":"fill","selector":"...","text":"..."}
 //   {"action":"press","key":"Tab"}
@@ -217,7 +218,7 @@ async function doHover(id) {
   if (!reducedMotion && info.lift < 0.9) note(`[hover:${id}] lift ${info.lift.toFixed(2)} did not land`);
 }
 
-async function doFocus(id, frames = 0, name = id, cluster = false) {
+async function doFocus(id, frames = 0, name = id, cluster = false, waitPanel = true) {
   await settle(); // rects must come from a rendered frame at rest, not a stale camera
   const aim = await aimPoint(id, touch ? 44 : 0);
   if (!aim) throw new Error(`no rect for ${id}`);
@@ -238,7 +239,7 @@ async function doFocus(id, frames = 0, name = id, cluster = false) {
   }
   try { await waitMark('focus:settled', id, t0); }
   catch { note(`[focus:${id}] never settled (focused=${await page.evaluate(() => window.__table.state.focused)})`); return; }
-  await page.waitForFunction(() => { const p = document.getElementById('panel'); return p && !p.hidden; }, null, { timeout: 4000 }).catch(() => note(`[focus:${id}] panel did not open`));
+  if (waitPanel) await page.waitForFunction(() => { const p = document.getElementById('panel'); return p && !p.hidden; }, null, { timeout: 4000 }).catch(() => note(`[focus:${id}] panel did not open`));
   await sleep(500); // panel entrance (420 ms) settles
   lastFocusT0 = t0;
 }
@@ -324,7 +325,7 @@ try {
           if (s.runFor) await page.clock.runFor(s.runFor);
           if (s.resume) await page.clock.resume();
           break;
-        case 'focus': await doFocus(s.id, s.frames || 0, s.name || s.id, !!s.cluster); break;
+        case 'focus': await doFocus(s.id, s.frames || 0, s.name || s.id, !!s.cluster, s.panel !== false); break; // "panel":false for objects that defer their panel (the ID)
         case 'exit': await doExit(); break;
         case 'click': await page.locator(s.selector).first().click({ timeout: 8000 }); break;
         case 'tap': if (touch) await page.locator(s.selector).first().tap({ timeout: 8000 }); else await page.locator(s.selector).first().click({ timeout: 8000 }); break;

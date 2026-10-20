@@ -59,6 +59,7 @@ async function boot(): Promise<void> {
     motion(id) { return hover.motion(id); },
     exit() { void focusCtl?.exit(); },
     reframe(id, duration) { focusCtl?.reframe(id, duration); },
+    openPanel(id) { focusCtl?.openPanel(id); },
   };
 
   // Objects: create, place roots from layout, register.

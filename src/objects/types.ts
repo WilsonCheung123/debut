@@ -45,6 +45,8 @@ export interface ObjectCtx {
   exit(): void;
   /** Re-runs the camera tween to the object's current focus pose (e.g. after a flip). */
   reframe(id: string, duration?: number): void;
+  /** Opens the focused object's panel now (for objects with `focus.deferPanel`, e.g. the ID after its flip). No-op unless `id` is focused. */
+  openPanel(id: string): void;
 }
 
 export interface TableObject {
@@ -73,6 +75,8 @@ export interface TableObject {
     onExit?(ctx: ObjectCtx): void;
     /** Clicks on this object's hit meshes while it is focused. hitName = mesh.name. */
     onClickInside?(hitName: string, ctx: ObjectCtx): void;
+    /** When true the engine does not open the panel at +450 ms; the object opens it later with ctx.openPanel(id). */
+    deferPanel?: boolean;
   };
   /** Idle animation. dt seconds (clamped), t seconds since start. */
   update?(dt: number, t: number): void;
