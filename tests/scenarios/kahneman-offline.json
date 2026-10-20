@@ -1,0 +1,17 @@
+[
+  {"action":"wait","ready":true},
+  {"action":"eval","js":"localStorage.removeItem('kahneman.group'); localStorage.removeItem('kahneman.guess')"},
+  {"action":"mock","url":"**/api/anchor","file":"fixtures/anchor-nostats.json","status":200},
+  {"action":"focus","id":"book.thinking-fast-slow","cluster":true},
+  {"action":"click","selector":"#panel .kahneman .choices button[data-choice=younger]"},
+  {"action":"wait","ms":700},
+  {"action":"fill","selector":"#panel .kahneman input","text":"70"},
+  {"action":"press","key":"Enter"},
+  {"action":"wait","selector":"#panel .kahneman .reveal"},
+  {"action":"wait","ms":2000},
+  {"action":"assert","name":"offline-real-answer","js":"[...document.querySelectorAll('#panel .kahneman .num')].map(e=>e.textContent).join()==='—,—,78'"},
+  {"action":"assert","name":"offline-unavailable-line","js":"document.querySelector('#panel .kahneman .unavailable').textContent==='The averages are unavailable right now.'"},
+  {"action":"assert","name":"offline-own-guess","js":"document.querySelector('#panel .kahneman .col.mine .you').textContent==='you said 70' && document.querySelector('#panel .kahneman .col.mine.lit') !== null"},
+  {"action":"shot","name":"k6-offline"},
+  {"action":"exit"}
+]

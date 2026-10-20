@@ -4,6 +4,7 @@ import { placeholder } from './placeholder';
 import { roundedBox, solid } from './helpers';
 import { metal } from '../materials';
 import { bookSlots } from '../layout';
+import { kahnemanPanel } from '../panels/kahneman'; // TEMP (kahneman builder): remove when the books builder's file lands
 
 // PLACEHOLDER. The books builder replaces this file: nine procedurally
 // covered books, five standing between two bookends and four in a stack.
@@ -44,6 +45,8 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
       color: tones[i % tones.length],
       hover: slot.standing ? { tiltMode: 'forward', tilt: 8, lift: 0.006 } : { lift: 0.012 },
     });
+    // TEMP (kahneman builder): the books builder's books.ts routes this book itself; keep theirs.
+    if (slot.id === 'book.thinking-fast-slow') obj.focus.panel = kahnemanPanel();
     if (slot.standing) {
       obj.group.position.set(cursor + size[0] / 2, 0, 0);
       cursor += size[0] + GAP;
