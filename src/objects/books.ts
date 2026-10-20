@@ -307,7 +307,13 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
   root.add(bookends);
 
   // motion into the engine, bottom of the stack first (the ride-along reads the books below)
-  const tick = (): void => { for (const b of books) b.sync(); };
+  let registered = false;
+  const tick = (): void => {
+    if (!registered) { // the engine registers motion rigs right after creation; never tick before that
+      try { ctx.motion(books[0].id); registered = true; } catch { return; }
+    }
+    for (const b of books) b.sync();
+  };
   gsap.ticker.add(tick);
   for (const b of books) {
     const own = b.dispose!;
