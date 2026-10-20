@@ -272,7 +272,7 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
       .addScaledVector(w, Math.sin(a) * r + bob);
     pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z;
     // fade in just below the mouth so none pops into being against the shade
-    alphas[i] = (1 - seed[i * 4 + 1] * seed[i * 4 + 1] * 0.85) * Math.min(1, (along - ALONG0) / 0.1 + 0.15) * (0.5 + 0.5 * Math.sin(i * 12.9898));
+    alphas[i] = (1 - seed[i * 4 + 1] * seed[i * 4 + 1] * 0.85) * Math.min(1, (along - ALONG0) / 0.1 + 0.15) * (0.65 + 0.35 * Math.sin(i * 12.9898));
   };
   let active = n;
   let opacity = 0;

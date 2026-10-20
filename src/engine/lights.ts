@@ -21,7 +21,10 @@ const FINAL_KEY = new THREE.Color(0xffc48e);   // ~2900 K after ACES: warm, not 
 const AMBER = new THREE.Color(0xff8a2a);       // warm-up start, like a filament coming on
 const FILL = new THREE.Color(0xb8cdf5);        // ~6500 K
 
-const BASE = { key: 8.6, sun: 0.6, spill: 0.75, fill: 6.2, hemi: 0.32, ambient: 0.12, keeper: 1.0 };
+// keeper: ~1.2 m from the object; 4.5 / 1.2^0.5 restores roughly the 30% the
+// key gives up (8.6 / 0.7^1.5 at the pool centre), inside an 11° cone so the
+// pool it leaves on the table around the object stays small and soft
+const BASE = { key: 8.6, sun: 0.6, spill: 0.75, fill: 6.2, hemi: 0.32, ambient: 0.12, keeper: 4.5 };
 
 export class Lights {
   readonly key = new THREE.SpotLight(FINAL_KEY.clone(), 0, 0, 1.06, 0.62, 1.5);
@@ -30,7 +33,7 @@ export class Lights {
   readonly fill = new THREE.SpotLight(FILL, 0, 0, 0.78, 1, 1.25);
   readonly hemi = new THREE.HemisphereLight(0x4a5468, 0x2a1d13, 0);
   readonly ambient = new THREE.AmbientLight(0x6b5c4a, 0);
-  readonly keeper = new THREE.SpotLight(0xfff0dc, 0, 0, 0.55, 1, 0.5);
+  readonly keeper = new THREE.SpotLight(0xfff0dc, 0, 0, 0.2, 0.7, 0.5);
   /** 0 at rest, 1 when focused (key to 70%, keeper on). Tweened by focus.ts. */
   dim = 0;
   /** 0 to 1 during the lamp warm-up. */

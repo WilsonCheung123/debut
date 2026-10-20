@@ -66,6 +66,11 @@ export function createJar(ctx: ObjectCtx): TableObject
   `matte(color)`. They are cached and shared; clone before mutating
   (`material.clone()`). Keep roughness 0.55–0.9 (metal 0.3–0.7), metalness 0
   except metal, nothing darker than `#141210` or lighter than `#f2ead8`.
+  If you build a material by hand, use `standard(params)` from `src/materials`
+  rather than `new MeshStandardMaterial`: it is the same thing with `dithering`
+  on, which keeps the dark falloff around your object free of banding.
+  `leather()` (pebbled, with bump) and `wood({ finish: true })` (roughness map
+  + fine pore bump for close-ups) are there too.
 - Textures: `makeCanvasTexture({ width, height, draw(ctx, w, h) })` returns an
   sRGB, mipmapped, anisotropic `CanvasTexture`. Covers 512 × 768, nothing above
   1024². `grain(ctx, w, h, alpha)` adds paper grain; `hash2(x, y, seed)` is a
