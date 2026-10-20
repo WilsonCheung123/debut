@@ -136,7 +136,7 @@ function createMat(): THREE.Group {
   const stitchInset = 0.011;
   const c = document.createElement('canvas');
   c.width = 1024; c.height = 640;
-  const cx = c.getContext('2d')!;
+  const cx = c.getContext('2d', { willReadFrequently: true })!; // CPU raster (see makeCanvasTexture)
   cx.clearRect(0, 0, c.width, c.height);
   // stitches: short cream dashes with a tiny shadow, following the rounded rectangle
   const px = c.width / w;
@@ -183,7 +183,7 @@ function createMat(): THREE.Group {
  * Exposure probe (`?probe=1`, dev only): the ID card image and a sheet of
  * cream paper standing in the pool, to judge skin and paper under the key.
  */
-function addProbe(scene: THREE.Scene): void {
+export function addProbe(scene: THREE.Scene): void {
   const loader = new THREE.TextureLoader();
   loader.load('/id-card.webp', (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;

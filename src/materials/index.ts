@@ -114,14 +114,19 @@ function drawWalnut(ctx: CanvasRenderingContext2D, w: number, h: number, seed: n
     }
   }
 
-  // open pores: thousands of tiny dark dashes along the grain
+  // open pores: thousands of tiny dark dashes along the grain, batched into
+  // three fills by strength (one path each, not one draw per pore)
   const pores = Math.round((w * h) / 110);
-  for (let i = 0; i < pores; i++) {
-    const x = R(i, 30) * w, y = Math.floor(R(i, 31) * h), len = 2 + R(i, 32) * 8;
-    const a = 0.08 + R(i, 33) * 0.2;
+  for (let bucket = 0; bucket < 3; bucket++) {
+    const a = 0.1 + bucket * 0.08;
     ctx.fillStyle = color ? `rgba(14,8,4,${a.toFixed(3)})` : `rgba(255,255,255,${(a * 0.5).toFixed(3)})`;
-    ctx.fillRect(x, y, len, 1);
-    if (x + len > w) ctx.fillRect(x - w, y, len, 1);
+    ctx.beginPath();
+    for (let i = bucket; i < pores; i += 3) {
+      const x = R(i, 30) * w, y = Math.floor(R(i, 31) * h), len = 2 + R(i, 32) * 8;
+      ctx.rect(x, y, len, 1);
+      if (x + len > w) ctx.rect(x - w, y, len, 1);
+    }
+    ctx.fill();
   }
 
   // wear: fine scratches, mostly along the grain (things slid across it)
@@ -189,11 +194,15 @@ function drawWoodDetail(ctx: CanvasRenderingContext2D, w: number, h: number, see
     }
     ctx.stroke();
   }
-  for (let i = 0; i < 900; i++) {
-    const x = R(i, 10) * w, y = Math.floor(R(i, 11) * h), len = 2 + R(i, 12) * 6;
-    ctx.fillStyle = `rgba(30,30,30,${(0.15 + R(i, 13) * 0.35).toFixed(3)})`;
-    ctx.fillRect(x, y, len, 1);
-    if (x + len > w) ctx.fillRect(x - w, y, len, 1);
+  for (let bucket = 0; bucket < 3; bucket++) {
+    ctx.fillStyle = `rgba(30,30,30,${(0.2 + bucket * 0.12).toFixed(3)})`;
+    ctx.beginPath();
+    for (let i = bucket; i < 900; i += 3) {
+      const x = R(i, 10) * w, y = Math.floor(R(i, 11) * h), len = 2 + R(i, 12) * 6;
+      ctx.rect(x, y, len, 1);
+      if (x + len > w) ctx.rect(x - w, y, len, 1);
+    }
+    ctx.fill();
   }
   const img = ctx.getImageData(0, 0, w, h);
   const d = img.data;

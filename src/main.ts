@@ -10,7 +10,7 @@ import gsap from 'gsap';
 import { state, refreshMedia, flags } from './state';
 import { api } from './api';
 import { materials } from './materials';
-import { createScene, surfaceHeightAt } from './engine/scene';
+import { createScene, surfaceHeightAt, addProbe } from './engine/scene';
 import { Lights } from './engine/lights';
 import { createContactShadows } from './engine/contact';
 import { CameraRig } from './engine/camera';
@@ -234,7 +234,7 @@ async function boot(): Promise<void> {
     exit() { return focus.exit(); },
     liftOf(id: string) { return hover.liftOf(id); },
     /** Environment tuning handles for scripted comparisons (several variants per run). */
-    env: { lights, renderer, scene, overlay },
+    env: { lights, renderer, scene, overlay, probe: () => addProbe(scene) },
     info() {
       return {
         drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,

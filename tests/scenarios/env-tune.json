@@ -2,13 +2,11 @@
   {"action":"wait","ready":true},
   {"action":"shot","name":"rest-mat"},
   {"action":"log","name":"info","js":"JSON.stringify(window.__table.info())"},
+  {"action":"assert","name":"draw-calls-budget","js":"window.__table.info().drawCalls <= 120"},
   {"action":"eval","js":"window.__table.env.scene.getObjectByName('desk-mat').visible = false"},
   {"action":"wait","ms":300},
   {"action":"shot","name":"rest-nomat"},
-  {"action":"eval","js":"window.__table.env.renderer.toneMappingExposure = 1.15"},
-  {"action":"wait","ms":300},
-  {"action":"shot","name":"rest-nomat-exp115"},
-  {"action":"eval","js":"window.__table.env.renderer.toneMappingExposure = 1.0; window.__table.env.scene.getObjectByName('desk-mat').visible = true"},
+  {"action":"eval","js":"window.__table.env.scene.getObjectByName('desk-mat').visible = true"},
   {"action":"hover","id":"puppet"},
   {"action":"shot","name":"hover-puppet"},
   {"action":"eval","js":"window.__table.hover(null)"},
@@ -21,5 +19,8 @@
   {"action":"focus","id":"vinyl"},
   {"action":"shot","name":"focus-vinyl"},
   {"action":"exit"},
-  {"action":"assert","name":"back-at-rest","js":"window.__table.info().mode === 'rest' && location.hash === ''"}
+  {"action":"assert","name":"back-at-rest","js":"window.__table.info().mode === 'rest' && location.hash === ''"},
+  {"action":"eval","js":"window.__table.env.probe()"},
+  {"action":"wait","ms":2500},
+  {"action":"shot","name":"probe"}
 ]

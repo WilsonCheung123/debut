@@ -29,7 +29,10 @@ export function makeCanvasTexture(opts: CanvasTextureOptions): THREE.CanvasTextu
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
-  const ctx = canvas.getContext('2d');
+  // CPU-backed: every texture here ends in getImageData (grain), and on a
+  // software-GL browser (headless QA) a GPU canvas rasterises each gradient
+  // stroke through SwiftShader, turning a 1 s boot into minutes.
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('2D canvas unavailable');
   opts.draw(ctx, w, h);
   const tex = new THREE.CanvasTexture(canvas);
@@ -76,7 +79,7 @@ function clamp255(v: number): number { return v < 0 ? 0 : v > 255 ? 255 : v; }
 export function noiseDataUrl(size = 128, alpha = 0.5, seed = 7): string {
   const c = document.createElement('canvas');
   c.width = c.height = size;
-  const ctx = c.getContext('2d')!;
+  const ctx = c.getContext('2d', { willReadFrequently: true })!;
   const img = ctx.createImageData(size, size);
   for (let i = 0; i < size * size; i++) {
     const v = Math.round(hash2(i % size, Math.floor(i / size), seed) * 255);
