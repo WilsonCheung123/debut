@@ -72,6 +72,7 @@ export const rest: Record<string, RestPose> = {
   'die-cast': { position: [-0.13, 0, 0.10], rotationY: 24 },
   puppet:   { position: [0.44, 0, 0.08], rotationY: 8 },   // turned toward the lamp so the key grazes his front (he read grey at -16: only the cool fill reached his face)
   'id-card': { position: [-0.42, 0, 0.25], rotationY: 9 },
+  papers:   { position: [-0.50, 0, 0.20], rotationY: -7 },
   guitar:   { position: [0.12, 0, 0.26], rotationY: -22 },
   jar:      { position: [0.56, 0, 0.24], rotationY: 0 },
   /** The lamp's head points down local -z, 0.74 m out; 123° aims it at (-0.06, 0.09): the pool covers the centre-front. */
@@ -115,6 +116,7 @@ export const focus: Record<string, FocusFrame> = {
   'book.pride-and-prejudice': book,
   // the ID lifts 5.5 cm and faces the camera when focused (ID_FOCUS_LIFT): aim where it will be
   'id-card':  { dist: 0.30, az: 2, el: 64, fov: 31, targetOffset: [0, 0.062, 0.01] },
+  papers:     { dist: 0.34, az: 6, el: 58, fov: 31, targetOffset: [0, 0.015, 0] },
   // from the right and lower, so the hinge end with the coil spring faces the camera
   guitar:     { dist: 0.28, az: -70, el: 52, fov: 31 },
   fpga:       { dist: 0.30, az: 4, el: 52, fov: 31 },
