@@ -60,7 +60,7 @@ A JSON array of steps, run in order by `tools/shot.mjs`:
 | `{"action":"wait","ready":true}` | wait until the lamp has warmed up (`__table.ready`) |
 | `{"action":"wait","ms":500}` / `{"action":"wait","selector":"#panel:not([hidden])"}` | wait |
 | `{"action":"hover","id":"book.inferno"}` | move the mouse onto the object; waits for lift + label; audits overlap/offscreen (no-op on touch) |
-| `{"action":"focus","id":"id-card"}` | click/tap the object's centre; waits for `focus:settled` and the panel; `"cluster":true` lets a member hidden behind a sibling on touch be focused via the hook (recorded as a note) |
+| `{"action":"focus","id":"id-card"}` | click/tap the object's centre; waits for `focus:settled` and the panel; `"cluster":true` lets a member hidden behind a sibling on touch be focused via the hook (recorded as a note); `"panel":false` skips the panel wait for objects that defer it (the ID opens its panel after the flip: follow with `click-object` and a `wait` on `#panel:not([hidden])`) |
 | `{"action":"exit"}` | Escape; waits for `exit:settled` |
 | `{"action":"click","selector":"…"}` / `tap` / `{"action":"fill","selector":"…","text":"…"}` | DOM interaction (Playwright selectors) |
 | `{"action":"press","key":"Tab"}` | keyboard |

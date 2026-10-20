@@ -49,18 +49,26 @@ export function createJar(ctx: ObjectCtx): TableObject
 - `focus.onEnter / onExit(ctx)` — start/stop video, tween `ctx.motion(id)`, etc.
 - `focus.onClickInside(hitName, ctx)` — clicks on your `hit` meshes while
   focused (the ID flip, the puppet's three items). `hitName` is `mesh.name`.
+- `focus.deferPanel` — set it when the panel must wait for an in-focus action
+  (the ID: the bio appears only after the flip lands). The engine then skips
+  the +450 ms open; call `ctx.openPanel(id)` when ready (no-op unless `id` is
+  focused; opens once). Scenarios focus such an object with
+  `{"action":"focus","id":"id-card","panel":false}`.
 - `update(dt, t)` — idle life (LED breathing, record spinning). dt is clamped to 50 ms.
 
 `ObjectCtx` gives you `scene`, `renderer`, `camera`, `state`, `materials`,
 `api`, `isPhone`, `maxAnisotropy`, `focusPose(id)`, `motion(id)`, `exit()`,
-`reframe(id, duration?)` (re-run the camera to your current bounds, e.g. after a flip).
+`reframe(id, duration?)` (re-run the camera to your current bounds, e.g. after a flip),
+`openPanel(id)` (for `focus.deferPanel` objects).
 
 ## 3. Geometry and materials
 
 - Metres. A credit card is 0.0856 × 0.054; a paperback 0.13 × 0.20 × 0.03.
 - Every box has rounded edges: `roundedBox(w, h, d, radius)` from
   `src/objects/helpers.ts` (RoundedBoxGeometry). Mark solid meshes with
-  `solid(mesh, name)` so they cast and receive shadows.
+  `solid(mesh, name)` so they cast and receive shadows. `mergeParts(geometries)`
+  merges same-material parts (boxes, cylinders, extrusions mixed) into one
+  geometry for one draw call.
 - Materials come from `src/materials`: `wood({ tone, seed })`, `paper({ color })`,
   `metal({ color, roughness })`, `glass({ opacity })`, `plastic({ color, emissive })`,
   `matte(color)`. They are cached and shared; clone before mutating
