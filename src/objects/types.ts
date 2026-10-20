@@ -75,6 +75,8 @@ export interface TableObject {
     tiltMode?: 'cursor' | 'forward';
     /** Feel of the lift spring: duration in s (default 0.35) and overshoot (back.out amount, default 1.7). Heavy things: longer, less overshoot. */
     spring?: { duration?: number; overshoot?: number };
+    /** Called when the hover lift starts (true) and settles (false); a cluster can move its members on its own. */
+    onHover?(on: boolean): void;
   };
   focus: {
     camera: FocusCamera;

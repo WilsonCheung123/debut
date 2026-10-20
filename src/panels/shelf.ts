@@ -62,6 +62,8 @@ const RECEDE_Z = -0.018;
 const WHEEL = 0.00055;
 /** Scroll past the ends is allowed this far and springs back. */
 const OVERSCROLL = 0.035;
+/** Fraction of the visible half-width the end book stops short of the view's centre at the scroll limits. */
+const END_REACH = 0.45;
 
 const CSS = `
 #shelf { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
@@ -337,7 +339,8 @@ export class Shelf {
     if (this.active) {
       const half = this.visibleHalf();
       const total = this.spreadX[this.spreadX.length - 1] - this.spreadX[0] + this.books[0].size[0] / 2 + this.books[this.books.length - 1].size[0] / 2 + 0.06;
-      const over = Math.max(0, total / 2 - half);
+      // the row scrolls until its end book sits near the middle of the view (round 3: the old bound, the end book at the edge, felt constrained)
+      const over = Math.max(0, total / 2 - half * END_REACH);
       s.min = -over; s.max = over;
       if (s.target === -1 && s.pos === -1) { s.target = s.pos = s.prev = s.min; }
       // past the ends: ease back once the wheel is quiet

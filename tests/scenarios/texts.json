@@ -190,7 +190,7 @@
   },
   {
     "action": "click",
-    "selector": "#panel .jar-more button.jar-link"
+    "selector": "#panel h1 button.jar-link"
   },
   {
     "action": "assert",
@@ -564,7 +564,7 @@
   {
     "action": "assert",
     "name": "capo-one-line",
-    "js": "(function(){ const lines = window.__texts['guitar:'].split('\\n').map((s) => s.trim()).filter(Boolean); return lines.length <= 3 && lines.some((l) => /learning guitar/.test(l)) && !lines.some((l) => l.length > 40); })()"
+    "js": "(function(){ const lines = window.__texts['guitar:'].split('\\n').map((s) => s.trim()).filter(Boolean); return lines.length <= 3 && lines.some((l) => /learning guitar/.test(l)) && lines.some((l) => l === 'I recently picked up guitar! might upload some musics here soon'); })()"
   },
   {
     "action": "log",

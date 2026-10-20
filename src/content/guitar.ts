@@ -1,10 +1,8 @@
-// The capo and pick's panel (SPEC 0.2 "Capo and pick"): no words for now.
-// The single quiet line is the heading (the dialog is named by its title,
-// so it cannot be empty); the body is empty.
-import type { PanelContent } from './types';
+// The capo and pick's panel: Wilson's one line (round 3), verbatim.
+import { p, type PanelContent } from './types';
 
 export const guitar: PanelContent = {
   kicker: 'capo and pick',
-  title: 'learning guitar.',
-  html: '',
+  title: 'learning guitar',
+  html: p('I recently picked up guitar! might upload some musics here soon'),
 };

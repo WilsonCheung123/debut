@@ -27,7 +27,7 @@
   {"action":"shot","name":"focus-die-cast"},
   {"action":"exit"},
   {"action":"focus","id":"guitar"},
-  {"action":"assert","name":"guitar-one-line","js":"document.getElementById('panel-title').textContent === 'learning guitar.' && document.querySelector('#panel .content').textContent.trim() === ''"},
+  {"action":"assert","name":"guitar-one-line","js":"document.getElementById('panel-title').textContent === 'learning guitar' && document.querySelector('#panel .content').textContent.trim() === 'I recently picked up guitar! might upload some musics here soon'"},
   {"action":"shot","name":"focus-guitar"},
   {"action":"exit"},
   {"action":"assert","name":"back-at-rest","js":"window.__table.info().mode === 'rest' && location.hash === ''"}

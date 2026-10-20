@@ -26,10 +26,9 @@ export const REALM = {
   kicker: 'Realm',
   title: 'An AI film studio',
   url: 'https://realmfilm.art',
-  /** Wilson's voice; the two sentences on Realm are the builder's educated guess (SPEC 0.1: nothing in brackets ships). */
+  /** Wilson's words (round 3), verbatim. */
   paragraphs: [
-    'Realm is my AI film studio: a small team making short films and campaigns with diffusion models, held to the standard of film rather than of demos.',
-    'Every shot is directed, graded and cut; the models are the camera, not the director.',
+    'Realm is a small team of artists with high standards and a deep respect for craftsmanship. We create cinematic films for multinational corporations, game studios, entrepreneurs, families, UFC fighters...... anyone with a story worth telling.',
   ],
   listKicker: 'five films, projected without sound',
 };

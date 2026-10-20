@@ -7,13 +7,13 @@
 //   back-right  turntable, then the lamp in the corner
 //   middle      FPGA board and the die-cast part together, puppet standing just right of centre
 //               (a standing object occludes what sits behind it along the view direction: keep that strip clear)
-//   front       ID card (left), capo and pick (centre-left), jar (right)
+//   front       stack of paper (left corner), ID card (left of centre), capo and pick (centre), jar (right)
 
 export interface RestPose {
   position: [number, number, number];
   /** Rotation about y in degrees. */
   rotationY?: number;
-  /** Uniform scale (the lamp only: a 10% shorter lamp keeps the rest camera close). */
+  /** Uniform scale (the lamp: a 10% shorter lamp keeps the rest camera close; the hologram: 1.3). */
   scale?: number;
 }
 
@@ -66,12 +66,12 @@ export const rest: Record<string, RestPose> = {
   // h tall hides the table up to d = h / tan(38°) behind it. The puppet (0.26 m) is the only one that matters:
   // its strip runs through the gap between the turntable and the lamp base.
   books:    { position: [-0.41, 0, -0.25], rotationY: 0 },
-  hologram: { position: [-0.01, 0, -0.28], rotationY: 0 },
+  hologram: { position: [-0.01, 0, -0.28], rotationY: 0, scale: 1.3 },   // round 3: a bit bigger
   vinyl:    { position: [0.28, 0, -0.25], rotationY: 6 },
   fpga:     { position: [-0.30, 0, 0.06], rotationY: -12 },
   'die-cast': { position: [-0.13, 0, 0.10], rotationY: 24 },
   puppet:   { position: [0.44, 0, 0.08], rotationY: 8 },   // turned toward the lamp so the key grazes his front (he read grey at -16: only the cool fill reached his face)
-  'id-card': { position: [-0.42, 0, 0.25], rotationY: 9 },
+  'id-card': { position: [-0.24, 0, 0.27], rotationY: 9 },   // round 3: moved right; the stack of paper takes the front-left corner
   guitar:   { position: [0.12, 0, 0.26], rotationY: -22 },
   jar:      { position: [0.56, 0, 0.24], rotationY: 0 },
   /** The lamp's head points down local -z, 0.74 m out; 123° aims it at (-0.06, 0.09): the pool covers the centre-front. */
@@ -119,7 +119,7 @@ export const focus: Record<string, FocusFrame> = {
   guitar:     { dist: 0.28, az: -70, el: 52, fov: 31 },
   fpga:       { dist: 0.30, az: 4, el: 52, fov: 31 },
   'die-cast': { dist: 0.30, az: 12, el: 44, fov: 31 },
-  hologram:   { dist: 0.84, az: 6, el: 22, fov: 32, targetOffset: [0, 0.05, 0] },
+  hologram:   { dist: 1.05, az: 6, el: 22, fov: 32, targetOffset: [0, 0.065, 0] },
   puppet:     { dist: 0.45, az: 22, el: 27, fov: 32, targetOffset: [0, 0.002, 0] },
   jar:        { dist: 0.36, az: 14, el: 30, fov: 31, targetOffset: [0, 0.008, 0] },
   vinyl:      { dist: 0.58, az: -4, el: 40, fov: 32 },

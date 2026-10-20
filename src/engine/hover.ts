@@ -94,10 +94,11 @@ export class Hover {
     const r = this.rigs.get(obj.id);
     if (!r) return;
     r.dirty = true;
-    if (state.reducedMotion) { r.hover.t = 0; return; }
+    if (state.reducedMotion) { r.hover.t = 0; obj.hover?.onHover?.(true); return; }
     gsap.killTweensOf(r.hover);
     const spring = obj.hover?.spring;
     gsap.to(r.hover, { t: 1, duration: spring?.duration ?? 0.35, ease: `back.out(${spring?.overshoot ?? 1.7})`, overwrite: true });
+    obj.hover?.onHover?.(true);
   }
 
   private settle(obj: TableObject): void {
@@ -105,9 +106,10 @@ export class Hover {
     if (!r) return;
     r.dirty = true;
     gsap.killTweensOf(r.hover);
-    if (state.reducedMotion) { r.hover.t = 0; return; }
+    if (state.reducedMotion) { r.hover.t = 0; obj.hover?.onHover?.(false); return; }
     const settle = 0.45 * ((obj.hover?.spring?.duration ?? 0.35) / 0.35);
     gsap.to(r.hover, { t: 0, duration: settle, ease: 'power2.out', overwrite: true });
+    obj.hover?.onHover?.(false);
   }
 
   /** Computes the tilt target for the hovered object from the pointer. */

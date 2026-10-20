@@ -59,12 +59,20 @@ export function jarPanel(opts: JarPanelOptions): PanelFactory {
           </div>
           <p class="jar-done">${esc(jarDone)}</p>
         </div>
-        <p class="jar-more"><button type="button" class="jar-link" aria-expanded="false">${esc(principlesLink)}</button></p>
         <section class="jar-principles" aria-label="${esc(principlesTitle)}">
           <h2>${esc(principlesTitle)}</h2>
           ${principles.map((line) => `<p>${esc(line)}</p>`).join('')}
         </section>`;
       ctx.body.append(root);
+      // the small note sits beside the title ("Leave a slip · notes on focus"), outside the content
+      const titleEl = document.getElementById('panel-title');
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'jar-link';
+      link.setAttribute('aria-expanded', 'false');
+      link.setAttribute('aria-controls', 'jar-principles');
+      link.textContent = principlesLink;
+      if (titleEl) titleEl.append(link); else root.prepend(link);
 
       const q = <T extends HTMLElement>(sel: string): T => root.querySelector<T>(sel)!;
       const stage = q<HTMLDivElement>('.jar-stage');
@@ -76,8 +84,8 @@ export function jarPanel(opts: JarPanelOptions): PanelFactory {
       const errorEl = q<HTMLParagraphElement>('.jar-error');
       const status = q<HTMLSpanElement>('.jar-status');
       const submit = q<HTMLButtonElement>('button[type="submit"]');
-      const link = q<HTMLButtonElement>('.jar-link');
       const section = q<HTMLElement>('.jar-principles');
+      section.id = 'jar-principles';
       const inputs: Record<Field, HTMLInputElement | HTMLTextAreaElement> = {
         name: q<HTMLInputElement>('input[name="name"]'),
         email: q<HTMLInputElement>('input[name="email"]'),
@@ -217,6 +225,7 @@ export function jarPanel(opts: JarPanelOptions): PanelFactory {
 
       return () => {
         closed = true;
+        link.remove();
         for (const t of tweens) t.kill();
         gsap.killTweensOf([wrap, crumple, body, section, stage, done]);
       };
@@ -305,11 +314,10 @@ function injectStyle(): void {
 #panel .content .jar-done { display: none; margin: 0; font-size: 17px; line-height: 1.55; color: var(--ink); padding: 6px 0 0; }
 #panel .content .jar-done.show { display: block; }
 #panel .content .jar-done.measure { display: block; position: absolute; visibility: hidden; left: 0; right: 0; }
-#panel .content .jar-more { margin: 6px 0 0; }
-#panel .content .jar-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; margin: -6px -2px 0; border: 0; border-radius: 0; background: transparent;
-  font-family: var(--serif); font-style: italic; font-size: 16px; letter-spacing: 0; text-transform: none; font-variant-caps: normal; color: var(--ink-faint);
-  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: rgba(29,26,23,.3); cursor: pointer; }
-#panel .content .jar-link:hover { background: transparent; color: var(--ink); text-decoration-color: currentColor; }
+#panel h1 .jar-link { display: inline-block; vertical-align: baseline; margin: 0 0 0 14px; padding: 12px 2px; margin-top: -12px; margin-bottom: -12px; border: 0; border-radius: 0; background: transparent;
+  font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 14px; line-height: 20px; letter-spacing: 0; text-transform: none; font-variant-caps: normal; color: var(--ink-faint);
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: rgba(29,26,23,.3); cursor: pointer; white-space: nowrap; }
+#panel h1 .jar-link:hover, #panel h1 .jar-link[aria-expanded="true"] { background: transparent; color: var(--ink); text-decoration-color: currentColor; }
 .jar-principles { display: none; overflow: hidden; }
 .jar-principles.open { display: block; }
 .jar-principles h2 { margin-top: 0.9em !important; }

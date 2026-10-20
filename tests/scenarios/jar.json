@@ -26,7 +26,7 @@
   {"action":"shot","name":"done"},
 
   {"action":"click","selector":"#panel .jar-link"},
-  {"action":"assert","name":"principles-open","js":"window.__until(() => document.querySelector('#panel .jar-principles').classList.contains('open') && document.querySelectorAll('#panel .jar-principles p').length >= 8 && document.querySelector('#panel .jar-link').getAttribute('aria-expanded') === 'true' && document.querySelector('#panel .jar-principles').getBoundingClientRect().height > 200, 10000)"},
+  {"action":"assert","name":"principles-open","js":"window.__until(() => document.querySelector('#panel .jar-principles').classList.contains('open') && document.querySelectorAll('#panel .jar-principles p').length === 4 && document.querySelector('#panel .jar-link').getAttribute('aria-expanded') === 'true' && document.querySelector('#panel .jar-principles').getBoundingClientRect().height > 200, 10000)"},
   {"action":"shot","name":"principles"},
   {"action":"click","selector":"#panel .jar-link"},
   {"action":"assert","name":"principles-close","js":"window.__until(() => !document.querySelector('#panel .jar-principles').classList.contains('open'), 10000)"},

@@ -124,6 +124,8 @@ interface Book extends TableObject {
   readonly pose: ShelfPose;
   /** The shelf's offset for this book (written by the Shelf). */
   readonly shelf: ShelfPose;
+  /** The row-hover lift of this one book (tweened by the cluster's onHover). */
+  readonly hov: { lift: number };
   /** Writes pose + shelf into the engine's motion layer (gsap's tick, before the engine composes transforms). */
   sync(): void;
 }
@@ -162,6 +164,7 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, content: BookContent, label:
   // camera. `pose` is tweened and copied into the motion layer in sync().
   const pose: ShelfPose = { x: 0, z: 0, lift: 0, yaw: 0, pitch: 0, roll: 0 };
   const shelf: ShelfPose = { x: 0, z: 0, lift: 0, yaw: 0, pitch: 0, roll: 0 };
+  const hov = { lift: 0 };
   const slide = D + 0.01;
   const turned = { lift: 0.08, yaw: -(Math.PI / 2 + THREE.MathUtils.degToRad(4)), roll: 0.26, pitch: -THREE.MathUtils.degToRad(8) };
   const home = { lift: 0, z: 0, yaw: 0, roll: 0, pitch: 0 };
@@ -185,6 +188,7 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, content: BookContent, label:
     mesh,
     pose,
     shelf,
+    hov,
     focus: {
       camera: ctx.focusPose(d.id),
       panel: panelFor(content),
@@ -207,7 +211,7 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, content: BookContent, label:
     },
     sync() {
       const mo = ctx.motion(d.id);
-      mo.lift = pose.lift + shelf.lift;
+      mo.lift = pose.lift + shelf.lift + hov.lift;
       mo.x = pose.x + shelf.x;
       mo.z = pose.z + shelf.z;
       mo.yaw = pose.yaw + shelf.yaw;
@@ -275,13 +279,24 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
     rowCentreX: (X0 + xEnd) / 2,
     bookends: { left: endL, right: endR, restLeft: X0, restRight: xEnd },
   });
+  // Hovering the row: the row rises a little as one, and each book lifts on its own a
+  // beat after its neighbour (a ripple from the left), so the nine read as nine things.
+  const ROW_HOVER = { lift: 0.007, each: 0.028, up: 0.42, down: 0.36 };
+  const rowHover = (on: boolean): void => {
+    books.forEach((b, i) => {
+      gsap.killTweensOf(b.hov);
+      if (state.reducedMotion) { b.hov.lift = on ? ROW_HOVER.lift : 0; return; }
+      if (on) gsap.to(b.hov, { lift: ROW_HOVER.lift, duration: ROW_HOVER.up, delay: i * ROW_HOVER.each, ease: 'back.out(1.5)' });
+      else gsap.to(b.hov, { lift: 0, duration: ROW_HOVER.down, delay: (books.length - 1 - i) * ROW_HOVER.each * 0.5, ease: 'power2.out' });
+    });
+  };
   const cluster: TableObject = {
     id: 'books',
-    label: 'the books',
+    label: 'nine books · click to see them all',
     group: root,
     hit: books.map((b) => b.mesh),
     anchor: new THREE.Vector3((X0 + xEnd) / 2, maxH, FRONT),
-    hover: { lift: 0.008, tilt: 0, spring: { duration: 0.42, overshoot: 1.2 } },
+    hover: { lift: 0.005, tilt: 0, spring: { duration: 0.42, overshoot: 1.2 }, onHover: rowHover },
     focus: {
       camera: ctx.focusPose('books'),
       panel: null,
