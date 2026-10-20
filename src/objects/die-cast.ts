@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { ObjectCtx, TableObject } from './types';
-import { roundedBox, hitProxy, solid, mergeParts } from './helpers';
+import { roundedBox, hitProxy, solid, mergeParts, topFirst } from './helpers';
 import { makeCanvasTexture, grain, hash2, matte } from '../materials';
 import { dieCast as content } from '../content/die-cast';
 
@@ -32,11 +32,11 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
   // One lamp and no environment map: a true metal (metalness 1) reads black or blown out.
   // Cast aluminium is matte anyway: a mid grey with modest metalness and a pebbled bump sells it.
   const cast = new THREE.MeshStandardMaterial({
-    color: 0x9a9ea0, roughness: 0.74, metalness: 0.42,
+    color: 0x8f9396, roughness: 0.84, metalness: 0.2,
     roughnessMap: noise, bumpMap: noise, bumpScale: 0.0004,
   });
   const toolMarks = machinedMarks();
-  const machined = new THREE.MeshStandardMaterial({ color: 0xc2c6c8, roughness: 0.3, metalness: 0.65, roughnessMap: toolMarks });
+  const machined = new THREE.MeshStandardMaterial({ color: 0xb9bdbf, roughness: 0.4, metalness: 0.48, roughnessMap: toolMarks });
   const hole = matte(0x1a1a19, 0.85);
 
   // walls: an extruded ring, filleted top and bottom; the top cap is the machined rim
@@ -197,8 +197,8 @@ function castNoise(): THREE.CanvasTexture {
           v += (a + (b - a) * sy) * amp;
           amp *= 0.5; f *= 2;
         }
-        // 0.55..0.85 roughness; the same value is the bump height
-        const g = Math.round((0.55 + v * 0.34) * 255);
+        // 0.62..0.98 roughness; the same value is the bump height
+        const g = Math.round((0.62 + v * 0.36) * 255);
         const i = (y * w + x) * 4;
         d[i] = d[i + 1] = d[i + 2] = g; d[i + 3] = 255;
       }
@@ -287,11 +287,7 @@ function createTag(): { mesh: THREE.Mesh; texture: THREE.CanvasTexture; material
   const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.92, metalness: 0 });
   const plain = matte(0xd3bf8c, 0.92);
   const geo = roundedBox(TW, TT, TD, 0.0002, 1);
-  const groups = geo.groups.map((g) => ({ ...g }));
-  geo.clearGroups();
-  geo.addGroup(groups[0].start, groups[0].count + groups[1].count, 1);
-  geo.addGroup(groups[2].start, groups[2].count, 0);
-  geo.addGroup(groups[3].start, groups[3].count + groups[4].count + groups[5].count, 1);
+  topFirst(geo); // printed top, plain sides: two draw calls
   const mesh = solid(new THREE.Mesh(geo, [material, plain]), 'die-cast-tag');
   mesh.position.y = TT / 2;
   return { mesh, texture, material };

@@ -38,11 +38,20 @@ export function solid<T extends THREE.Mesh>(mesh: T, name?: string): T {
  * indexed (box, cylinder) and non-indexed (extrude) geometries: everything is
  * made non-indexed and reduced to position/normal/uv first. The parts are disposed.
  */
-export function mergeParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
-  const flat = parts.map((g) => {
+export function mergeParts(parts: THREE.BufferGeometry[], colors?: THREE.ColorRepresentation[]): THREE.BufferGeometry {
+  const c = new THREE.Color();
+  const flat = parts.map((g, i) => {
     const n = g.index ? g.toNonIndexed() : g.clone();
     for (const name of Object.keys(n.attributes)) if (name !== 'position' && name !== 'normal' && name !== 'uv') n.deleteAttribute(name);
     n.clearGroups();
+    if (colors) {
+      // one colour per part, as a vertex attribute (use a material with vertexColors: true): several tints, one draw call
+      c.set(colors[i] ?? 0xffffff);
+      const count = n.attributes.position.count;
+      const arr = new Float32Array(count * 3);
+      for (let k = 0; k < count; k++) { arr[k * 3] = c.r; arr[k * 3 + 1] = c.g; arr[k * 3 + 2] = c.b; }
+      n.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+    }
     return n;
   });
   const merged = mergeGeometries(flat, false);
@@ -120,4 +129,23 @@ export function contactBlob(w: number, d: number, baseYaw: number, opts: { x?: n
     },
     dispose() { geo.dispose(); mat.dispose(); tex.dispose(); },
   };
+}
+
+/**
+ * Reorders a BoxGeometry's index so the top (+y) face comes first and leaves
+ * two groups: 0 = top, 1 = the other five faces. A box with a printed top and
+ * plain sides then costs two draw calls instead of three.
+ */
+export function topFirst(geo: THREE.BufferGeometry): void {
+  const index = geo.index;
+  const g = geo.groups.map((x) => ({ ...x }));
+  if (!index || g.length !== 6) return;
+  const a = Array.from(index.array as ArrayLike<number>);
+  const top = g[2];
+  const rest = a.slice(0, top.start).concat(a.slice(top.start + top.count));
+  const ordered = a.slice(top.start, top.start + top.count).concat(rest);
+  geo.setIndex(ordered);
+  geo.clearGroups();
+  geo.addGroup(0, top.count, 0);
+  geo.addGroup(top.count, rest.length, 1);
 }

@@ -33,8 +33,8 @@ export function createIdCard(ctx: ObjectCtx): TableObject {
 
   const frontTex = frontTexture();
   const backTex = backTexture();
-  const front = new THREE.MeshPhysicalMaterial({ map: frontTex, roughness: 0.58, metalness: 0, clearcoat: 0.85, clearcoatRoughness: 0.34 });
-  const back = new THREE.MeshPhysicalMaterial({ map: backTex, roughness: 0.6, metalness: 0, clearcoat: 0.7, clearcoatRoughness: 0.38 });
+  const front = new THREE.MeshPhysicalMaterial({ map: frontTex, roughness: 0.66, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.45 });
+  const back = new THREE.MeshPhysicalMaterial({ map: backTex, roughness: 0.68, metalness: 0, clearcoat: 0.42, clearcoatRoughness: 0.48 });
   const edge = new THREE.MeshPhysicalMaterial({ color: 0xe6dcc6, roughness: 0.7, metalness: 0, clearcoat: 0.4, clearcoatRoughness: 0.5 });
 
   // The card turns about `pivot`, which sits at the card's centre; the mesh hangs below it.
@@ -54,7 +54,8 @@ export function createIdCard(ctx: ObjectCtx): TableObject {
   const frame = focusFrames[ID] ?? { dist: 0.3, az: 2, el: 58 };
   const restYaw = THREE.MathUtils.degToRad(restPoses[ID]?.rotationY ?? 0);
   const dir = dirFrom(frame.az, frame.el).applyAxisAngle(new THREE.Vector3(0, 1, 0), -restYaw);
-  const alpha = Math.acos(THREE.MathUtils.clamp(dir.y, -1, 1));
+  // tipped ~5° past the camera so the sheen gathers at the top edge instead of flooding the face
+  const alpha = Math.acos(THREE.MathUtils.clamp(dir.y, -1, 1)) + 0.09;
   const beta = Math.atan2(dir.x, dir.z);
 
   // a thin card casts nothing the shadow map can show near the table: a soft contact shadow stays on the table as it lifts

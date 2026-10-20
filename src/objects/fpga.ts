@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { ObjectCtx, TableObject } from './types';
-import { roundedBox, hitProxy, solid, mergeParts } from './helpers';
-import { makeCanvasTexture, hash2, metal, plastic, matte } from '../materials';
+import { roundedBox, hitProxy, solid, mergeParts, topFirst } from './helpers';
+import { makeCanvasTexture, hash2, plastic, matte } from '../materials';
 import { fpga as content } from '../content/fpga';
 
 // The FPGA dev board (SPEC 4.4): a green PCB on four rubber feet with a
@@ -41,16 +41,16 @@ export function createFpga(ctx: ObjectCtx): TableObject {
   const pcbTex = pcbTexture();
   const pcbTop = new THREE.MeshStandardMaterial({ map: pcbTex, roughness: 0.52, metalness: 0 });
   const pcbEdge = matte(0x8f8c62, 0.8);
-  regroupBox(boardGeo, 0, 1); // 0 = top (py), 1 = everything else
+  topFirst(boardGeo); // 0 = top (py), 1 = everything else: two draw calls
   const board = solid(new THREE.Mesh(boardGeo, [pcbTop, pcbEdge]), ID);
   board.position.y = FOOT + BT / 2;
   group.add(board);
 
+  // every plastic part in one mesh and every metal part in another: tints are vertex colours
   const black = plastic({ color: 0x1f1f21, roughness: 0.55 });
-  const gold = metal({ color: 0xd4b464, roughness: 0.32 });
-  const steel = metal({ color: 0xa4a4a0, roughness: 0.36 });
-  const tan = matte(0xb59a6c, 0.62);
-  const dark = matte(0x2c2c2e, 0.5);
+  const plastics = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55, metalness: 0, vertexColors: true });
+  const metals = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.34, metalness: 1, vertexColors: true });
+  const BLACK = 0x1f1f21, TAN = 0xb59a6c, DARK = 0x2c2c2e, GOLD = 0xd4b464, STEEL = 0xa4a4a0;
 
   // the chip and its etched label
   const chipGeo = roundedBox(CHIP.s, CHIP.h, CHIP.s, 0.0004, 2);
@@ -64,9 +64,13 @@ export function createFpga(ctx: ObjectCtx): TableObject {
   label.position.set(CHIP.x, TOP + CHIP.h + 0.00004, CHIP.z);
   board.add(label);
 
-  // black plastic: header bases, button base + plunger, regulator, feet, the USB's dark mouth
-  const blacks: THREE.BufferGeometry[] = [];
-  const pins: THREE.BufferGeometry[] = [];
+  // plastics: header bases, button base + plunger, regulator, feet, the USB's dark mouth, the passives
+  const parts: THREE.BufferGeometry[] = [];
+  const tints: number[] = [];
+  const blacks = { push(g: THREE.BufferGeometry) { parts.push(g); tints.push(BLACK); } };
+  const metalParts: THREE.BufferGeometry[] = [];
+  const metalTints: number[] = [];
+  const pins = { push(g: THREE.BufferGeometry) { metalParts.push(g); metalTints.push(GOLD); } };
   for (const j of [J1, J2]) {
     const base = roundedBox(0.0203, 0.0025, 0.0051, 0.0003, 1);
     base.translate(0, TOP + 0.00125, 0);
@@ -98,36 +102,28 @@ export function createFpga(ctx: ObjectCtx): TableObject {
   const mouth = new THREE.BoxGeometry(USB.w - 0.0012, USB.h - 0.0012, 0.001);
   mouth.translate(USB.x, TOP + USB.h / 2, USB.z + USB.d / 2 - 0.0003);
   blacks.push(mouth);
-  const blackMesh = solid(new THREE.Mesh(mergeParts(blacks), black), 'fpga-plastic');
-  board.add(blackMesh);
-  const pinMesh = solid(new THREE.Mesh(mergeParts(pins), gold), 'fpga-pins');
-  board.add(pinMesh);
-
-  // metal: the USB-C shell, the crystal can, the regulator tab
-  const metals: THREE.BufferGeometry[] = [];
-  const shell = roundedBox(USB.w, USB.h, USB.d, 0.0012, 2);
-  shell.translate(USB.x, TOP + USB.h / 2, USB.z);
-  metals.push(shell);
-  const xtal = roundedBox(0.0032, 0.0009, 0.0025, 0.0003, 1);
-  xtal.translate(XTAL.x, TOP + 0.00045, XTAL.z);
-  metals.push(xtal);
-  const tab = new THREE.BoxGeometry(0.003, 0.0003, 0.0018);
-  tab.translate(REG.x, TOP + 0.00015, REG.z - 0.0026);
-  metals.push(tab);
-  const metalMesh = solid(new THREE.Mesh(mergeParts(metals), steel), 'fpga-metal');
-  board.add(metalMesh);
-
-  // passives: 0805, two kinds
-  const tans: THREE.BufferGeometry[] = [];
-  const darks: THREE.BufferGeometry[] = [];
+  // passives: 0805, tan ceramics and dark resistors
   for (const [px, pz, rot, isTan] of PASSIVES) {
     const g = new THREE.BoxGeometry(0.002, 0.0007, 0.00125);
     if (rot) g.rotateY(Math.PI / 2);
     g.translate(px, TOP + 0.00035, pz);
-    (isTan ? tans : darks).push(g);
+    parts.push(g); tints.push(isTan ? TAN : DARK);
   }
-  board.add(solid(new THREE.Mesh(mergeParts(tans), tan), 'fpga-caps'));
-  board.add(solid(new THREE.Mesh(mergeParts(darks), dark), 'fpga-res'));
+  const plasticMesh = solid(new THREE.Mesh(mergeParts(parts, tints), plastics), 'fpga-plastic');
+  board.add(plasticMesh);
+
+  // metal: the pins, the USB-C shell, the crystal can, the regulator tab
+  const shell = roundedBox(USB.w, USB.h, USB.d, 0.0012, 2);
+  shell.translate(USB.x, TOP + USB.h / 2, USB.z);
+  metalParts.push(shell); metalTints.push(STEEL);
+  const xtal = roundedBox(0.0032, 0.0009, 0.0025, 0.0003, 1);
+  xtal.translate(XTAL.x, TOP + 0.00045, XTAL.z);
+  metalParts.push(xtal); metalTints.push(STEEL);
+  const tab = new THREE.BoxGeometry(0.003, 0.0003, 0.0018);
+  tab.translate(REG.x, TOP + 0.00015, REG.z - 0.0026);
+  metalParts.push(tab); metalTints.push(STEEL);
+  const metalMesh = solid(new THREE.Mesh(mergeParts(metalParts, metalTints), metals), 'fpga-metal');
+  board.add(metalMesh);
 
   // the LED: a tiny 0805 lens that breathes, plus an additive glow above it
   const ledMat = new THREE.MeshStandardMaterial({ color: 0xe9e6cf, emissive: 0x7cff66, emissiveIntensity: 0.2, roughness: 0.3, metalness: 0 });
@@ -176,21 +172,11 @@ export function createFpga(ctx: ObjectCtx): TableObject {
       glowMat.opacity = 0.62 * e;
     },
     dispose() {
-      for (const g of [boardGeo, chipGeo, ledGeo, blackMesh.geometry, pinMesh.geometry, metalMesh.geometry]) g.dispose();
+      for (const g of [boardGeo, chipGeo, ledGeo, plasticMesh.geometry, metalMesh.geometry]) g.dispose();
       pcbTex.dispose(); labelTex.dispose(); glowTex.dispose();
-      pcbTop.dispose(); labelMat.dispose(); ledMat.dispose(); glowMat.dispose();
+      pcbTop.dispose(); labelMat.dispose(); ledMat.dispose(); glowMat.dispose(); plastics.dispose(); metals.dispose();
     },
   };
-}
-
-/** Collapses a BoxGeometry's six face groups into two materials: the top (+y) and the rest. */
-function regroupBox(geo: THREE.BufferGeometry, topIndex: number, restIndex: number): void {
-  const g = geo.groups.map((x) => ({ ...x }));
-  if (g.length !== 6) return;
-  geo.clearGroups();
-  geo.addGroup(g[0].start, g[0].count + g[1].count, restIndex); // +x, -x
-  geo.addGroup(g[2].start, g[2].count, topIndex);               // +y
-  geo.addGroup(g[3].start, g[3].count + g[4].count + g[5].count, restIndex); // -y, +z, -z
 }
 
 /** Silkscreen + traces for the top of the board. 1024 × 704 maps the 96 × 66 mm board; v up = the far edge. */
