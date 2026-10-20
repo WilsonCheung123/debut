@@ -343,6 +343,7 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
         };
       },
       shelf: () => shelf.snapshot(),
+      dbg: () => shelf.dbg,
       /** Drives the shelf without a pointer: hover(id | null), select(id), scroll(metres). */
       drive: { hover: (id: string | null) => shelf.hoverById(id), scrollBy: (m: number) => shelf.scrollBy(m) },
     };

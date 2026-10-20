@@ -101,8 +101,10 @@ export class Shelf {
   private pointerOwns = true;
   private readonly spreadX: number[];
   private readonly scroll = { pos: 0, target: 0, min: 0, max: 0, lean: 0, kick: 0, prev: 0 };
-  /** True from enter() until the camera has arrived or the visitor scrolls: the target follows the left-end parking. */
+  /** True from enter() until the visitor scrolls (or a book is revealed): the target follows the left-end parking. */
   private parking = false;
+  /** QA: the last bounds computation. */
+  dbg: unknown = null;
   private readonly raycaster = new THREE.Raycaster();
   private readonly ndc = new THREE.Vector2();
   private readonly v = new THREE.Vector3();
@@ -306,10 +308,13 @@ export class Shelf {
   private readonly mid = new THREE.Vector3();
   /** Half the visible width (metres) at the row's depth: the view's centre to its right edge. */
   private visibleHalf(): number {
-    const z = this.rowWorldZ();
-    const e = this.pointAt(1, 0.5, z, this.edge);
-    const m = this.pointAt(0.5, 0.5, z, this.mid);
-    return e && m ? Math.max(0.1, Math.abs(e.x - m.x)) : 0.27;
+    // from the camera's own numbers (the unprojection read wide while the rig settled, which parked the row centred)
+    const cam = this.ctx.camera;
+    this.books[0].group.parent?.getWorldPosition(this.mid);
+    this.mid.z = this.rowWorldZ();
+    cam.getWorldDirection(this.edge);
+    const d = Math.max(0.1, this.mid.sub(cam.position).dot(this.edge));
+    return Math.max(0.1, d * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * cam.aspect);
   }
 
   private rowWorldZ(): number {
@@ -349,11 +354,13 @@ export class Shelf {
       // the row parks with its first book at the view's left edge and scrolls past either end until the
       // end book sits well inside the view (round 3: the old bounds, the end books pinned at the edges, felt constrained)
       const edge = Math.max(0, total / 2 - half);
+      this.dbg = { half, edge, total, fov: this.ctx.camera.fov, aspect: this.ctx.camera.aspect, cam: this.ctx.camera.position.toArray() };
       const over = edge + half * END_REACH;
       s.min = -over; s.max = over;
       // the bounds are only right once the focus camera is in place (the spread tween runs with it): until then,
       // or until the visitor scrolls, the target tracks the parking so the row settles with its first book at the view's left edge
-      if (this.parking) { s.target = -edge; if (sp > 0.995) this.parking = false; }
+      // (it stays parked, following the camera and the viewport, until the visitor scrolls or a book is revealed)
+      if (this.parking) s.target = -edge;
       // past the ends: ease back once the wheel is quiet
       if (s.target < s.min) s.target += (s.min - s.target) * Math.min(1, dt * 8);
       else if (s.target > s.max) s.target += (s.max - s.target) * Math.min(1, dt * 8);
