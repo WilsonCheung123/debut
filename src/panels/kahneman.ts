@@ -86,7 +86,6 @@ const STYLE = `
 #panel .content .kahneman .trick:hover { background: transparent; }
 #panel .content .kahneman .trick:focus-visible { outline-offset: 4px; }
 #panel .content .kahneman .trick img, #panel .content .kahneman .trick svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
-#panel .content .kahneman .field { fill: var(--paper); }
 #panel .content .kahneman figcaption { margin-top: 10px; }
 #panel .content .kahneman .claim { margin: 0 0 4px; }
 #panel .content .kahneman .prompt { transition: color .2s ease; }
@@ -104,7 +103,7 @@ const STYLE = `
 #panel .content .kahneman .placeholder { margin: 0; }
 #panel .content .kahneman .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 18px; align-items: start; }
 #panel .content .kahneman .col { position: relative; padding: 10px 8px 10px; border-radius: 4px; box-shadow: inset 0 0 0 1px transparent; transition: background-color .5s ease, box-shadow .5s ease; }
-#panel .content .kahneman .col .kicker { display: block; }
+#panel .content .kahneman .col .kicker { display: block; line-height: 1.35; min-height: 2.7em; }
 #panel .content .kahneman .num { display: block; font-family: var(--serif); font-size: 34px; line-height: 1.1; margin: 6px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 #panel .content .kahneman .n { display: block; font-family: var(--sans); font-size: 12px; line-height: 1.35; color: var(--ink-faint); }
 #panel .content .kahneman .you { display: block; font-family: var(--sans); font-size: 12px; line-height: 1.35; color: var(--maroon); margin-top: 4px; opacity: 0; transition: opacity .5s ease; }
@@ -142,17 +141,9 @@ function figureHtml(): string {
 <figure class="illusion">
   <button class="trick" type="button" aria-label="Adelson's checker-shadow illusion. Press and hold to isolate squares A and B.">
     <img src="/checker-shadow.svg" alt="" draggable="false" decoding="async" />
-    <svg viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false">
-      <defs>
-        <mask id="kahneman-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}">
-          <rect x="0" y="0" width="${w}" height="${h}" fill="#fff" />
-          <polygon points="${SQUARE_A}" fill="#000" />
-          <polygon points="${SQUARE_B}" fill="#000" />
-        </mask>
-      </defs>
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true" focusable="false">
       <g fill="${GREY}"><polygon points="${SQUARE_A}" /><polygon points="${SQUARE_B}" /></g>
       <g fill="#505050"><path d="${GLYPH_A}" /><path d="${GLYPH_B}" /></g>
-      <rect class="field" x="0" y="0" width="${w}" height="${h}" mask="url(#kahneman-mask)" opacity="0" />
       <line class="bridge" x1="${BRIDGE.x}" y1="${BRIDGE.y1}" x2="${BRIDGE.x}" y2="${BRIDGE.y2}" stroke="${GREY}" stroke-width="${BRIDGE.width}" stroke-dasharray="${BRIDGE_LEN}" stroke-dashoffset="${BRIDGE_LEN}" />
     </svg>
   </button>
@@ -164,14 +155,15 @@ function figureHtml(): string {
 }
 
 /**
- * The press-and-hold proof. A paused timeline: the bridge grows from A to B
- * (360 ms) while the rest of the picture fades to the paper (420 ms, from
- * 100 ms). Hold plays it, release reverses it slightly faster; reduced
- * motion jumps to either end.
+ * The press-and-hold proof. A paused timeline: the bridge draws from A to B
+ * (360 ms) while the picture itself fades out (420 ms, from 100 ms), leaving
+ * the two painted squares and the bridge on the bare paper, grain and all.
+ * Hold plays it, release reverses it slightly faster; reduced motion jumps
+ * to either end.
  */
 function mountIllusion(root: HTMLElement, ctx: PanelCtx, g: gsap.Context): void {
   const btn = root.querySelector<HTMLButtonElement>('.trick')!;
-  const field = root.querySelector<SVGRectElement>('.field')!;
+  const picture = root.querySelector<HTMLImageElement>('.trick img')!;
   const bridge = root.querySelector<SVGLineElement>('.bridge')!;
   const prompt = root.querySelector<HTMLElement>('.prompt')!;
   const idle = ctx.state.isTouch ? TEXT.promptTouch : TEXT.promptPointer;
@@ -181,7 +173,7 @@ function mountIllusion(root: HTMLElement, ctx: PanelCtx, g: gsap.Context): void 
   g.add(() => {
     tl = gsap.timeline({ paused: true })
       .fromTo(bridge, { attr: { 'stroke-dashoffset': BRIDGE_LEN } }, { attr: { 'stroke-dashoffset': 0 }, duration: 0.36, ease: 'power2.out' }, 0)
-      .fromTo(field, { opacity: 0 }, { opacity: 1, duration: 0.42, ease: 'sine.inOut' }, 0.1);
+      .fromTo(picture, { opacity: 1 }, { opacity: 0, duration: 0.42, ease: 'sine.inOut' }, 0.1);
   });
 
   const setPrompt = (text: string): void => {
@@ -327,7 +319,7 @@ function columnHtml(group: Group, stats: Stats | null, mine: boolean, guess: num
   const count = !s ? '' : s.n === 0 ? 'no one yet' : `average of ${s.n} ${s.n === 1 ? 'guess' : 'guesses'}`;
   return `
 <div class="col${mine ? ' mine' : ''}">
-  <span class="kicker">saw ${ANCHOR[group]}</span>
+  <span class="kicker">people who saw ${ANCHOR[group]}</span>
   <span class="num"${hasMean ? ` data-to="${s!.mean}"` : ''}>${hasMean ? '0' : '—'}</span>
   <span class="n">${count || ' '}</span>
   ${mine ? `<span class="you">you said ${guess}</span>` : ''}

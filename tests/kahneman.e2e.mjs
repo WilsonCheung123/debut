@@ -86,7 +86,8 @@ async function load(page) {
 const stats = async () => (await (await fetch(new URL('/api/anchor/stats', url))).json());
 const fmt = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 const heldJs = (K) => document.querySelector(K).dataset.held === '1';
-const fieldJs = (K) => +getComputedStyle(document.querySelector(`${K} .field`)).opacity;
+/** How far the picture has dissolved: 0 = the illusion, 1 = bare paper with the two squares and the bridge. */
+const fieldJs = (K) => 1 - +getComputedStyle(document.querySelector(`${K} .trick img`)).opacity;
 const promptJs = (K) => document.querySelector(`${K} .prompt`).textContent;
 const bridgeJs = (K) => +document.querySelector(`${K} .bridge`).getAttribute('stroke-dashoffset');
 
@@ -122,12 +123,12 @@ const bridgeJs = (K) => +document.querySelector(`${K} .bridge`).getAttribute('st
     await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.55);
     await page.mouse.down();
     check('held-on-mousedown', await until(page, heldJs, K));
-    check('proof-settles-in', await until(page, (K) => +getComputedStyle(document.querySelector(`${K} .field`)).opacity > 0.98 && +document.querySelector(`${K} .bridge`).getAttribute('stroke-dashoffset') === 0, K));
+    check('proof-settles-in', await until(page, (K) => +getComputedStyle(document.querySelector(`${K} .trick img`)).opacity < 0.02 && +document.querySelector(`${K} .bridge`).getAttribute('stroke-dashoffset') === 0, K));
     check('prompt-says-let-go', (await page.evaluate(promptJs, K)) === 'now let go');
     await shot(cdp, 'e2e-2-hold');
     await page.mouse.up();
     check('released-on-mouseup', await until(page, (K) => !document.querySelector(K).dataset.held, K));
-    check('illusion-comes-back', await until(page, (K) => +getComputedStyle(document.querySelector(`${K} .field`)).opacity < 0.02 && +document.querySelector(`${K} .bridge`).getAttribute('stroke-dashoffset') > 33, K));
+    check('illusion-comes-back', await until(page, (K) => +getComputedStyle(document.querySelector(`${K} .trick img`)).opacity > 0.98 && +document.querySelector(`${K} .bridge`).getAttribute('stroke-dashoffset') > 33, K));
     check('prompt-back', (await page.evaluate(promptJs, K)) === 'press and hold the picture');
 
     // ---- 2. keyboard: Tab reaches the figure, Space holds, release lets go, Tab order continues ----
@@ -135,9 +136,9 @@ const bridgeJs = (K) => +document.querySelector(`${K} .bridge`).getAttribute('st
     await page.keyboard.press('Tab');
     check('tab-reaches-figure', await page.evaluate((K) => document.activeElement === document.querySelector(`${K} .trick`), K));
     await page.keyboard.down('Space');
-    check('space-holds', await until(page, (K) => document.querySelector(K).dataset.held === '1' && +getComputedStyle(document.querySelector(`${K} .field`)).opacity > 0.98, K));
+    check('space-holds', await until(page, (K) => document.querySelector(K).dataset.held === '1' && +getComputedStyle(document.querySelector(`${K} .trick img`)).opacity < 0.02, K));
     await page.keyboard.up('Space');
-    check('space-release', await until(page, (K) => !document.querySelector(K).dataset.held && +getComputedStyle(document.querySelector(`${K} .field`)).opacity < 0.02, K));
+    check('space-release', await until(page, (K) => !document.querySelector(K).dataset.held && +getComputedStyle(document.querySelector(`${K} .trick img`)).opacity > 0.98, K));
     await page.keyboard.press('Tab');
     check('tab-reaches-older', await page.evaluate((K) => document.activeElement === document.querySelector(`${K} .choices button[data-choice=older]`), K));
     await page.keyboard.press('Tab');
@@ -164,6 +165,8 @@ const bridgeJs = (K) => +document.querySelector(`${K} .bridge`).getAttribute('st
     check('row-recorded', after[group].n === before[group].n + 1, `${before[group].n} -> ${after[group].n}`);
     check('reveal-numbers', await until(page, ([K, s]) => { const t = [...document.querySelectorAll(`${K} .num`)].map((e) => e.textContent); const f = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(1)); return t[0] === f(s.A.mean) && t[1] === f(s.B.mean) && t[2] === '78'; }, [K, after]), `expected ${fmt(after.A.mean)}, ${fmt(after.B.mean)}, 78`);
     check('reveal-counts', await page.evaluate(([K, s]) => { const t = [...document.querySelectorAll(`${K} .col .n`)].map((e) => e.textContent); return t[0] === `average of ${s.A.n} guesses` && t[1] === `average of ${s.B.n} guesses` && t[2] === '1869 to 1948'; }, [K, after]));
+    check('reveal-kickers', await page.evaluate((K) => [...document.querySelectorAll(`${K} .col .kicker`)].map((e) => e.textContent).join('|') === 'people who saw 114|people who saw 35|the real answer', K));
+    check('numbers-share-a-baseline', await page.evaluate((K) => { const tops = [...document.querySelectorAll(`${K} .num`)].map((e) => e.getBoundingClientRect().top); return Math.max(...tops) - Math.min(...tops) < 1; }, K));
     check('own-column-lit', await until(page, ([K, g]) => { const cols = [...document.querySelectorAll(`${K} .col`)]; const m = cols[g === 'A' ? 0 : 1]; return m.classList.contains('mine') && m.classList.contains('lit') && m.querySelector('.you').textContent === 'you said 60' && cols.filter((c) => c.classList.contains('mine')).length === 1; }, [K, group]));
     check('guess-persisted', await page.evaluate(() => localStorage.getItem('kahneman.guess') === '60'));
     check('explain-verbatim', await page.evaluate((K) => document.querySelector(`${K} .explain`).textContent === "The first number was random and obviously wrong. It still pulled your guess toward it. That's anchoring: the mind starts from whatever it was handed and doesn't adjust far enough.", K));

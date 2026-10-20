@@ -9,10 +9,10 @@
   {"action":"shot","name":"k1-rest"},
 
   {"action":"eval","js":"document.querySelector('#panel .kahneman .trick').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:7,button:0,pointerType:'mouse',isPrimary:true}))"},
-  {"action":"assert","name":"held-proof-visible","js":"__until(function(){ return document.querySelector('#panel .kahneman').dataset.held === '1' && +getComputedStyle(document.querySelector('#panel .kahneman .field')).opacity > 0.98; })"},
+  {"action":"assert","name":"held-proof-visible","js":"__until(function(){ return document.querySelector('#panel .kahneman').dataset.held === '1' && +getComputedStyle(document.querySelector('#panel .kahneman .trick img')).opacity < 0.02 && +document.querySelector('#panel .kahneman .bridge').getAttribute('stroke-dashoffset') === 0; })"},
   {"action":"shot","name":"k2-hold"},
   {"action":"eval","js":"document.querySelector('#panel .kahneman .trick').dispatchEvent(new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerId:7,button:0,pointerType:'mouse',isPrimary:true}))"},
-  {"action":"assert","name":"released-illusion-back","js":"__until(function(){ return !document.querySelector('#panel .kahneman').dataset.held && +getComputedStyle(document.querySelector('#panel .kahneman .field')).opacity < 0.02; })"},
+  {"action":"assert","name":"released-illusion-back","js":"__until(function(){ return !document.querySelector('#panel .kahneman').dataset.held && +getComputedStyle(document.querySelector('#panel .kahneman .trick img')).opacity > 0.98; })"},
 
   {"action":"click","selector":"#panel .kahneman .choices button[data-choice=older]"},
   {"action":"assert","name":"q2-shown-input-focused","js":"__until(function(){ return document.querySelector('#panel .kahneman').dataset.step === 'q2' && document.activeElement === document.querySelector('#panel .kahneman input'); })"},
@@ -40,9 +40,9 @@
 
   {"action":"eval","js":"document.querySelector('#panel .kahneman .trick').focus()"},
   {"action":"eval","js":"document.querySelector('#panel .kahneman .trick').dispatchEvent(new KeyboardEvent('keydown',{key:' ',bubbles:true,cancelable:true}))"},
-  {"action":"assert","name":"keyboard-hold","js":"__until(function(){ return document.querySelector('#panel .kahneman').dataset.held==='1' && +getComputedStyle(document.querySelector('#panel .kahneman .field')).opacity > 0.98; })"},
+  {"action":"assert","name":"keyboard-hold","js":"__until(function(){ return document.querySelector('#panel .kahneman').dataset.held==='1' && +getComputedStyle(document.querySelector('#panel .kahneman .trick img')).opacity < 0.02; })"},
   {"action":"eval","js":"document.querySelector('#panel .kahneman .trick').dispatchEvent(new KeyboardEvent('keyup',{key:' ',bubbles:true,cancelable:true}))"},
-  {"action":"assert","name":"keyboard-release","js":"__until(function(){ return !document.querySelector('#panel .kahneman').dataset.held && +getComputedStyle(document.querySelector('#panel .kahneman .field')).opacity < 0.02; })"},
+  {"action":"assert","name":"keyboard-release","js":"__until(function(){ return !document.querySelector('#panel .kahneman').dataset.held && +getComputedStyle(document.querySelector('#panel .kahneman .trick img')).opacity > 0.98; })"},
   {"action":"exit"},
   {"action":"assert","name":"back-at-rest","js":"window.__table.info().mode === 'rest' && location.hash === ''"}
 ]
