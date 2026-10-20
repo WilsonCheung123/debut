@@ -65,6 +65,8 @@ export interface TableObject {
     tilt?: number;
     /** 'cursor' tilts toward the pointer; 'forward' tilts the top toward the camera (standing books). */
     tiltMode?: 'cursor' | 'forward';
+    /** Feel of the lift spring: duration in s (default 0.35) and overshoot (back.out amount, default 1.7). Heavy things: longer, less overshoot. */
+    spring?: { duration?: number; overshoot?: number };
   };
   focus: {
     camera: FocusCamera;

@@ -1,36 +1,35 @@
-import { defineConfig } from 'vite';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 
 // Dev server on 5180; /api is proxied to the Cloudflare Worker running under
-// `npm run worker` (wrangler dev --local on 8780).
-//
-// node_modules may be a symlink (builder worktrees share the main checkout's).
-// Vite serves files by their real path, so the real node_modules must be on
-// the allow list or the @fontsource files 403. Node's resolver follows the
-// symlink, which gives the real path without any Node typings.
-const here = decodeURIComponent(new URL('.', import.meta.url).pathname);
-const realModules = (() => {
-  try {
-    const url = (import.meta as unknown as { resolve(s: string): string }).resolve('three');
-    const m = /^file:\/\/(.*\/node_modules)\//.exec(url);
-    return m ? decodeURIComponent(m[1]) : null;
-  } catch { return null; }
-})();
+// `npm run worker` (wrangler dev --local on 8780). WORKER_PORT overrides the
+// proxy target so parallel builders can run their own worker on another port.
+const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+const workerPort = env.WORKER_PORT || '8780';
+const api = { target: `http://localhost:${workerPort}`, changeOrigin: true };
+// VITE_CACHE_DIR gives a checkout its own optimiser cache when several share one node_modules.
+const cacheDir = env.VITE_CACHE_DIR || 'node_modules/.vite';
 
-export default defineConfig({
+// Builders' checkouts share the main one's node_modules through a symlink; Vite
+// serves only under the workspace root, so the symlink's real path is allowed too.
+async function realNodeModules(): Promise<string> {
+  try {
+    const fs = (await import(/* @vite-ignore */ 'node:' + 'fs')) as { realpathSync(p: string): string };
+    return fs.realpathSync('node_modules');
+  } catch { return 'node_modules'; }
+}
+
+export default defineConfig(async () => ({
+  cacheDir,
   server: {
     port: 5180,
     strictPort: true,
-    fs: { allow: [here, ...(realModules ? [realModules] : [])] },
-    proxy: {
-      '/api': { target: 'http://localhost:8780', changeOrigin: true },
-    },
+    proxy: { '/api': api },
+    fs: { allow: [searchForWorkspaceRoot('.'), await realNodeModules()] },
   },
   preview: {
     port: 5181,
     strictPort: true,
-    proxy: {
-      '/api': { target: 'http://localhost:8780', changeOrigin: true },
-    },
+    proxy: { '/api': api },
   },
   // hls.js is only ever imported dynamically (first hologram focus); pre-bundle it so the dev
   // server never re-optimises mid-visit (an "Outdated Optimize Dep" 504 would break a QA run).
@@ -41,7 +40,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string) {
           if (id.includes('node_modules/three')) return 'three';
           if (id.includes('node_modules/gsap')) return 'gsap';
           return undefined;
@@ -49,4 +48,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
