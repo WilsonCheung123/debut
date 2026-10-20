@@ -154,6 +154,12 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: 
     ? { lift: 0.08, z: 0.13, yaw: -(Math.PI / 2 + THREE.MathUtils.degToRad(4)), roll: 0.26, pitch: -THREE.MathUtils.degToRad(8) }
     : { lift: 0.08, z: 0.14, pitch: 0.6 };
   const ease = 'power3.inOut';
+  // reduced motion: the engine cuts to black (100 ms in); the pose changes under the black
+  let pending: gsap.core.Tween | null = null;
+  const setUnderCut = (delay: number, pose: Partial<Record<string, number>>): void => {
+    pending?.kill();
+    pending = gsap.delayedCall(delay, () => { pending = null; gsap.set(m(), pose); });
+  };
 
   return {
     id: d.id,
@@ -167,13 +173,15 @@ function createBook(ctx: ObjectCtx, d: CoverDesign, standing: boolean, content: 
       panel: panelFor(content),
       onEnter() {
         gsap.killTweensOf(m());
-        if (state.reducedMotion) { gsap.set(m(), target); return; }
+        pending?.kill();
+        if (state.reducedMotion) { setUnderCut(0.1, target); return; }
         gsap.to(m(), { ...target, duration: 0.9, ease, overwrite: true });
       },
       onExit() {
         gsap.killTweensOf(m());
+        pending?.kill();
         const rest = { lift: 0, z: 0, x: 0, yaw: 0, roll: 0 };
-        if (state.reducedMotion) { gsap.set(m(), { ...rest, pitch: 0 }); return; }
+        if (state.reducedMotion) { setUnderCut(0.34, { ...rest, pitch: 0 }); return; } // after the panel's 240 ms fade, under the cut
         gsap.to(m(), { ...rest, duration: 0.8, ease, overwrite: 'auto' });
         // the hover tilt settles over 450 ms power2.out (engine); the pitch that cancelled it follows the same curve
         gsap.to(m(), { pitch: 0, duration: standing ? 0.45 : 0.8, ease: standing ? 'power2.out' : ease, overwrite: 'auto' });
