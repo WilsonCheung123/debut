@@ -10,19 +10,19 @@ import { brackets } from '../content/types';
 export const PLAYLIST_TITLE = 'lol'; // the playlist's name on Spotify (oEmbed, 2026-10)
 
 const CSS = `
-.vinyl-panel .vinyl-slot { position: relative; height: ${EMBED_HEIGHT}px; border-radius: 12px; background: #262626; overflow: hidden; }
-.vinyl-panel .vinyl-slot .skeleton { position: absolute; inset: 0; background: linear-gradient(100deg, #262626 35%, #2f2f2f 50%, #262626 65%); background-size: 240% 100%; animation: vinyl-shimmer 1.8s ease-in-out infinite; }
-.vinyl-panel .vinyl-slot .skeleton::before { content: ''; position: absolute; left: 16px; top: 16px; width: 88px; height: 88px; border-radius: 6px; background: rgba(255,255,255,.06); }
-.vinyl-panel .vinyl-slot .skeleton::after { content: ''; position: absolute; left: 120px; top: 24px; width: 46%; height: 12px; border-radius: 6px; background: rgba(255,255,255,.08); box-shadow: 0 24px 0 -2px rgba(255,255,255,.05); }
-.vinyl-panel .vinyl-slot.off { background: #262626; }
-.vinyl-panel .vinyl-off { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 24px; color: #d9d2c4; font-family: var(--sans); font-size: 14px; line-height: 1.5; box-sizing: border-box; }
-.vinyl-panel .vinyl-off a { color: #f2ead8; }
-.vinyl-panel .vinyl-row { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; }
-.vinyl-panel .vinyl-toggle { display: inline-flex; align-items: center; gap: 9px; padding: 9px 14px 9px 12px; }
-.vinyl-panel .vinyl-toggle .dot { width: 8px; height: 8px; border-radius: 50%; background: #9a9283; transition: background-color .25s ease, box-shadow .25s ease; }
-.vinyl-panel .vinyl-toggle[aria-pressed="true"] .dot { background: #2f8f5b; box-shadow: 0 0 0 3px rgba(47,143,91,.18); animation: vinyl-pulse 2.4s ease-in-out infinite; }
-.vinyl-panel .vinyl-note { font-family: var(--sans); font-size: 12.5px; line-height: 1.45; color: var(--ink-faint); margin: 0; }
-.vinyl-panel .vinyl-after { margin-top: 18px; }
+#panel .content .vinyl-panel .vinyl-slot { position: relative; height: ${EMBED_HEIGHT}px; border-radius: 12px; background: #262626; overflow: hidden; }
+#panel .content .vinyl-panel .vinyl-slot .skeleton { position: absolute; inset: 0; background: linear-gradient(100deg, #262626 35%, #2f2f2f 50%, #262626 65%); background-size: 240% 100%; animation: vinyl-shimmer 1.8s ease-in-out infinite; }
+#panel .content .vinyl-panel .vinyl-slot .skeleton::before { content: ''; position: absolute; left: 16px; top: 16px; width: 88px; height: 88px; border-radius: 6px; background: rgba(255,255,255,.06); }
+#panel .content .vinyl-panel .vinyl-slot .skeleton::after { content: ''; position: absolute; left: 120px; top: 24px; width: 46%; height: 12px; border-radius: 6px; background: rgba(255,255,255,.08); box-shadow: 0 24px 0 -2px rgba(255,255,255,.05); }
+#panel .content .vinyl-panel .vinyl-slot.off { background: #262626; }
+#panel .content .vinyl-panel .vinyl-off { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 24px; color: #d9d2c4; font-family: var(--sans); font-size: 14px; line-height: 1.5; box-sizing: border-box; }
+#panel .content .vinyl-panel .vinyl-off a { color: #f2ead8; }
+#panel .content .vinyl-panel .vinyl-row { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; }
+#panel .content .vinyl-panel .vinyl-toggle { display: inline-flex; align-items: center; gap: 9px; padding: 9px 14px 9px 12px; }
+#panel .content .vinyl-panel .vinyl-toggle .dot { width: 8px; height: 8px; border-radius: 50%; background: #9a9283; transition: background-color .25s ease, box-shadow .25s ease; }
+#panel .content .vinyl-panel .vinyl-toggle[aria-pressed="true"] .dot { background: #2f8f5b; box-shadow: 0 0 0 3px rgba(47,143,91,.18); animation: vinyl-pulse 2.4s ease-in-out infinite; }
+#panel .content .vinyl-panel .vinyl-note { font-family: var(--sans); font-size: 12.5px; line-height: 1.45; color: var(--ink-faint); margin: 0; }
+#panel .content .vinyl-panel .vinyl-after { margin-top: 18px; }
 @keyframes vinyl-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 @keyframes vinyl-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(47,143,91,.18); } 50% { box-shadow: 0 0 0 5px rgba(47,143,91,.08); } }
 @media (prefers-reduced-motion: reduce) { .vinyl-panel .vinyl-slot .skeleton, .vinyl-panel .vinyl-toggle .dot { animation: none !important; } }
