@@ -118,6 +118,64 @@ tapped book lifted and the others listed in the panel as tappable rows, or the
 stack is fanned so each lying book shows an edge of at least ~44 px. Whatever
 the solution, the full visit must reach every book's panel on the iPhone run.
 
+## Graphics pass (SPEC 0.2, 2026-10-20)
+
+Wilson's verdict on the first build was "solid but feels like coarse paper".
+Three things made it coarse, in order of weight:
+
+1. **The quality tier dropped his machine to DPR 1.** The old rule was one
+   check: mean frame over 26 ms during any 60 frames → DPR 1, 1024 shadow map,
+   60 motes, permanently. An Intel Iris Plus 645 driving 2880 × 1800 with MSAA
+   sits around that line, so the Retina screen was being rendered at half
+   resolution within seconds of the lamp coming on. Now (`src/engine/quality.ts`):
+   desktop renders at the device pixel ratio up to 2; when the mean frame over
+   60 frames passes 30 ms the ladder gives up, one step at a time with a
+   90-frame settle between measurements: dust 200 → 60, then the jar's
+   transmission, then the shadow map 4096 → 2048, then DPR down to **1.5 and
+   never lower on a real GPU** (1 only on software GL). `__table.info().gfx`
+   reports the level and settings; `__table.gfx.step()` forces a step.
+2. **The grain overlay.** A 3.2% noise tile at one noise pixel per CSS pixel is
+   a 2 × 2-device-pixel grain over the whole frame on a 2x screen. It is 1%
+   now, drawn at 256 px so one grain is one device pixel; the renderer's own
+   dithering (`standard()` materials) is what prevents banding in the 3D.
+3. **Texture scale.** The walnut was one 1024 tile across 0.65 m, soft in every
+   focus; it is 2048 on desktop (`closeUpSize()`), with the figure's strokes
+   kept at their world width and the per-pixel noise halved. The ID front is a
+   2048-wide canvas from the 1536-px source (the webp had been capped at 1024).
+
+Also in this pass: MSAA stays on the default framebuffer (the only AA; no
+post-processing). Shadows: 4096 map on a real GPU, the frustum fitted to the
+table top plus the objects' real bounds (`Lights.fitShadow`), bias and blur
+set from the texel size so the map resize keeps the same look (normal bias
+~1 mm instead of 10 mm, so the ID, the pick and the tag now touch their
+shadows; blur ~3 mm). The engine's instanced contact blobs stay as the
+ambient-occlusion halo the map cannot give (one draw call); they no longer
+have to stand in for the shadow itself. A dark room environment with the lamp
+as its one highlight (`scene.environment`, intensity 0.55) gives metals
+something to reflect: the tonearm, bookends, capo, lamp steel and the die-cast
+read as metal instead of dark plastic; dielectrics gain only a faint sheen.
+Die-cast: warm grey, metalness 0.55 (was bluish matte at 0.2). Puppet turned
+toward the lamp (rotationY −16 → 8) so the key grazes his front; puppet focus
+from el 32 so the shade's lit mouth leaves the frame; ID focus from el 66 with
+the look-at nudged forward so the FPGA behind it leaves the frame.
+
+Tools: `node tools/gfx-audit.mjs <url> <outdir>` (headed Chromium, the real
+GPU: frame-time profile at 1440 × 900 DPR 2 with the ladder unlocked,
+screenshots of every focus state, a DPR 1.5 pass, a 1920 × 1080 pass, the
+exposure probe); `node tools/profile.mjs` is the small single-pass version.
+
+### Numbers
+
+Before (main `b2583a6`, headed Chromium on the owner's Iris Plus 645, taken
+while the machine was running five other builders' SwiftShader runs at load
+average 85, so the frame times are not comparable to a quiet machine): DPR 2,
+145 draw calls (85 main + 60 shadow), 156 776 triangles, rest frames 400 to
+1750 ms, the tier logic would have fired at the first 60-frame window.
+
+After: see the table below (filled from `shots/audit/audit.json`).
+
+AFTER_TABLE
+
 ## Known environment facts
 
 - Playwright renders through SwiftShader: frames take ~1 s, so hover/focus
