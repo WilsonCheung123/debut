@@ -18,7 +18,7 @@
   {
     "action": "assert",
     "name": "focus-started",
-    "js": "window.__table.state.focused === 'id-card' && window.__table.info().mode === 'moving'"
+    "js": "window.__table.state.focused === 'fpga' && window.__table.info().mode === 'moving'"
   },
   {
     "action": "clock",

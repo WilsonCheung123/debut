@@ -13,7 +13,8 @@ const url = process.env.QA_URL || 'http://localhost:5180/';
 const outdir = process.env.QA_OUT || 'shots/qa';
 const D = ['--viewport', 'desktop'];
 const runs = [
-  { name: 'visit-a', args: [...D, '--scenario', 'tests/scenarios/full-visit-a.json'] },   // rest, API, hovers, the ID flip, the nine books
+  { name: 'visit-a', args: [...D, '--scenario', 'tests/scenarios/full-visit-a.json'] },   // rest, API, hovers, the ID flip
+  { name: 'visit-books', args: [...D, '--scenario', 'tests/scenarios/full-visit-books.json'] },   // the nine books' panels
   { name: 'visit-b', args: [...D, '--scenario', 'tests/scenarios/full-visit-b.json'] },   // the other objects, the Austen trick, keyboard
   { name: 'reduced', args: [...D, '--reduced-motion', '--scenario', 'tests/scenarios/reduced-motion.json'] },
   // choreography timings under a fake clock: panel at +450 ms, camera settled at +900 ms, exit at +800 ms

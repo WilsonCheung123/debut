@@ -2,11 +2,13 @@
 
 Read in this order: this file, `SPEC.md` (the build contract), `docs/BRIEF-wilson-verbatim.md` (Wilson's own words; blurbs and quotes must stay verbatim), `docs/OBJECT-GUIDE.md`, `docs/QA.md`. `docs/VISION-v1-light-table.md` is an earlier, superseded concept kept for history only.
 
-## State as of 2026-10-20 05:00 (all eight objects merged)
+## State as of 2026-10-20 (integration pass on main)
 
-- **main** has every object merged (last merge `0253285`): books, Kahneman panel, ID card + FPGA + die-cast + capo, hologram, puppet, turntable + Spotify + Austen bubble, jar + principles, environment. `npm run build` and `tsc` are clean. Branches `worktree-agent-*` are kept on GitHub for history only; nothing on them is unmerged.
-- **In progress:** integration QA on main (full scripted visit, layout retune for the real objects, draw-call budget, the items each builder left unverified), then the four critics (taste, glitch, a11y/perf, content) with fix rounds. Desktop only per SPEC 0.1.
-- **Not done:** Turnstile widget on the jar slip (keep `TURNSTILE_SECRET` unset until it exists, or every submit is rejected); deployment to Cloudflare (owner runs `wrangler login`); a real-GPU check of frame times (`__table.info().lastMove.max` in Chrome) and of the jar's glass transmission; the hls.js path in real Chrome/Firefox for the hologram.
+- **main** has every object merged and the assembled table integrated (`1b7a14f`, `b3a77f3`, then this commit): table shrunk to 1.3 × 0.8 m, the objects re-spread so the front half is used (ID front-left, capo and pick front-centre, FPGA and die-cast together left-centre, puppet right of centre in the gap between turntable and lamp, jar front-right), the lamp aimed at the centre-front and scaled 0.9, and the rest camera fitted to the objects' own bounds (centred and iterated) rather than the table's edges. Smallest object (FPGA) is 105 px wide at 1440; ID 127; capo 144. `npm run build` and `tsc` are clean.
+- **Draw calls:** 276 → 145 at rest (85 main pass + 60 shadow casters): lamp enamel/steel baked into two meshes, vinyl statics and tonearm parts baked, table legs merged, and the jar's transmission now only while the jar is focused (cheap fresnel glass at rest; both shaders compiled at boot). The scripted assert is 160 with the reasoning in docs/QA.md.
+- **Panel routing** on the real books is by direct import (`kahnemanPanel`, `austenPanel`) in `src/objects/books.ts`; the glob lookup and the two placeholder files are gone.
+- **QA (desktop only, `tools/qa.mjs`):** `visit-a`, `visit-b` and `reduced` PASS with zero console errors/warnings of ours; the Austen trick, the ID flip + deferred panel, the Kahneman panel and keyboard path are all verified on the assembled table. `timing` failed on a scenario bug (it clicked the FPGA and asserted the ID; fixed in the file, not yet re-run). `hologram` was running (video played natively in headless Chromium: mode "native", readyState 4) when the pass was cut; `puppet`, `jar`, `id-flip`, `deep-link`, `vinyl`, `vinyl-offline`, `vinyl-silent`, `kahneman`, `four-objects`, `visit-books` not yet run on the integrated layout (their flows passed in isolation on the builders' branches).
+- **Known visual issues on the integrated table (not yet fixed, see docs/QA.md and the integrator's report):** capo focus angle hides the coil spring (try az −70, el 32); puppet focus shows the lamp's shade mouth at the top (raise el 12 → 24, az 20); the die-cast reads as matte grey plastic, bluish under the window fill (raise metalness ~0.5, warm the base colour); the flat-book focus frame is too tight now that the FPGA/die-cast sit in front of the stack (flatBook dist 0.6 → 0.7, el 46); the puppet at rest reads grey because his camera-facing side gets only the cool fill (turn him toward the lamp, rotationY −16 → ~8). The hls.js path (`?holo=hls`) and Lighthouse are unverified.
 
 ## Things Wilson must read or decide (collected from the builders)
 
@@ -32,7 +34,7 @@ npm run worker:init   # once, creates the local D1 tables
 npm run worker        # Cloudflare worker on :8780 (local D1)
 npm run dev           # Vite on :5180, proxies /api to the worker
 npm run shots -- http://localhost:5180/ shots/x --viewport desktop --focus id-card
-npm run qa            # scripted full visit; fails on console errors
+npm run qa            # every desktop run (about 40 min on software GL); npm run qa visit-a jar runs two
 ```
 
 ## Next steps for whoever picks this up

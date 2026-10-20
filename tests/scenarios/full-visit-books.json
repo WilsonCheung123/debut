@@ -1,0 +1,21 @@
+[
+  {"action": "wait", "ready": true},
+  {"action": "focus", "id": "book.anna-karenina"},
+  {"action": "shot", "name": "focus-anna-karenina"},
+  {"action": "exit"},
+  {"action": "focus", "id": "book.inferno"},
+  {"action": "exit"},
+  {"action": "focus", "id": "book.three-body"},
+  {"action": "exit"},
+  {"action": "focus", "id": "book.power-broker"},
+  {"action": "exit"},
+  {"action": "focus", "id": "book.thinking-fast-slow", "cluster": true},
+  {"action": "shot", "name": "focus-thinking"},
+  {"action": "exit"},
+  {"action": "focus", "id": "book.innovators-dilemma", "cluster": true},
+  {"action": "exit"},
+  {"action": "focus", "id": "book.demi-gods", "cluster": true},
+  {"action": "exit"},
+  {"action": "focus", "id": "book.becoming-steve-jobs", "cluster": true},
+  {"action": "exit"}
+]
