@@ -1,13 +1,17 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { wood, matte, leather, standard, setMaxAnisotropy } from '../materials';
+import { wood, matte, leather, standard, setMaxAnisotropy, setMaxTextureSize, makeCanvasTexture } from '../materials';
 
 export interface SceneBundle {
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   table: THREE.Group;
   maxAnisotropy: number;
+  /** The GL is a software rasteriser (SwiftShader / llvmpipe): the quality ladder may go to DPR 1. */
+  software: boolean;
+  /** Points the room environment's highlight at the lamp (call once the lamp exists). */
+  setEnvironment(lampHead: THREE.Vector3): void;
 }
 
 // 1.3 x 0.8: a desk, not a conference table. The rest camera fits the things on it, not its edges (SPEC 0.1 composition).
@@ -40,10 +44,15 @@ export function surfaceHeightAt(x: number, z: number): number {
 }
 
 /** Renderer + the room + the table. Table top is the plane y = 0. */
-export function createScene(canvas: HTMLCanvasElement): SceneBundle {
+export function createScene(canvas: HTMLCanvasElement, isPhone = false): SceneBundle {
+  // antialias: MSAA on the default framebuffer (4x on every desktop GPU that matters); there is no
+  // post-processing, so this is the whole anti-aliasing story and thin edges (book edges, tonearm,
+  // strings) are resolved by the hardware at the full device pixel ratio.
   const renderer = new THREE.WebGLRenderer({
     canvas, antialias: true, alpha: false, stencil: false, powerPreference: 'high-performance',
   });
+  const software = isSoftwareGL(renderer);
+  setMaxTextureSize(isPhone ? 1024 : 2048);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
@@ -111,7 +120,69 @@ export function createScene(canvas: HTMLCanvasElement): SceneBundle {
 
   if (flag('probe', false)) addProbe(scene);
 
-  return { renderer, scene, table, maxAnisotropy };
+  return {
+    renderer, scene, table, maxAnisotropy, software,
+    setEnvironment(lampHead) {
+      if (!flag('env', true)) return;
+      const env = roomEnvironment(renderer, lampHead);
+      scene.environment = env;
+      scene.environmentIntensity = 0.55;
+    },
+  };
+}
+
+/** SwiftShader / llvmpipe / Mesa software: the headless QA rig, never a visitor's machine. */
+function isSoftwareGL(renderer: THREE.WebGLRenderer): boolean {
+  try {
+    const gl = renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    return /swiftshader|llvmpipe|softpipe|software/i.test(name);
+  } catch { return false; }
+}
+
+/**
+ * The room as an environment map, for reflections only: near-black walls, the
+ * warm pool of the table below the horizon, the lamp as one bright warm
+ * highlight in its real direction, and a faint cool window to the left. With
+ * one spotlight and no environment, metals (bookends, tonearm, the capo, the
+ * lamp's own steel, the die-cast) had nothing to reflect and read as dark
+ * plastic; dielectrics gain only a faint sheen. Diffuse irradiance from it is
+ * tiny (the map is mostly black), so the key light still owns the lighting.
+ */
+function roomEnvironment(renderer: THREE.WebGLRenderer, lampHead: THREE.Vector3): THREE.Texture {
+  const dir = lampHead.clone().normalize();
+  // three's equirect convention: u = atan2(z, x) / 2pi + 0.5, v = asin(y) / pi + 0.5 (v up; the canvas is flipped by default)
+  const u = Math.atan2(dir.z, dir.x) / (Math.PI * 2) + 0.5;
+  const v = Math.asin(THREE.MathUtils.clamp(dir.y, -1, 1)) / Math.PI + 0.5;
+  const tex = makeCanvasTexture({
+    width: 512, height: 256, anisotropy: 1,
+    draw(c, w, h) {
+      const g = c.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#07070a'); g.addColorStop(0.46, '#100e0c'); g.addColorStop(0.56, '#2a1c11'); g.addColorStop(0.75, '#1a120b'); g.addColorStop(1, '#0a0806');
+      c.fillStyle = g; c.fillRect(0, 0, w, h);
+      // the lit table below the horizon, under the lamp
+      let r = c.createRadialGradient(u * w, h * 0.72, 2, u * w, h * 0.72, w * 0.3);
+      r.addColorStop(0, 'rgba(170,105,50,0.9)'); r.addColorStop(1, 'rgba(170,105,50,0)');
+      c.fillStyle = r; c.fillRect(0, 0, w, h);
+      // the lamp: a hot warm disc with a soft halo (the shade's lit lining)
+      const lx = u * w, ly = (1 - v) * h;
+      for (const dx of [0, -w, w]) {
+        r = c.createRadialGradient(lx + dx, ly, 1, lx + dx, ly, 34);
+        r.addColorStop(0, 'rgba(255,236,200,1)'); r.addColorStop(0.3, 'rgba(255,205,140,0.9)'); r.addColorStop(1, 'rgba(255,170,90,0)');
+        c.fillStyle = r; c.fillRect(0, 0, w, h);
+      }
+      // the window: a faint cool rectangle far to the left (-x is u = 0 / 1, the seam)
+      c.fillStyle = 'rgba(80,105,140,0.3)';
+      c.fillRect(0, h * 0.28, w * 0.05, h * 0.3); c.fillRect(w * 0.95, h * 0.28, w * 0.05, h * 0.3);
+    },
+  });
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const rt = pmrem.fromEquirectangular(tex);
+  pmrem.dispose();
+  tex.dispose();
+  return rt.texture;
 }
 
 /** The leather mat: a rounded-rectangle slab with a bevelled edge and a stitched top. */

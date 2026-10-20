@@ -22,7 +22,10 @@ export interface State {
   /** Small screen: phone budgets (DPR 1.5, 1024 shadow map, 60 motes). */
   isPhone: boolean;
   portrait: boolean;
+  /** 'low' once the quality ladder has switched the jar's transmission off (engine/quality.ts); objects read this. */
   quality: QualityTier;
+  /** Where on the quality ladder the engine is (0 = everything on). */
+  gfxLevel: number;
   /** True once the first lit frame has been rendered. */
   ready: boolean;
 }
@@ -50,6 +53,7 @@ export const state: State = {
   isPhone: detectPhone(),
   portrait: innerHeight > innerWidth,
   quality: 'high',
+  gfxLevel: 0,
   ready: false,
 };
 

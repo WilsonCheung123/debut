@@ -4,8 +4,16 @@ let maxAnisotropy = 1;
 /** Called once by the engine after the renderer exists. */
 export function setMaxAnisotropy(n: number): void { maxAnisotropy = n; }
 
+// Texture budget (SPEC 0.2): 2048² where a surface is seen close on desktop
+// (the wood, the ID, the covers); phones stay at 1024. The engine sets it
+// once at boot, before any object draws a texture.
+let maxTextureSize = 2048;
+export function setMaxTextureSize(n: number): void { maxTextureSize = n; }
+/** The size a close-up texture should be drawn at: 2048 on desktop, 1024 on phones. */
+export function closeUpSize(): number { return Math.min(2048, maxTextureSize); }
+
 export interface CanvasTextureOptions {
-  /** Width in px (power of two preferred). Covers: 512 x 768. Max 1024. */
+  /** Width in px (power of two preferred). Close-up surfaces: closeUpSize() (2048 desktop / 1024 phone); small parts 256–1024. */
   width: number;
   height: number;
   /** Draw the texture. The context is 2D, origin top-left, y down. */
@@ -24,8 +32,8 @@ export interface CanvasTextureOptions {
  * the budget. Object builders draw covers, labels, PCB art and so on with this.
  */
 export function makeCanvasTexture(opts: CanvasTextureOptions): THREE.CanvasTexture {
-  const w = Math.min(1024, Math.max(2, Math.round(opts.width)));
-  const h = Math.min(1024, Math.max(2, Math.round(opts.height)));
+  const w = Math.min(maxTextureSize, Math.max(2, Math.round(opts.width)));
+  const h = Math.min(maxTextureSize, Math.max(2, Math.round(opts.height)));
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
