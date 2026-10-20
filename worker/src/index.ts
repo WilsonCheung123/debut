@@ -67,7 +67,7 @@ async function emailOwner(env: Env, note: { name: string; email: string; note: s
       method: 'POST',
       headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
       body: JSON.stringify({
-        from: 'The jar <jar@notifications.resend.dev>',
+        from: 'The jar <onboarding@resend.dev>', // Resend's free tier sends from this address, to the account owner's own email only
         to: [env.OWNER_EMAIL],
         reply_to: note.email,
         subject: `A slip in the jar from ${note.name}`,
