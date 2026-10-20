@@ -86,11 +86,14 @@ const problems = [];
 const note = (s) => { problems.push(s); console.log(`  ! ${s}`); };
 // SwiftShader-only noise (not present on real GPUs): recorded, not counted.
 const ENV_NOISE = /KHR_parallel_shader_compile|GL Driver Message/;
+// Third-party noise: Chromium warns about the Spotify embed's own iframe markup (allow="…fullscreen" plus
+// allowfullscreen); it is Spotify's element, not ours. Recorded as [3p.warn], not counted.
+const THIRD_PARTY_NOISE = /Allow attribute will take precedence over 'allowfullscreen'/;
 page.on('console', (msg) => {
   const type = msg.type();
   const text = msg.text();
   if (type === 'error') note(`[console.error] ${text}`);
-  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : `[console.warn] ${text}`);
+  else if (type === 'warning') note(ENV_NOISE.test(text) ? `[env.warn] ${text}` : THIRD_PARTY_NOISE.test(text) ? `[3p.warn] ${text}` : `[console.warn] ${text}`);
 });
 page.on('pageerror', (err) => note(`[pageerror] ${err.message}`));
 page.on('requestfailed', (req) => {
