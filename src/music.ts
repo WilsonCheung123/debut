@@ -222,6 +222,10 @@ class Music {
       status: () => this.status,
       reportsState: () => this.reportsState,
       hasController: () => this.controller !== null,
+      /** What the embed itself last reported (null before its first playback_update). */
+      embedPaused: () => this.embedPaused,
+      resume: () => this.resume(),
+      pause: () => this.pause(),
     };
   }
 }
