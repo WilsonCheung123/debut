@@ -9,17 +9,23 @@ export interface BubbleContent {
 
 export type BubbleEvent = 'show' | 'expand' | 'hide';
 
+/** 28 ms per character (SPEC 3). */
+const CHAR_MS = 28;
+
 /**
  * The iMessage-style message bubble (Austen trick only). Bottom-centre, a
  * grey received-message bubble with one button; tapping it grows the bubble
- * to the answer's final size (measured from an invisible copy of the full
- * text, so typing never reflows it) and types the answer at 28 ms per
- * character with a caret, then fades in a quiet link.
+ * into a white one that types the answer at 28 ms per character with a
+ * caret. The box follows the text the way a message composer does: its
+ * height eases to each new line instead of jumping. Then a quiet link.
+ *
+ * Typing is wall-clock driven (setTimeout), not frame driven, so the cadence
+ * holds when frames are slow, and a tap on the bubble completes it.
  */
 export class Bubble {
   static instance: Bubble | null = null;
   readonly el: HTMLDivElement;
-  private typing: gsap.core.Tween | null = null;
+  private typing: { complete(): void; cancel(): void } | null = null;
   private outside: ((e: PointerEvent) => void) | null = null;
   private readonly listeners = new Set<(ev: BubbleEvent) => void>();
   visible = false;
@@ -47,7 +53,6 @@ export class Bubble {
     this.expanded = false;
     this.el.hidden = false;
     this.el.className = 'ask';
-    this.el.style.cssText = '';
     this.el.innerHTML = `${TAIL}<div class="box"><button type="button" class="ask-btn">${esc(content.prompt)}</button></div>`;
     const btn = this.el.querySelector<HTMLButtonElement>('.ask-btn')!;
     btn.addEventListener('click', () => this.expand(content));
@@ -67,8 +72,8 @@ export class Bubble {
     this.expanded = true;
     const from = this.el.querySelector<HTMLDivElement>('.box')!.getBoundingClientRect();
     this.el.className = 'answer';
-    this.el.innerHTML = `${TAIL}<div class="box"><div class="inner">
-      <p class="typed" aria-hidden="true"><span class="ghost">${esc(content.answer)}</span><span class="live"><span class="text"></span><span class="caret"></span></span></p>
+    this.el.innerHTML = `${TAIL}<div class="box growing"><div class="inner">
+      <p class="typed" aria-hidden="true"><span class="text"></span><span class="caret"></span></p>
       <p class="after"><a href="${esc(content.link.href)}" target="_blank" rel="noopener">${esc(content.link.text)}</a></p>
       <p class="sr-only" aria-live="polite">${esc(content.answer)} ${esc(content.link.text)}</p>
     </div></div>`;
@@ -77,44 +82,71 @@ export class Bubble {
     const text = this.el.querySelector<HTMLSpanElement>('.text')!;
     const caret = this.el.querySelector<HTMLSpanElement>('.caret')!;
     const after = this.el.querySelector<HTMLParagraphElement>('.after')!;
-    // the final size comes from the ghost copy; grow from the ask bubble's box to it
     gsap.killTweensOf(this.el);
     gsap.set(this.el, { clearProps: 'transform,opacity' });
-    const to = box.getBoundingClientRect();
+    const to = box.getBoundingClientRect(); // one empty line plus the link's row
     const full = content.answer;
-    const counter = { n: 0 };
+    const reduced = state.reducedMotion;
+    if (reduced) box.style.transition = 'none';
+
+    // the box's height follows the content (the CSS transition eases each new line)
+    let lastH = 0;
+    const fit = (): void => {
+      const h = inner.offsetHeight;
+      if (h !== lastH) { lastH = h; box.style.height = `${h}px`; }
+    };
     const finish = (): void => {
+      this.typing = null;
       text.textContent = full;
       caret.classList.add('done');
-      gsap.to(after, { opacity: 1, duration: 0.45, delay: 0.25 });
+      fit();
+      after.classList.add('shown');
     };
+    let timer = 0;
+    let started = false;
     const startTyping = (): void => {
-      this.typing = gsap.to(counter, {
-        n: full.length, duration: full.length * 0.028, ease: 'none',
-        onUpdate: () => { text.textContent = full.slice(0, Math.floor(counter.n)); },
-        onComplete: () => { this.typing = null; finish(); },
-      });
+      started = true;
+      const t0 = performance.now();
+      let shown = 0;
+      const step = (): void => {
+        const n = Math.min(full.length, Math.floor((performance.now() - t0) / CHAR_MS));
+        if (n !== shown) { shown = n; text.textContent = full.slice(0, n); fit(); }
+        if (n < full.length) timer = window.setTimeout(step, CHAR_MS);
+        else finish();
+      };
+      step();
     };
-    if (state.reducedMotion) {
+    this.typing = {
+      complete: () => { clearTimeout(timer); finish(); },
+      cancel: () => { clearTimeout(timer); this.typing = null; },
+    };
+    if (reduced) {
+      box.classList.remove('growing');
       gsap.fromTo(inner, { opacity: 0 }, { opacity: 1, duration: 0.2 });
       startTyping();
     } else {
+      // grow from the ask bubble's box to the answer's first line, then type
       box.style.width = `${from.width}px`;
       box.style.height = `${from.height}px`;
       gsap.set(inner, { opacity: 0 });
       gsap.to(box, {
         width: to.width, height: to.height, duration: 0.42, ease: 'power3.out',
-        onComplete: () => { box.style.width = ''; box.style.height = ''; },
+        onComplete: () => {
+          box.style.width = '';
+          box.classList.remove('growing');
+          lastH = to.height;
+          if (this.typing && !started) fit();
+        },
       });
       gsap.to(inner, { opacity: 1, duration: 0.25, delay: 0.16 });
-      gsap.delayedCall(0.24, startTyping);
+      timer = window.setTimeout(() => { if (this.typing) startTyping(); }, 220);
     }
     // a click on the bubble while typing completes it (bound on the next tick so the
     // click that opened the answer does not count)
     setTimeout(() => {
       this.el.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('a')) return;
-        if (this.typing) this.typing.progress(1);
+        this.typing?.complete();
       });
     }, 0);
     this.emit('expand');
@@ -124,7 +156,7 @@ export class Bubble {
     if (!this.visible) return;
     this.visible = false;
     if (this.outside) { window.removeEventListener('pointerdown', this.outside, true); this.outside = null; }
-    if (this.typing) { this.typing.kill(); this.typing = null; }
+    this.typing?.cancel();
     const done = (): void => { this.el.hidden = true; this.el.innerHTML = ''; this.el.style.cssText = ''; };
     gsap.killTweensOf(this.el);
     if (instant || state.reducedMotion) { done(); this.emit('hide'); return; }

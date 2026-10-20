@@ -117,7 +117,8 @@
 }
 #bubble[hidden] { display: none; }
 #bubble .tail { position: absolute; left: -5px; bottom: 0; width: 20px; height: 20px; }
-#bubble .box { position: relative; border-radius: 20px; overflow: hidden; box-sizing: border-box; }
+#bubble .box { position: relative; border-radius: 20px; overflow: hidden; box-sizing: border-box; transition: height .24s cubic-bezier(.2,.7,.2,1); }
+#bubble .box.growing { transition: none; }
 #bubble.ask .box { background: #e9e9eb; color: #111; padding: 4px; white-space: nowrap; }
 #bubble.ask .tail path { fill: #e9e9eb; }
 #bubble .ask-btn {
@@ -130,16 +131,16 @@
 #bubble.answer .box { background: #fff; color: #111; }
 #bubble.answer .tail path { fill: #fff; }
 #bubble .inner { padding: 14px 18px 14px; }
-#bubble .typed { position: relative; margin: 0; }
-#bubble .ghost { visibility: hidden; }
-#bubble .live { position: absolute; inset: 0; }
+#bubble .typed { margin: 0; }
 #bubble .caret { display: inline-block; width: 0; height: 1.05em; vertical-align: -0.16em; margin-left: 1px; box-shadow: 0 0 0 1px #111; animation: caret 1s steps(1) infinite; }
 #bubble .caret.done { animation: none; opacity: 0; }
-#bubble .after { margin: 10px 0 0; opacity: 0; }
+#bubble .after { margin: 10px 0 0; opacity: 0; transition: opacity .45s ease .25s; }
+#bubble .after.shown { opacity: 1; }
 #bubble .after a { display: inline-block; color: #1a6ce0; text-decoration: none; font-size: 14px; padding: 13px 6px; margin: -13px -6px; }
 #bubble .after a:hover { text-decoration: underline; }
 @keyframes caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   #bubble .caret { animation: none; }
+  #bubble .box, #bubble .after { transition: none; }
 }
