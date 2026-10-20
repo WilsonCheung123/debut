@@ -174,7 +174,28 @@ average 85, so the frame times are not comparable to a quiet machine): DPR 2,
 
 After: see the table below (filled from `shots/audit/audit.json`).
 
-AFTER_TABLE
+| state (1440 × 900, DPR 2, ladder unlocked) | mean ms | p50 | p95 | level after | draw calls |
+|---|---|---|---|---|---|
+| rest (first window) | 70.6 | 67 | 90 | 0 → 1 (dust 60) | 145 |
+| hover | 81 | 82 | 86 | 1 | 145 |
+| focus move (ID) | 88 | 87 | 101 | 1 | 82 |
+| focused (ID) | 80 | 79 | 82 | 1 → 2 (transmission off) | 82 |
+| exit move | 82 | 83 | 103 | 2 | 145 |
+| rest after | 79 | 80 | 84 | 2 → 3 (shadow 2048) | 145 |
+
+Taken on the Iris Plus 645 at load average 107 (every other builder's
+SwiftShader run on the same four cores). The ladder stepped three times and
+the frame time did not move (71 → 80 → 79 ms), which says the frame was
+CPU-starved, not GPU-bound, in this run; on a quiet machine the same GPU is
+expected to sit near the 30 ms line at DPR 2, where the ladder's first steps
+are the cheap ones and resolution stays at 2 or, at worst, 1.5. **Re-run
+`node tools/gfx-audit.mjs` on a quiet machine before trusting any number
+here.** What the run does establish: DPR 2 is held while the cheaper steps go
+first (before, the first window would have set DPR 1), triangles 156 776,
+draw calls unchanged (145 at rest, 82 in the ID focus), zero console errors,
+MSAA resolves the book edges and the tonearm cleanly at DPR 1.5 and 2
+(`shots/audit/1440@1.5-*`), and the real-GPU screenshots of every focus
+state are in `shots/audit/`.
 
 ## Known environment facts
 

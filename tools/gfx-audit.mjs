@@ -51,7 +51,8 @@ async function pass({ name, vw, vh, dpr, query = '', profile = false, focus = []
       report[label] = { ...stats(frames), ...(await info()) };
       console.log(name, label, JSON.stringify(report[label]));
     };
-    const shot = (file) => shots && page.screenshot({ path: path.join(outdir, `${name}-${file}.png`) });
+    // a 2x screenshot of a busy frame can take a while on a loaded machine; a missed shot must not end the pass
+    const shot = async (file) => { if (!shots) return; try { await page.screenshot({ path: path.join(outdir, `${name}-${file}.png`), timeout: 90000 }); } catch (e) { report.problems.push(`[shot ${file}] ${e.message.split('\n')[0]}`); } };
     const focusOn = async (id) => {
       await page.evaluate((id) => { window.__table.focus(id); }, id);
       await page.waitForFunction(() => window.__table.info().mode === 'focus', null, { timeout: 10000 }).catch(() => {});
