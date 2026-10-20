@@ -18,8 +18,8 @@ import { papers as content } from '../content/papers';
 // lifts the whole stack 2 cm.
 
 const ID = 'papers';
-const W = 0.17, D = 0.22;              // US letter proportions (8.5 : 11), the footprint the corner allows
-const N = 36;                           // sheets
+const W = 0.125, D = 0.162;            // A5-ish (same 8.5 : 11 proportions): letter size pulled the rest camera back ~17% to fit
+const N = 44;                           // sheets
 const T = 0.00022;                      // one sheet
 const H = N * T;                        // 7.9 mm
 /** How far the stack rises when focused (metres). */

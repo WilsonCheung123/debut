@@ -72,7 +72,7 @@ export const rest: Record<string, RestPose> = {
   'die-cast': { position: [-0.13, 0, 0.10], rotationY: 24 },
   puppet:   { position: [0.44, 0, 0.08], rotationY: 8 },   // turned toward the lamp so the key grazes his front (he read grey at -16: only the cool fill reached his face)
   'id-card': { position: [-0.24, 0, 0.27], rotationY: 9 },   // round 3: moved right; the stack of paper takes the front-left corner
-  papers:   { position: [-0.50, 0, 0.20], rotationY: -7 },   // z 0.20, not 0.25: any further forward and the rest camera pulls back ~17% to fit it
+  papers:   { position: [-0.51, 0, 0.23], rotationY: -7 },   // the corner; its front edge stays near the ID's old reach so the rest camera does not pull back
   guitar:   { position: [0.12, 0, 0.26], rotationY: -22 },
   jar:      { position: [0.56, 0, 0.24], rotationY: 0 },
   /** The lamp's head points down local -z, 0.74 m out; 123° aims it at (-0.06, 0.09): the pool covers the centre-front. */
