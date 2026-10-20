@@ -27,6 +27,7 @@ import { A11yList } from './ui/a11y';
 import { registry } from './objects/index';
 import { isCluster, type TableObject, type ObjectCtx, type FocusCamera } from './objects/types';
 import { rest as restPoses } from './layout';
+import { music } from './music';
 import type { LampObject } from './objects/lamp';
 
 async function boot(): Promise<void> {
@@ -223,6 +224,8 @@ async function boot(): Promise<void> {
     focus(id: string) { return focus.focus(id); },
     exit() { return focus.exit(); },
     liftOf(id: string) { return hover.liftOf(id); },
+    /** Music test hooks: __table.music.setPlaying(true) arms the Austen trick without Spotify. */
+    music: music.hooks,
     info() {
       return {
         drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
