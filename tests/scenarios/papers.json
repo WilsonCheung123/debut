@@ -1,0 +1,18 @@
+[
+  {"action":"wait","ready":true},
+  {"action":"shot","name":"rest"},
+  {"action":"log","name":"bounds","js":"(function(){const t=window.__table;return {papers:t.rect('papers',0),id:t.rect('id-card',0),fpga:t.rect('fpga',0)};})()"},
+  {"action":"audit","name":"sizes","minWidth":60,"clusterPrefixes":["book."]},
+  {"action":"hover","id":"papers"},
+  {"action":"assert","name":"label","js":"document.getElementById('label').textContent === 'a stack of paper'"},
+  {"action":"shot","name":"hover-papers"},
+  {"action":"eval","js":"window.__table.hover(null)"},
+  {"action":"focus","id":"papers"},
+  {"action":"assert","name":"blog-title","js":"document.getElementById('panel-title').textContent === 'Blog'"},
+  {"action":"assert","name":"blog-text","js":"(function(){const t=document.querySelector('#panel .content').textContent.trim();return t === 'More to come.' && document.querySelectorAll('#panel .content p').length === 1 && !document.querySelector('#panel .content mark.todo');})()"},
+  {"action":"assert","name":"hash","js":"location.hash === '#papers'"},
+  {"action":"wait","ms":600},
+  {"action":"shot","name":"focus-papers"},
+  {"action":"exit"},
+  {"action":"assert","name":"back-at-rest","js":"window.__table.info().mode === 'rest' && location.hash === ''"}
+]
