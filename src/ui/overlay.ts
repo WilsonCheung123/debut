@@ -1,13 +1,20 @@
 import gsap from 'gsap';
+import { noiseDataUrl } from '../materials';
 
 /**
  * The CSS overlay on the canvas: a radial vignette whose clear "eye" follows
- * the focused object, plus a black layer for reduced-motion camera cuts.
- * depth 0 = rest, 1 = focused. During warm-up depth starts above 1.
+ * the focused object, a film-grain layer, plus a black layer for
+ * reduced-motion camera cuts. depth 0 = rest, 1 = focused. During warm-up
+ * depth starts above 1 and settles to 0 with the lamp.
+ *
+ * The grain is a 3% tiled noise: enough to break the 8-bit banding of a CSS
+ * gradient over a mostly-black frame (the renderer dithers its own output),
+ * and it lifts pure black to the faint grey of film, which is the point.
  */
 export class Overlay {
   readonly el: HTMLDivElement;
   private readonly vignette: HTMLDivElement;
+  private readonly grain: HTMLDivElement;
   private readonly cutEl: HTMLDivElement;
   depth = 1.6;
   private eye = { x: 50, y: 50 };
@@ -19,9 +26,12 @@ export class Overlay {
     this.el.setAttribute('aria-hidden', 'true');
     this.vignette = document.createElement('div');
     this.vignette.className = 'vignette';
+    this.grain = document.createElement('div');
+    this.grain.className = 'grain';
+    this.grain.style.backgroundImage = `url(${noiseDataUrl(128, 1, 11)})`;
     this.cutEl = document.createElement('div');
     this.cutEl.className = 'cut';
-    this.el.append(this.vignette, this.cutEl);
+    this.el.append(this.vignette, this.grain, this.cutEl);
     root.append(this.el);
     this.apply();
   }
@@ -51,8 +61,10 @@ export class Overlay {
     if (d === this.last.depth && this.eye.x === this.last.x && this.eye.y === this.last.y) return;
     this.last = { depth: d, x: this.eye.x, y: this.eye.y };
     const s = this.vignette.style;
-    const inner = Math.max(6, 34 - 16 * Math.min(d, 1));
-    const outerAlpha = Math.min(0.97, 0.62 + 0.3 * d);
+    // rest: a wide, gentle fall-off that leaves the table's corners readable;
+    // focus: the eye tightens on the object and the rest goes down to ~10%
+    const inner = Math.max(4, 30 - 14 * Math.min(d, 1));
+    const outerAlpha = Math.min(0.97, 0.5 + 0.38 * d);
     s.setProperty('--vx', `${this.eye.x}%`);
     s.setProperty('--vy', `${this.eye.y}%`);
     s.setProperty('--vin', `${inner}%`);

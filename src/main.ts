@@ -12,6 +12,7 @@ import { api } from './api';
 import { materials } from './materials';
 import { createScene } from './engine/scene';
 import { Lights } from './engine/lights';
+import { createContactShadows } from './engine/contact';
 import { CameraRig } from './engine/camera';
 import { Picker } from './engine/picking';
 import { Hover } from './engine/hover';
@@ -83,7 +84,14 @@ async function boot(): Promise<void> {
   for (const o of objects) hover.register(o);
   const interactive = objects.filter((o) => o.hit.length > 0);
   picker.register(interactive);
-  if (lamp) lights.attachToLamp(lamp.headWorld(), lamp.aimWorld());
+  if (lamp) {
+    lights.attachToLamp(lamp.headWorld(), lamp.aimWorld());
+    const l = lamp;
+    lights.onApply = (w, d) => l.setGlow(w, d);
+  }
+  // contact shadows under everything that sits on the wood (sized from real bounds)
+  const contact = createContactShadows(scene);
+  for (const o of interactive) contact.add(o);
 
   focusCtl = new Focus({ rig, lights, hover, picker, overlay, label, panel, bubble, a11y, objects: interactive, ctx });
   const focus = focusCtl;
@@ -182,6 +190,7 @@ async function boot(): Promise<void> {
     hover.apply();
     for (const o of objects) o.update?.(dt, t);
     rig.update(dt);
+    contact.update();
     lights.apply();
     overlay.apply();
     placeLabel();

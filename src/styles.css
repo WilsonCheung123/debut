@@ -20,9 +20,11 @@
 #overlay .vignette {
   position: absolute; inset: 0;
   --vx: 50%; --vy: 50%; --vin: 34%; --vout: 0.62;
-  background: radial-gradient(ellipse 72% 72% at var(--vx) var(--vy), rgba(0,0,0,0) var(--vin), rgba(0,0,0,var(--vout)) 100%);
+  background: radial-gradient(ellipse 78% 76% at var(--vx) var(--vy), rgba(0,0,0,0) var(--vin), rgba(0,0,0,var(--vout)) 100%);
   opacity: 0.6;
 }
+/* Film grain over everything: tiled noise at 3%, breaks gradient banding, lifts black to film black. */
+#overlay .grain { position: absolute; inset: 0; background-size: 128px 128px; background-repeat: repeat; opacity: 0.032; }
 #overlay .cut { position: absolute; inset: 0; background: #000; opacity: 0; }
 
 /* Hover label: small caps, cream on nothing. */
