@@ -1,15 +1,15 @@
-// The student ID's panel (SPEC 4.3): the bio, in Wilson's voice, first person,
-// from his facts. Appears after the card is flipped. No email anywhere: the
-// jar is the contact path.
+// The student ID's panel (SPEC 0.2 "Student ID"): Wilson's words, verbatim,
+// four short paragraphs. No flip: the panel opens with the focus. No email
+// anywhere: the jar is the contact path.
 import { p, type PanelContent } from './types';
 
 export const idCard: PanelContent = {
   kicker: 'student id',
   title: 'Wilson Cheung',
   html: [
-    p('I spent the first years of my life in rural China, grew up in Hong Kong, and came to the US for boarding school. First in my family to do any of it.'),
-    p("I don't have a lot of interests. I do three things: build products, read, and talk to interesting, smart people. If you can help with any of the three, reach out."),
-    p('The threads I keep pulling on: US–China, tech × humanities, spirituality.'),
-    '<p class="kicker">the jar on the desk is how to reach me</p>',
+    p('Howdy guys, my name is Wilson.'),
+    p('I spent my childhood in rural China, grew up in Hong Kong, and came to the US for boarding school. Now I study at Harvard.'),
+    p("I do three things: build products, read, and talk to interesting people. To relax, I play the guitar and hit the gym. Drop me a note in the jar if you think we'd enjoy chatting!"),
+    p("That's it. You'll have to look elsewhere to learn more about me. There's only so much room on a student card..."),
   ].join(''),
 };

@@ -115,7 +115,7 @@ export const focus: Record<string, FocusFrame> = {
   // the ID lifts 5.5 cm and faces the camera when focused (ID_FOCUS_LIFT): aim where it will be
   'id-card':  { dist: 0.30, az: 2, el: 64, fov: 31, targetOffset: [0, 0.062, 0.01] },
   // from the right and lower, so the hinge end with the coil spring faces the camera
-  guitar:     { dist: 0.30, az: -70, el: 32, fov: 31 },
+  guitar:     { dist: 0.29, az: -70, el: 36, fov: 31 },
   fpga:       { dist: 0.30, az: 4, el: 52, fov: 31 },
   'die-cast': { dist: 0.30, az: 12, el: 44, fov: 31 },
   hologram:   { dist: 0.84, az: 6, el: 22, fov: 32, targetOffset: [0, 0.05, 0] },
