@@ -61,7 +61,8 @@ async function boot(): Promise<void> {
     motion(id) { return hover.motion(id); },
     exit() { void focusCtl?.exit(); },
     reframe(id, duration) { focusCtl?.reframe(id, duration); },
-    openPanel(id) { focusCtl?.openPanel(id); },
+    openPanel(id, spec, onClose) { focusCtl?.openPanel(id, spec, onClose); },
+    closePanel() { return focusCtl ? focusCtl.closePanel() : Promise.resolve(); },
   };
 
   // Objects: create, place roots from layout, register.
@@ -112,7 +113,7 @@ async function boot(): Promise<void> {
   }
   // contact shadows under everything that sits on the wood (sized from real bounds)
   const contact = createContactShadows(scene);
-  for (const o of interactive) contact.add(o);
+  for (const o of interactive) if (o.contactShadow !== false) contact.add(o);
 
   focusCtl = new Focus({ rig, lights, hover, picker, overlay, label, panel, bubble, a11y, objects: interactive, ctx });
   const focus = focusCtl;

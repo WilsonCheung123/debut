@@ -3,7 +3,7 @@
 // Table: 1.30 (x) by 0.80 (z), so x in [-0.65, 0.65], z in [-0.40, 0.40] (TABLE in engine/scene.ts).
 //
 // Composition (one person's desk, read from the front-left camera):
-//   back-left   books cluster (five standing + stack)        hologram puck centre-back
+//   back-left   books cluster (nine standing between bookends)  hologram puck centre-back
 //   back-right  turntable, then the lamp in the corner
 //   middle      FPGA board and the die-cast part together, puppet standing just right of centre
 //               (a standing object occludes what sits behind it along the view direction: keep that strip clear)
@@ -79,39 +79,40 @@ export const rest: Record<string, RestPose> = {
 };
 
 /**
- * The books, in shelf order (also the keyboard/reading order): five standing
- * between the bookends (spines toward +z), left to right, then the lying
- * stack, bottom to top. The books builder decides sizes and exact positions
- * inside the cluster (standing books start near local x = -0.19; the stack
- * sits around local x = +0.14); the engine frames from real bounds.
+ * The books, in shelf order (also the keyboard/reading order, SPEC 4.1's
+ * list): nine standing between the bookends, spines toward +z, left to right.
+ * The books builder decides sizes and exact positions inside the cluster
+ * (the row starts near local x = -0.19); the engine frames from real bounds.
  */
-export const bookSlots: { id: string; title: string; standing: boolean; stackIndex?: number }[] = [
-  { id: 'book.anna-karenina',      title: 'Anna Karenina',            standing: true },
-  { id: 'book.inferno',            title: 'Inferno',                  standing: true },
-  { id: 'book.three-body',         title: 'The Three-Body Problem',   standing: true },
-  { id: 'book.power-broker',       title: 'The Power Broker',         standing: true },
-  { id: 'book.pride-and-prejudice', title: 'Pride and Prejudice',      standing: true },
-  { id: 'book.thinking-fast-slow', title: 'Thinking, Fast and Slow',  standing: false, stackIndex: 0 },
-  { id: 'book.innovators-dilemma', title: "The Innovator's Dilemma",  standing: false, stackIndex: 1 },
-  { id: 'book.demi-gods',          title: '天龙八部',                  standing: false, stackIndex: 2 },
-  { id: 'book.becoming-steve-jobs', title: 'Becoming Steve Jobs',      standing: false, stackIndex: 3 },
+export const bookSlots: { id: string; title: string }[] = [
+  { id: 'book.anna-karenina',       title: 'Anna Karenina' },
+  { id: 'book.inferno',             title: 'Inferno' },
+  { id: 'book.becoming-steve-jobs', title: 'Becoming Steve Jobs' },
+  { id: 'book.innovators-dilemma',  title: "The Innovator's Dilemma" },
+  { id: 'book.three-body',          title: 'The Three-Body Problem' },
+  { id: 'book.power-broker',        title: 'The Power Broker' },
+  { id: 'book.thinking-fast-slow',  title: 'Thinking, Fast and Slow' },
+  { id: 'book.demi-gods',           title: '天龙八部' },
+  { id: 'book.pride-and-prejudice', title: 'Pride and Prejudice' },
 ];
 
-// Books slide out of the shelf / stack and lift ~8 cm when focused (books.ts
-// tweens the motion layer); the target offsets aim where the book will be.
+// A single book (keyboard / deep link) slides out of the row and lifts ~8 cm when
+// focused (books.ts tweens the motion layer); the target offset aims where it will be.
 const book: FocusFrame = { dist: 0.5, az: 8, el: 24, fov: 31, targetOffset: [0, 0.085, 0.15] };
-const flatBook: FocusFrame = { dist: 0.6, az: 6, el: 40, fov: 31, targetOffset: [0, 0.1, 0.22] };
+// The shelf (clicking the cluster): frontal, low, the row lifted to eye level (SHELF in books.ts).
+const shelf: FocusFrame = { dist: 0.62, az: 0, el: 7, fov: 30, targetOffset: [0, 0.10, 0.06] };
 
 export const focus: Record<string, FocusFrame> = {
+  books: shelf,
   'book.anna-karenina': book,
   'book.inferno': book,
+  'book.becoming-steve-jobs': book,
+  'book.innovators-dilemma': book,
   'book.three-body': book,
   'book.power-broker': book,
+  'book.thinking-fast-slow': book,
+  'book.demi-gods': book,
   'book.pride-and-prejudice': book,
-  'book.thinking-fast-slow': flatBook,
-  'book.innovators-dilemma': flatBook,
-  'book.demi-gods': flatBook,
-  'book.becoming-steve-jobs': flatBook,
   // the ID lifts 5.5 cm and faces the camera when focused (ID_FOCUS_LIFT): aim where it will be
   'id-card':  { dist: 0.30, az: 2, el: 58, fov: 31, targetOffset: [0, 0.062, 0] },
   guitar:     { dist: 0.30, az: 6, el: 50, fov: 31 },

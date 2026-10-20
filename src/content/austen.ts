@@ -1,8 +1,15 @@
-// The Austen trick (SPEC 4.9). Shown by the message bubble when the visitor
-// focuses Pride and Prejudice while music is playing. Wilson's words, verbatim.
+// The Austen letter (SPEC 0.2): slides in over the Pride and Prejudice panel
+// when the music stopped because the book was opened. Wilson's words,
+// verbatim; the heading is the builder's (the theme note the spec asks for).
 export const austen = {
-  prompt: 'why did my music stop?',
-  answer:
-    "When you're overwhelmed by sadness, should you reach for melancholy music? The common answer is yes, that it's catharsis. But there's a quieter problem underneath. If music becomes a tool for producing feeling rather than a way of honoring a feeling you already have, is the emotion still yours, or did the music manufacture it? And even if indulging our sensibility feels harmless, what does it cost us? These are the questions Austen was asking, long before anyone had a playlist for heartbreak. If you want the right answer (in my opinion), read Persuasion.",
+  /** The short heading: letter writing is a theme in Austen's novels, so the theme is extended here. */
+  heading: 'Letters carry the turns of every Austen novel: Darcy explains himself in one, Wentworth declares himself in another. So the reply to what just happened comes as a letter too.',
+  salutation: 'Dear reader,',
+  /** Paragraphs of the letter. `*Persuasion*` is set in italics by the panel. */
+  body: [
+    "So you noticed the music stopped when you opened this book. Well, this is not a glitch. Let me ask you a quick question: when you're overwhelmed by sadness, should you listen to sad music? The common answer is yes, because it's cathartic. But if music, instead of relieving our sadness, becomes a tool to deliberately produce it, is the emotion still yours? To live is indeed to feel, but does indulging one's sensibility lead to a loss of emotional ownership? If you want the right answer (in my opinion), read *Persuasion*.",
+  ],
+  signoff: 'Yours,',
+  signature: 'Wilson',
   link: { text: 'read Persuasion', href: 'https://www.gutenberg.org/ebooks/105' },
 };
