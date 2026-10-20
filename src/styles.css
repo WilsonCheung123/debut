@@ -108,5 +108,3 @@
 #panel.sheet header { padding-top: 6px; }
 #panel.sheet .body { padding: 4px 22px calc(28px + env(safe-area-inset-bottom, 0px)); }
 #panel.sheet h1 { font-size: 24px; }
-
-}
