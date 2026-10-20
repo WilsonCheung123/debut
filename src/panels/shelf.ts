@@ -101,6 +101,8 @@ export class Shelf {
   private pointerOwns = true;
   private readonly spreadX: number[];
   private readonly scroll = { pos: 0, target: 0, min: 0, max: 0, lean: 0, kick: 0, prev: 0 };
+  /** True from enter() until the camera has arrived or the visitor scrolls: the target follows the left-end parking. */
+  private parking = false;
   private readonly raycaster = new THREE.Raycaster();
   private readonly ndc = new THREE.Vector2();
   private readonly v = new THREE.Vector3();
@@ -135,7 +137,8 @@ export class Shelf {
     this.hovered = -1;
     this.pointerOwns = true;
     this.scroll.kick = 0; this.scroll.lean = 0;
-    this.scroll.pos = this.scroll.target = this.scroll.prev = -1; // resolved to the left end on the first tick (needs the camera)
+    this.scroll.pos = this.scroll.target = this.scroll.prev = 0;
+    this.parking = true; // the row glides to its left-end parking as the camera arrives (the bounds need the focus camera)
     gsap.killTweensOf(this);
     const dur = state.reducedMotion ? 0 : 0.9;
     gsap.to(this, { spread: 1, duration: dur, ease: 'power3.inOut', overwrite: true });
@@ -258,6 +261,7 @@ export class Shelf {
   scrollBy(m: number): void {
     if (!this.active) return;
     const s = this.scroll;
+    this.parking = false;
     s.target = THREE.MathUtils.clamp(s.target + m, s.min - OVERSCROLL, s.max + OVERSCROLL);
     s.kick = THREE.MathUtils.clamp(s.kick + m * 2.2, -0.22, 0.22);
   }
@@ -265,6 +269,7 @@ export class Shelf {
   /** Scrolls so book `i` sits well inside the view. */
   private reveal(i: number): void {
     const s = this.scroll;
+    this.parking = false;
     const x = this.spreadX[i] - this.opts.rowCentreX; // view-centred local x of the book, at scroll 0
     const half = this.visibleHalf() * 0.72;
     if (x - s.target < -half) s.target = THREE.MathUtils.clamp(x + half, s.min, s.max);
@@ -283,7 +288,9 @@ export class Shelf {
   /** QA: hover by id without a pointer. */
   hoverById(id: string | null): void {
     this.pointerOwns = false;
-    this.setHovered(id ? this.index(id) : -1);
+    const i = id ? this.index(id) : -1;
+    if (i >= 0) this.reveal(i); // like the keyboard: a book the script names scrolls into view
+    this.setHovered(i);
   }
 
   private setHovered(i: number): void {
@@ -344,11 +351,13 @@ export class Shelf {
       const edge = Math.max(0, total / 2 - half);
       const over = edge + half * END_REACH;
       s.min = -over; s.max = over;
-      if (s.target === -1 && s.pos === -1) { s.target = s.pos = s.prev = -edge; }
+      // the bounds are only right once the focus camera is in place (the spread tween runs with it): until then,
+      // or until the visitor scrolls, the target tracks the parking so the row settles with its first book at the view's left edge
+      if (this.parking) { s.target = -edge; if (sp > 0.995) this.parking = false; }
       // past the ends: ease back once the wheel is quiet
       if (s.target < s.min) s.target += (s.min - s.target) * Math.min(1, dt * 8);
       else if (s.target > s.max) s.target += (s.max - s.target) * Math.min(1, dt * 8);
-    } else if (s.pos === -1) { s.target = s.pos = s.prev = 0; }
+    }
     if (!this.active) s.target = 0;
     s.pos += (s.target - s.pos) * (this.active ? k : Math.min(1, dt * 6));
     // the sway: a kick per wheel event that decays within a few frames (Stripe), plus the row's own velocity
