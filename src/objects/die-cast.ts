@@ -33,7 +33,7 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
   // Cast aluminium is matte anyway: a mid grey with modest metalness and a pebbled bump sells it.
   const cast = new THREE.MeshStandardMaterial({
     color: 0x8f9396, roughness: 0.84, metalness: 0.2,
-    roughnessMap: noise, bumpMap: noise, bumpScale: 0.0004,
+    roughnessMap: noise, bumpMap: noise, bumpScale: 0.0007,
   });
   const toolMarks = machinedMarks();
   const machined = new THREE.MeshStandardMaterial({ color: 0xb9bdbf, roughness: 0.4, metalness: 0.48, roughnessMap: toolMarks });
@@ -77,7 +77,7 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
   // the bosses' holes: dark discs sunk a hair below the boss tops
   const holes = BOSSES.map(([bx, bz]) => {
     const g = new THREE.CylinderGeometry(BOSS_HOLE, BOSS_HOLE, 0.004, 18);
-    g.translate(bx, bossH - 0.0021, bz);
+    g.translate(bx, bossH - 0.0018, bz); // its top a hair above the boss top, so the dark disc reads as the hole
     return g;
   });
   const holeMesh = new THREE.Mesh(mergeParts(holes), hole);

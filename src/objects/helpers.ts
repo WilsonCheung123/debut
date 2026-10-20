@@ -137,15 +137,32 @@ export function contactBlob(w: number, d: number, baseYaw: number, opts: { x?: n
  * plain sides then costs two draw calls instead of three.
  */
 export function topFirst(geo: THREE.BufferGeometry): void {
-  const index = geo.index;
   const g = geo.groups.map((x) => ({ ...x }));
-  if (!index || g.length !== 6) return;
-  const a = Array.from(index.array as ArrayLike<number>);
+  if (g.length !== 6) return;
   const top = g[2];
-  const rest = a.slice(0, top.start).concat(a.slice(top.start + top.count));
-  const ordered = a.slice(top.start, top.start + top.count).concat(rest);
-  geo.setIndex(ordered);
+  const index = geo.index;
+  let total: number;
+  if (index) {
+    const a = Array.from(index.array as ArrayLike<number>);
+    const rest = a.slice(0, top.start).concat(a.slice(top.start + top.count));
+    geo.setIndex(a.slice(top.start, top.start + top.count).concat(rest));
+    total = a.length;
+  } else {
+    // non-indexed (RoundedBoxGeometry): groups are vertex ranges; move the top's vertices to the front in every attribute
+    total = geo.attributes.position.count;
+    for (const name of Object.keys(geo.attributes)) {
+      const attr = geo.attributes[name] as THREE.BufferAttribute;
+      const n = attr.itemSize;
+      const src = attr.array as Float32Array;
+      const out = new Float32Array(src.length);
+      const a0 = top.start * n, a1 = (top.start + top.count) * n;
+      out.set(src.subarray(a0, a1), 0);
+      out.set(src.subarray(0, a0), a1 - a0);
+      out.set(src.subarray(a1), a1 - a0 + a0);
+      geo.setAttribute(name, new THREE.BufferAttribute(out, n, attr.normalized));
+    }
+  }
   geo.clearGroups();
   geo.addGroup(0, top.count, 0);
-  geo.addGroup(top.count, rest.length, 1);
+  geo.addGroup(top.count, total - top.count, 1);
 }
