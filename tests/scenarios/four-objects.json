@@ -19,6 +19,7 @@
   {"action":"exit"},
   {"action":"focus","id":"fpga"},
   {"action":"assert","name":"fpga-card","js":"(function(){const a=document.querySelector('#panel .content a.linkcard');const img=a&&a.querySelector('img');return !!a && a.href==='https://architectlabs.com/blog/redwood' && a.target==='_blank' && /noopener/.test(a.rel) && !!img && img.complete && img.naturalWidth>0 && !a.classList.contains('no-image') && !document.querySelector('#panel .content .btn') && !document.querySelector('#panel .content mark.todo');})()"},
+  {"action":"wait","ms":1200},
   {"action":"shot","name":"focus-fpga"},
   {"action":"exit"},
   {"action":"focus","id":"die-cast"},
