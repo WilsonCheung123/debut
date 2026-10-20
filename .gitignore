@@ -7,3 +7,6 @@ worker/.wrangler/
 worker/.dev.vars
 *.log
 .DS_Store
+
+# agent worktrees live inside the repo dir; never commit them
+.claude/
