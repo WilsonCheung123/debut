@@ -2,11 +2,24 @@
 
 Read in this order: this file, `SPEC.md` (the build contract), `docs/BRIEF-wilson-verbatim.md` (Wilson's own words; blurbs and quotes must stay verbatim), `docs/OBJECT-GUIDE.md`, `docs/QA.md`. `docs/VISION-v1-light-table.md` is an earlier, superseded concept kept for history only.
 
-## State as of 2026-10-20 (morning)
+## State as of 2026-10-20 (stopped on Wilson's instruction)
 
-- **main** = engine complete (scene, camera rig, hover/focus choreography, paper panels, bubble, keyboard list, worker with local D1, Playwright shot tool). Every object on the table is still a placeholder box. Last commit: `9debb7e`.
-- **Eight builder branches** exist as git worktrees under `.claude/worktrees/agent-*` (branches `worktree-agent-*`). They were started 2026-10-19 20:17 and all eight were killed by an API rate limit about 25 minutes in, with work saved on their branches. Map branch to job by reading each branch's diff; the jobs (SPEC section numbers) are: books 4.1, Kahneman flow 4.2, ID+FPGA+die-cast+capo 4.3–4.6, hologram 4.7, puppet 4.8, turntable+Austen 4.9, jar+principles 4.10, environment 4.11. Only the jar and environment branches had committed before the kill; the rest have uncommitted edits in their worktrees (`git -C <worktree> status`).
-- **Not started:** integration (merge the eight branches into main, retune `src/layout.ts`), the desktop QA loop (taste, glitch, a11y, content critics), Lighthouse.
+- **main** = engine complete (scene, camera rig, hover/focus choreography, paper panels, bubble, keyboard list, worker with local D1, Playwright shot tool). Objects on main are still placeholder boxes.
+- **Eight builder branches**, all pushed to GitHub (`origin`), each with real but unfinished object work. Every branch's last commit is either the builder's own or a `wip: salvage` commit made at stop time, so nothing is lost. Branch -> job (SPEC section):
+
+| Branch | Job | State at stop |
+|---|---|---|
+| `worktree-agent-a75f3648453584236` | Books 4.1 | content (nine blurbs/quotes) + procedural cover-design module; object not yet wired |
+| `worktree-agent-a093b530b35c69f45` | Thinking, Fast and Slow flow 4.2 | checker-shadow press-and-hold proof + anchoring panel drafted; needs end-to-end test against worker |
+| `worktree-agent-a1c800077036819b8` | ID card, FPGA, die-cast, capo 4.3-4.6 | all four objects first versions (ID flip + deferred panel); needs screenshots/QA |
+| `worktree-agent-aa879965708220422` | Hologram projector + films 4.7 | wip salvage; check `src/objects/hologram.ts`, `src/panels/hologram.ts` |
+| `worktree-agent-a83bb075904774d8f` | Puppet + Think Different page 4.8 | marionette geometry, painted head, strings to cross bar; panel copy to verify |
+| `worktree-agent-a6f534a90d0a4c31a` | Turntable, Spotify, Austen bubble 4.9 | wip salvage; check `src/objects/vinyl.ts`, `src/panels/vinyl.ts`, `src/panels/austen.ts` |
+| `worktree-agent-a08fb61d0872017eb` | Jar + slip + principles 4.10 | glass jar (transmission), slotted lid, slip pile, slip-of-paper panel; principles copy |
+| `worktree-agent-a43b9640003202166` | Environment polish 4.11 | articulate lamp, walnut maps, leather mat, light rig WIP; before/after shots under `shots/env/` |
+
+Each branch may have made small additive edits to engine files; diff against main before merging. Worktrees live under `.claude/worktrees/` (ignored by git); they share one `node_modules` via symlink. Another agent can simply `git checkout <branch>` instead of using the worktrees.
+- **Not started:** integration (merge the eight branches into main one at a time, retune `src/layout.ts`), the desktop QA loop (taste, glitch, a11y, content critics per `docs/QA.md`), Lighthouse, deployment.
 
 ## How to run
 
