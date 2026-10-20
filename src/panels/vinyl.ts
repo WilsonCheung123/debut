@@ -8,7 +8,6 @@
 // lives in music.ts's dock, laid over the tile, so it survives the panel closing.
 import type { PanelFactory, PanelCtx } from './types';
 import { music, PLAYLIST_URL, PLAYLIST_TITLE, type MusicStatus, type TrackInfo } from '../music';
-import { brackets } from '../content/types';
 
 const CSS = `
 #panel .content .vinyl-panel { display: flex; flex-direction: column; }
@@ -69,7 +68,7 @@ export function vinylPanel(): PanelFactory {
           <button type="button" class="vinyl-skip vinyl-next" aria-label="Next track" disabled>${NEXT}</button>
         </div>
         <p class="vinyl-note"></p>
-        <p class="vinyl-after">${brackets('[a line about this playlist, or nothing]')}</p>
+        <p class="vinyl-after">Mostly film scores. The kind of music that makes a long night of work feel like a montage.</p>
         <div class="vinyl-foot">
           <p class="vinyl-via">music via YouTube</p>
           <div class="vinyl-slot"><div class="skeleton" aria-hidden="true"></div></div>
