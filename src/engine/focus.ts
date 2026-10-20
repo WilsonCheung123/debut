@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import type { TableObject, ObjectCtx } from '../objects/types';
+import type { PanelSpec } from '../panels/types';
 import type { CameraRig, CamPose } from './camera';
 import type { Lights } from './lights';
 import type { Hover } from './hover';
@@ -12,7 +13,6 @@ import type { Bubble } from '../ui/bubble';
 import type { A11yList } from '../ui/a11y';
 import { focus as focusFrames } from '../layout';
 import { state } from '../state';
-import { austen } from '../content/austen';
 
 export interface TimelineMark { ev: string; id?: string; t: number }
 
@@ -48,7 +48,6 @@ export class Focus {
   private seq = 0;
   private readonly bounds = new THREE.Box3();
   private readonly centre = new THREE.Vector3();
-  private austenTimer = 0;
   private focusPose: CamPose | null = null;
   /** history.back() is asynchronous: a focus that follows an exit waits for it. */
   private backPending: Promise<void> | null = null;
@@ -58,11 +57,18 @@ export class Focus {
     for (const o of d.objects) this.byId.set(o.id, o);
     window.addEventListener('hashchange', () => this.onHash());
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && state.focused) { e.preventDefault(); this.exit(); }
+      if (e.key === 'Escape' && state.focused) { e.preventDefault(); this.dismiss(); }
     });
   }
 
   get focused(): TableObject | null { return state.focused ? this.byId.get(state.focused) ?? null : null; }
+
+  /** Esc / click outside / chevron: the focused object may consume it (the shelf closes its book); else exit. */
+  dismiss(): void {
+    const obj = this.focused;
+    if (obj?.focus.onDismiss?.(this.d.ctx)) return;
+    void this.exit();
+  }
   /** True during the first 450 ms of a transition (clicks are ignored then). */
   get busy(): boolean { return performance.now() < this.busyUntil; }
 
@@ -95,7 +101,8 @@ export class Focus {
     // resolve the pose from the object's real bounds and the viewport framing
     const frame = focusFrames[id] ?? { dist: 0.4, az: 8, el: 30 };
     d.picker.worldBounds(obj, this.bounds);
-    const framing = d.rig.framing(d.panel.widthPx, d.panel.sheetFraction);
+    // an object without a panel (the books' shelf) gets the whole viewport
+    const framing = d.rig.framing(obj.focus.panel ? d.panel.widthPx : 0, d.panel.sheetFraction);
     const pose = d.rig.resolveFocus(frame, this.bounds, framing);
     this.focusPose = pose;
     this.bounds.getCenter(this.centre);
@@ -114,7 +121,7 @@ export class Focus {
     const openPanel = (): void => {
       if (state.focused !== id || obj.focus.deferPanel) return;
       this.mark('panel:open', id);
-      if (obj.focus.panel) d.panel.open(obj.focus.panel, { objectId: id, onClose: () => this.exit() });
+      if (obj.focus.panel) d.panel.open(obj.focus.panel, { objectId: id, onClose: () => this.dismiss() });
     };
 
     if (state.reducedMotion) {
@@ -135,24 +142,30 @@ export class Focus {
       this.mark('focus:settled', id);
     }
 
-    // The Austen trick: music playing + Pride and Prejudice → pause, then the bubble.
+    // The Austen trick: music playing + Pride and Prejudice → pause (the panel itself usually has
+    // done it at mount and shown the letter, src/panels/austen.ts; this is the backstop).
     if (id === 'book.pride-and-prejudice' && state.music.isPlaying) {
       try { state.music.pause?.(); } catch (e) { console.error(e); }
       state.music.isPlaying = false;
-      clearTimeout(this.austenTimer);
-      this.austenTimer = window.setTimeout(() => {
-        if (state.focused === id) { this.mark('bubble:show', id); d.bubble.show(austen); }
-      }, 600);
+      this.mark('music:paused', id);
     }
   }
 
-  /** Opens the focused object's panel now (objects that defer it past +450 ms: the ID after its flip). */
-  openPanel(id: string): void {
+  /**
+   * Opens a panel while `id` is focused: the object's own (objects that defer it past
+   * +450 ms: the ID after its flip) or `spec` (the shelf opening one book's panel while
+   * the cluster stays focused), with `onClose` in place of the exit.
+   */
+  openPanel(id: string, spec?: PanelSpec, onClose?: () => void): void {
     const obj = this.byId.get(id);
-    if (!obj || state.focused !== id || !obj.focus.panel || this.d.panel.isOpen) return;
+    const panel = spec ?? obj?.focus.panel;
+    if (!obj || state.focused !== id || !panel || this.d.panel.isOpen) return;
     this.mark('panel:open', id);
-    this.d.panel.open(obj.focus.panel, { objectId: id, onClose: () => this.exit() });
+    this.d.panel.open(panel, { objectId: id, onClose: onClose ?? (() => this.dismiss()) });
   }
+
+  /** Closes the open panel without leaving focus (the shelf closing a book). */
+  closePanel(): Promise<void> { return this.d.panel.close(); }
 
   /** Re-runs the camera to the focused object's current pose (after a flip, say). */
   reframe(id: string, duration = 0.6): void {
@@ -177,7 +190,6 @@ export class Focus {
     this.mark('exit:start', id);
     state.focused = null;
     this.focusPose = null;
-    clearTimeout(this.austenTimer);
     d.bubble.hide();
     d.a11y.setExpanded(null);
     obj.focus.onExit?.(d.ctx);
@@ -256,7 +268,7 @@ export class Focus {
       focused.focus.onClickInside(hit.name, d.ctx);
       return;
     }
-    void this.exit();
+    this.dismiss();
   }
 
   /** Resizing while focused: re-apply the pose for the new viewport (no tween). */

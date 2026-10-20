@@ -45,8 +45,15 @@ export interface ObjectCtx {
   exit(): void;
   /** Re-runs the camera tween to the object's current focus pose (e.g. after a flip). */
   reframe(id: string, duration?: number): void;
-  /** Opens the focused object's panel now (for objects with `focus.deferPanel`, e.g. the ID after its flip). No-op unless `id` is focused. */
-  openPanel(id: string): void;
+  /**
+   * Opens a panel while `id` is focused: the object's own panel by default (objects with
+   * `focus.deferPanel`, e.g. the ID after its flip), or `spec` (the books' shelf opens one
+   * book's panel while the cluster stays focused). `onClose` replaces the default exit
+   * (the back chevron). No-op unless `id` is focused.
+   */
+  openPanel(id: string, spec?: PanelSpec, onClose?: () => void): void;
+  /** Closes the open panel without exiting focus (resolves after its leave animation). */
+  closePanel(): Promise<void>;
 }
 
 export interface TableObject {
@@ -79,7 +86,14 @@ export interface TableObject {
     onClickInside?(hitName: string, ctx: ObjectCtx): void;
     /** When true the engine does not open the panel at +450 ms; the object opens it later with ctx.openPanel(id). */
     deferPanel?: boolean;
+    /**
+     * Esc, a click outside the panel, or the panel's chevron while focused: return true to
+     * consume it (the shelf closes its open book and stays), false to let the engine exit.
+     */
+    onDismiss?(ctx: ObjectCtx): boolean;
   };
+  /** False for members of a cluster whose root already casts the contact shadow (the nine books under the row's). */
+  contactShadow?: boolean;
   /** Idle animation. dt seconds (clamped), t seconds since start. */
   update?(dt: number, t: number): void;
   dispose?(): void;
