@@ -247,6 +247,8 @@ class Music {
     dock.id = 'music-dock';
     dock.setAttribute('aria-hidden', 'true');
     dock.style.cssText = 'position:absolute;left:0;top:0;width:200px;height:200px;overflow:hidden;border-radius:10px;background:#111;visibility:hidden;pointer-events:none;transform:translate(-200vw,0);will-change:transform;z-index:3;transition:opacity .3s ease;';
+    dock.addEventListener('pointerenter', () => { if (!this.slot) dock.style.opacity = '1'; });
+    dock.addEventListener('pointerleave', () => { if (!this.slot) dock.style.opacity = '0.8'; });
     (document.getElementById('ui') ?? document.body).append(dock);
     this.dock = dock;
     return dock;
@@ -301,7 +303,7 @@ class Music {
     dock.style.height = '200px';
     if (state.music.isPlaying && this.player) {
       dock.style.transform = `translate(16px, ${Math.max(0, innerHeight - 216)}px)`;
-      dock.style.opacity = '1';
+      dock.style.opacity = '0.8'; // quiet in the dark scene; full on hover (still visible and unobscured)
       dock.style.visibility = 'visible';
       dock.style.pointerEvents = 'auto';
       dock.style.boxShadow = '0 12px 32px rgba(0,0,0,.45)';

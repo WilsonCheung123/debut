@@ -87,11 +87,12 @@ export function vinylPanel(): PanelFactory {
 
       // the tile sits at the bottom of the panel: give the root the body's inner height so margin-top:auto has room
       const body = ctx.body.closest<HTMLElement>('.body') ?? ctx.body;
+      // (the panel's title sits in the body above the content, so measure from the content's own top)
       const fit = (): void => {
-        const cs = getComputedStyle(body);
-        const inner = body.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-        const contentCs = getComputedStyle(ctx.body);
-        root.style.minHeight = `${Math.max(0, inner - parseFloat(contentCs.paddingTop) - parseFloat(contentCs.paddingBottom))}px`;
+        const b = body.getBoundingClientRect();
+        const c = ctx.body.getBoundingClientRect();
+        const padBottom = parseFloat(getComputedStyle(body).paddingBottom) + parseFloat(getComputedStyle(ctx.body).paddingBottom);
+        root.style.minHeight = `${Math.max(0, Math.floor(b.bottom - padBottom - (c.top + body.scrollTop)))}px`;
       };
       fit();
       const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null;
