@@ -33,11 +33,13 @@ function panelFor(content: BookContent): PanelSpec {
   const key = customFor[content.id];
   const mod = key ? customPanels[`../panels/${key}.ts`] : undefined;
   if (!mod) return plain;
-  // the named factory first, then whatever the module exports that looks like one
+  // the named factory first, then whatever the module exports that looks like one; the factory gets
+  // the rendered panel (kicker, title, html: what panels/austen.ts documents) and the raw content on one object
+  const arg = { ...content, ...plain };
   const candidates = [mod[`${key}Panel`], mod.default, mod.panel, ...Object.values(mod)].filter((c) => c !== undefined);
   for (const cand of candidates) {
     try {
-      const spec = typeof cand === 'function' ? (cand as (c: BookContent) => unknown)(content) : cand;
+      const spec = typeof cand === 'function' ? (cand as (c: typeof arg) => unknown)(arg) : cand;
       if (spec && typeof (spec as PanelFactory).mount === 'function') return spec as PanelFactory;
       if (spec && typeof (spec as { html?: unknown }).html === 'string') return spec as PanelSpec;
     } catch (e) {
