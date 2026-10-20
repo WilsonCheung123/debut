@@ -32,7 +32,7 @@ const CSS = `
 #panel .content .vinyl-panel .vinyl-slot { position: relative; width: 200px; height: 200px; border-radius: 10px; background: #111; overflow: hidden; }
 #panel .content .vinyl-panel .vinyl-slot .skeleton { position: absolute; inset: 0; background: linear-gradient(100deg, #161616 35%, #222 50%, #161616 65%); background-size: 240% 100%; animation: vinyl-shimmer 1.8s ease-in-out infinite; }
 #panel .content .vinyl-panel .vinyl-off { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 18px; color: #d9d2c4; font-family: var(--sans); font-size: 13px; line-height: 1.45; box-sizing: border-box; }
-#panel .content .vinyl-panel .vinyl-off a { color: #f2ead8; }
+#panel .content .vinyl-panel .vinyl-off a { display: inline-flex; align-items: center; min-height: 44px; color: #f2ead8; }
 @keyframes vinyl-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 @keyframes vinyl-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(47,143,91,.18); } 50% { box-shadow: 0 0 0 5px rgba(47,143,91,.08); } }
 @media (prefers-reduced-motion: reduce) { .vinyl-panel .vinyl-slot .skeleton, .vinyl-panel .vinyl-toggle .dot { animation: none !important; } }
