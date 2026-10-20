@@ -1,68 +1,81 @@
-// The puppet's panel (SPEC 4.8), in the "Think different" register: an intro,
-// three sections (the puppet, the instant camera, the phone) and a coda. The
-// puppet's in-focus clicks call goTo(item), which scrolls the mounted panel to
-// that item's section and lights its margin rule for a moment.
+// The puppet's panel (SPEC 0.2 "Puppet"): an intro view (the verbatim intro,
+// then the Elon quote and Wilson's goal, then a hint to click one of the
+// three) and three item views (the puppet, the instant camera, the phone),
+// each with a back link to the intro. The puppet's in-focus clicks call
+// goTo(item); the hint's three names do the same from the keyboard.
 //
-// Facts checked 2026-10-19: Disney's Character Model Department (late 1937,
-// Joe Grant) sculpted clay figures cast in plaster, with copies for the
-// animators; Pinocchio opened in 1940 as the studio's second feature; the
-// Polaroid Model 95 went on sale at Jordan Marsh in Boston in late 1948 and
-// sold out the same day; the SX-70 was unveiled in April 1972; the iPhone was
-// announced on 9 January 2007 and went on sale on 29 June 2007.
+// Facts checked 2026-10-20: Disney's Character Model Department was set up in
+// late 1937 under Joe Grant; it sculpted characters in clay and cast them in
+// plaster so the animators had maquettes on their desks (Pinocchio, 1940).
+// The Polaroid Model 95 went on sale at Jordan Marsh, Boston, on 26 November
+// 1948 and the first lot sold out that day; the SX-70 was introduced in 1972.
+// The iPhone was announced on 9 January 2007 and went on sale on 29 June 2007;
+// Apple's billionth iPhone was sold in July 2016.
+import gsap from 'gsap';
 import type { PanelFactory, PanelCtx } from './types';
 
 export type PuppetItem = 'puppet' | 'camera' | 'phone';
 
 export interface PinocchioPanel extends PanelFactory {
-  /** Scrolls the mounted panel to an item's section (no-op when closed). */
+  /** Shows an item's description (no-op when closed). */
   goTo(item: PuppetItem): void;
+  /** Back to the intro (no-op when closed). */
+  home(): void;
+  /** The view currently shown, for tests. */
+  readonly view: 'intro' | PuppetItem | null;
 }
 
 const STYLE_ID = 'pinocchio-style';
 const CSS = `
-.pinocchio .pin-section { position: relative; margin-top: 2.1em; scroll-margin-top: 12px; }
-.pinocchio .pin-section::before {
-  content: ''; position: absolute; left: -16px; top: 2px; bottom: 6px; width: 2px; border-radius: 1px;
-  background: var(--maroon); opacity: 0; transition: opacity .35s ease;
-}
-.pinocchio .pin-section.lit::before { opacity: .6; }
-.pinocchio .pin-section .kicker { margin: 0 0 2px; }
-.pinocchio .pin-section h2 { margin: 0 0 0.55em; }
-.pinocchio .pin-why { font-style: italic; color: var(--ink-soft); margin-top: -0.3em; }
-.pinocchio .pin-coda { margin-top: 2.4em; padding-top: 1.5em; border-top: 1px solid var(--paper-line); }
+.pinocchio .pin-view { will-change: opacity, transform; }
+.pinocchio .pin-intro-text p { font-size: 19px; line-height: 1.5; }
+.pinocchio .pin-coda { margin-top: 2em; padding-top: 1.4em; border-top: 1px solid var(--paper-line); }
 .pinocchio .pin-coda blockquote { margin-top: 0; }
 .pinocchio .pin-sign { font-family: var(--sans); font-size: 12px; letter-spacing: 0.08em; text-transform: lowercase;
-  font-variant-caps: all-small-caps; color: var(--ink-faint); margin-top: 1.6em; }
+  font-variant-caps: all-small-caps; color: var(--ink-faint); margin-top: 1.4em; }
+.pinocchio .pin-hint { margin-top: 2.2em; color: var(--ink-faint); font-style: italic; }
+#panel .content .pinocchio button.pin-link {
+  display: inline-block; min-height: 0; min-width: 0; padding: 12px 0; margin: -12px 0; line-height: 20px; border: 0; border-radius: 0; background: none;
+  font: inherit; color: var(--ink-soft); cursor: pointer; letter-spacing: 0; text-transform: none; font-variant-caps: normal;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: var(--ink-faint);
+}
+#panel .content .pinocchio button.pin-link:hover { color: var(--ink); text-decoration-color: var(--ink); }
+#panel .content .pinocchio button.pin-back { display: inline-flex; align-items: center; gap: 6px; margin: -8px 0 1.2em; padding: 12px 0; line-height: 20px;
+  font-family: var(--sans); font-size: 12px; letter-spacing: 0.08em; text-transform: lowercase; font-variant-caps: all-small-caps;
+  color: var(--ink-faint); text-decoration: none; }
+#panel .content .pinocchio button.pin-back:hover { color: var(--ink); }
+#panel .content .pinocchio button.pin-back::before { content: '\\2190'; font-family: var(--sans); font-size: 14px; }
+.pinocchio .pin-item .kicker { margin: 0 0 2px; }
+.pinocchio .pin-item h2 { margin: 0 0 0.55em; }
+.pinocchio .pin-why { font-style: italic; color: var(--ink-soft); }
 `;
 
 interface Section { item: PuppetItem; kicker: string; title: string; body: string; why: string }
 
-const INTRO = [
-  'Before a single frame of <em>Pinocchio</em> was drawn, Disney’s model shop sculpted him. Animators could turn him in their hands, study him from every angle, and watch how light fell on his face. The object came before the drawing.',
-  'The three objects here each did something like that for everyone else. Each introduced a cultural moment, and each redefined how people live with technology.',
-];
+/** SPEC 0.2, verbatim (including its lowercase product names). */
+const INTRO = 'A puppet, an iphone, a polaroid. A puppet, an iphone, a polaroid. A puppet, an iphone... are you getting it? These are not three separate things. This is one thing, and we are calling it an insanely great product.';
 
 const SECTIONS: Section[] = [
   {
     item: 'puppet',
-    kicker: 'the puppet · Disney, 1940',
-    title: 'Animation as a serious art',
-    body: '<em>Pinocchio</em> opened in 1940, Disney’s second feature, and argued scene by scene that animation was a serious art: water that bent light, a wooden boy you worried about. Behind it sat the Character Model Department, founded in 1937, casting plaster maquettes so every animator drew the same boy. A maquette is a tool of craft: a thing you can hold, made so you can make a thing you can only watch.',
-    why: 'Get the object right first; everything after has something to be true to.',
+    kicker: 'the puppet · Disney, late 1930s',
+    title: 'The thing you could hold',
+    body: 'In the late 1930s, before Pinocchio’s animators drew a frame that counted, Disney’s model department sculpted him in clay and cast him in plaster. The maquette sat on every desk so that a hundred hands could draw one boy, turn him toward the light, and agree on where his nose ended. Animation had been a cartoon’s business; Disney insisted it could carry a feature, and the way to carry it was to make the character real before making him move. Every studio that followed built a model shop. Every character you have ever cried over was once a lump of clay on a turntable.',
+    why: 'Why it matters to me: get the object right first, and everything after has something to be true to.',
   },
   {
     item: 'camera',
     kicker: 'the instant camera · Polaroid, 1948',
-    title: 'The photograph you could hold',
-    body: 'In 1948 Edwin Land’s first Land Camera went on sale in a Boston department store and sold out the same day. You pressed the shutter and, a minute later, held the photograph. Polaroid made the camera, the film and the chemistry as one system, and the SX-70 of 1972 folded all of it into a jacket pocket. Land insisted on the whole experience, not just the clever part.',
-    why: 'The product is everything the person touches, start to finish.',
+    title: 'A photograph, a minute later',
+    body: 'In 1948 Edwin Land put the first instant camera on sale in a Boston department store, and the lot sold out that day. You pressed the shutter and, a minute later, held the picture. The photograph stopped being something a lab sent back and became something that happened in the room, passed hand to hand while the moment was still warm. In 1972 the SX-70 folded the whole system, camera, film and chemistry, into a jacket pocket. Land’s rule was that the experience had to be whole, with nothing left for the customer to figure out.',
+    why: 'Why it matters to me: the product is everything the person touches, start to finish.',
   },
   {
     item: 'phone',
     kicker: 'the phone · Apple, 2007',
     title: 'The computer that fit a life',
-    body: 'On 9 January 2007 Steve Jobs announced three things, a widescreen iPod, a phone and an internet device, and then said they were one. It went on sale that June. What arrived was not a better phone but a computer that fit a life: in a pocket, under a thumb, with you at breakfast and in the dark. Nearly every screen you touch today is a descendant.',
-    why: 'The bar for “insanely good” was set in public, and it has not moved.',
+    body: 'On 9 January 2007 Steve Jobs announced a widescreen iPod, a phone and an internet device, then said they were one thing. It went on sale that June. There was no keyboard, no stylus, nothing to learn: you touched what you wanted. What arrived was not a better phone but a computer that fit a life, in a pocket, under a thumb, with you at breakfast and in the dark. Within a decade Apple had sold a billion of them, and nearly every screen you now touch is a descendant.',
+    why: 'Why it matters to me: the bar for insanely good was set in public, and it has not moved.',
   },
 ];
 
@@ -81,61 +94,57 @@ function ensureStyle(): void {
   document.head.append(s);
 }
 
-export function pinocchioPanel(): PinocchioPanel {
-  let mounted: { ctx: PanelCtx; sections: Map<PuppetItem, HTMLElement> } | null = null;
-  let litTimer = 0;
-  let lit: HTMLElement | null = null;
+export function pinocchioPanel(opts: { onSelect?(item: PuppetItem): void } = {}): PinocchioPanel {
+  let mounted: { ctx: PanelCtx; root: HTMLElement } | null = null;
+  let view: 'intro' | PuppetItem | null = null;
 
-  const unlight = (): void => {
-    clearTimeout(litTimer);
-    litTimer = 0;
-    lit?.classList.remove('lit');
-    lit = null;
+  const render = (next: 'intro' | PuppetItem, animate: boolean): void => {
+    if (!mounted) return;
+    const { ctx, root } = mounted;
+    const el = document.createElement('div');
+    el.className = 'pin-view';
+    if (next === 'intro') {
+      el.innerHTML =
+        `<div class="pin-intro-text"><p>${INTRO}</p></div>` +
+        `<div class="pin-coda"><blockquote><p>${CODA.quote}</p><cite>${CODA.cite}</cite></blockquote>` +
+        `<p>${CODA.goal}</p><p class="pin-sign">${CODA.sign}</p></div>` +
+        `<p class="pin-hint">Click <button type="button" class="pin-link" data-item="puppet">the puppet</button>, ` +
+        `<button type="button" class="pin-link" data-item="phone">the phone</button> or ` +
+        `<button type="button" class="pin-link" data-item="camera">the camera</button>.</p>`;
+      for (const b of el.querySelectorAll<HTMLButtonElement>('button[data-item]')) {
+        b.addEventListener('click', () => { const item = b.dataset.item as PuppetItem; show(item, true); opts.onSelect?.(item); });
+      }
+    } else {
+      const s = SECTIONS.find((x) => x.item === next)!;
+      el.innerHTML =
+        `<button type="button" class="pin-back">back to the three</button>` +
+        `<section class="pin-item" id="pin-${s.item}"><p class="kicker">${s.kicker}</p><h2>${s.title}</h2><p>${s.body}</p><p class="pin-why">${s.why}</p></section>`;
+      el.querySelector('button.pin-back')!.addEventListener('click', () => show('intro', true));
+    }
+    root.replaceChildren(el);
+    ctx.body.scrollTop = 0;
+    view = next;
+    if (animate && !ctx.state.reducedMotion) gsap.fromTo(el, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.32, ease: 'power2.out' });
+  };
+  const show = (next: 'intro' | PuppetItem, animate: boolean): void => {
+    if (!mounted || next === view) return;
+    render(next, animate);
   };
 
   return {
     kicker: 'the puppet',
-    title: 'The object comes first',
+    title: 'Three objects',
+    get view() { return view; },
     mount(ctx: PanelCtx) {
       ensureStyle();
       const root = document.createElement('div');
       root.className = 'pinocchio';
-      const intro = document.createElement('div');
-      intro.className = 'pin-intro';
-      intro.innerHTML = INTRO.map((t) => `<p>${t}</p>`).join('');
-      root.append(intro);
-
-      const sections = new Map<PuppetItem, HTMLElement>();
-      for (const s of SECTIONS) {
-        const el = document.createElement('section');
-        el.className = 'pin-section';
-        el.id = `pin-${s.item}`;
-        el.innerHTML = `<p class="kicker">${s.kicker}</p><h2>${s.title}</h2><p>${s.body}</p><p class="pin-why">${s.why}</p>`;
-        root.append(el);
-        sections.set(s.item, el);
-      }
-
-      const coda = document.createElement('div');
-      coda.className = 'pin-coda';
-      coda.innerHTML =
-        `<blockquote><p>${CODA.quote}</p><cite>${CODA.cite}</cite></blockquote>` +
-        `<p>${CODA.goal}</p>` +
-        `<p class="pin-sign">${CODA.sign}</p>`;
-      root.append(coda);
-
       ctx.body.append(root);
-      mounted = { ctx, sections };
-      return () => { unlight(); mounted = null; };
+      mounted = { ctx, root };
+      render('intro', false);
+      return () => { mounted = null; view = null; };
     },
-    goTo(item) {
-      if (!mounted) return;
-      const el = mounted.sections.get(item);
-      if (!el) return;
-      mounted.ctx.scrollTo(el);
-      unlight();
-      lit = el;
-      el.classList.add('lit');
-      litTimer = window.setTimeout(unlight, 1600);
-    },
+    goTo(item) { show(item, true); },
+    home() { show('intro', true); },
   };
 }

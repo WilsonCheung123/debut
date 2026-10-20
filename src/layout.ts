@@ -120,7 +120,7 @@ export const focus: Record<string, FocusFrame> = {
   fpga:       { dist: 0.30, az: 4, el: 52, fov: 31 },
   'die-cast': { dist: 0.30, az: 12, el: 44, fov: 31 },
   hologram:   { dist: 0.84, az: 6, el: 22, fov: 32, targetOffset: [0, 0.05, 0] },
-  puppet:     { dist: 0.62, az: 20, el: 32, fov: 32, targetOffset: [0, 0.01, 0] },   // from higher: the lamp's shade (0.4 m up, behind him) leaves the top of the frame (at el 12 and 24 its lit mouth cut the corner)
+  puppet:     { dist: 0.45, az: 22, el: 27, fov: 32, targetOffset: [0, 0.002, 0] },
   jar:        { dist: 0.36, az: 14, el: 30, fov: 31, targetOffset: [0, 0.008, 0] },
   vinyl:      { dist: 0.58, az: -4, el: 40, fov: 32 },
 };
