@@ -63,12 +63,15 @@ interface Stats { A: GroupStats; B: GroupStats }
 // Square A is the dark square at grid (1,0); B is the light square at (2,2).
 // A's corners come straight from the asset's dark-square path; B's are the
 // shared corners of its four dark neighbours (they agree to 0.00). The bridge
-// is a screen-vertical strip from A's near edge to B's far edge, extended
-// 3 units into each square so the union has no shared edge (no AA seam).
+// is a screen-vertical bar of the same grey, drawn as a stroked line whose
+// ends sit 3 units inside A and B (over the patches, so the slanted square
+// edges need no matching and there is no anti-aliasing seam); it is revealed
+// with stroke-dashoffset, an attribute tween that needs no geometry queries.
 const VIEWBOX = { w: 267.47, h: 203.43 };
 const SQUARE_A = '132.39,50.04 165.52,57.16 147.46,76.49 114.02,69.18';
 const SQUARE_B = '128.48,96.78 163.2,104.5 144.6,124.95 109.56,117.03';
-const BRIDGE = '130.65,69.82 145.65,73.1 145.65,103.6 130.65,100.27';
+const BRIDGE = { x: 138.15, y1: 69.82, y2: 103.6, width: 15 };
+const BRIDGE_LEN = +(BRIDGE.y2 - BRIDGE.y1).toFixed(2);
 const GREY = '#6f6f6f';
 const GLYPH_A = 'm131.15 65.775 10.827-6.4947 1.3907 0.30265-3.0883 8.1788-1.4706-0.32003 1.0066-2.4615-4.0791-0.88768-3.2159 1.9808zm5.7224-2.3892 3.3072 0.7197 0.9429-2.246q0.42775-1.0238 0.77628-1.6664-0.86735 0.66252-1.8781 1.2818z';
 const GLYPH_B = 'm128.93 113.7 7.0726-7.6641 3.8575 0.82134q1.1783 0.25088 1.6696 0.63696 0.50312 0.38235 0.45423 0.95366-0.037 0.56758-0.5243 1.0956-0.4535 0.49142-1.2116 0.84918-0.75812 0.35775-1.7266 0.47056 0.74467 0.4025 0.78915 0.99995 0.0515 0.59894-0.56602 1.2681-0.49692 0.53848-1.2349 0.93805-0.72613 0.39584-1.4066 0.55121-0.68044 0.15536-1.4814 0.1412-0.7891-0.0179-1.771-0.22696zm5.4614-4.154 2.2233 0.47339q0.90476 0.19264 1.3795 0.18739 0.62514-4e-3 1.1307-0.21587 0.51256-0.20988 0.88404-0.61243 0.35218-0.38163 0.37205-0.72143 0.0247-0.34503-0.33471-0.54666-0.35458-0.20685-1.4627-0.4428l-2.055-0.43755zm-3.2661 3.5393 2.56 0.54507q0.65929 0.14037 0.95957 0.16053 0.52781 0.0373 0.97851-0.0419 0.45069-0.0792 0.90979-0.31295 0.46391-0.239 0.80161-0.60495 0.3956-0.42869 0.39049-0.80509-2.9e-4 -0.38162-0.41052-0.61909-0.3984-0.2412-1.3803-0.45027l-2.3776-0.50624z';
@@ -150,7 +153,7 @@ function figureHtml(): string {
       <g fill="${GREY}"><polygon points="${SQUARE_A}" /><polygon points="${SQUARE_B}" /></g>
       <g fill="#505050"><path d="${GLYPH_A}" /><path d="${GLYPH_B}" /></g>
       <rect class="field" x="0" y="0" width="${w}" height="${h}" mask="url(#kahneman-mask)" opacity="0" />
-      <polygon class="bridge" points="${BRIDGE}" fill="${GREY}" />
+      <line class="bridge" x1="${BRIDGE.x}" y1="${BRIDGE.y1}" x2="${BRIDGE.x}" y2="${BRIDGE.y2}" stroke="${GREY}" stroke-width="${BRIDGE.width}" stroke-dasharray="${BRIDGE_LEN}" stroke-dashoffset="${BRIDGE_LEN}" />
     </svg>
   </button>
   <figcaption>
@@ -169,7 +172,7 @@ function figureHtml(): string {
 function mountIllusion(root: HTMLElement, ctx: PanelCtx, g: gsap.Context): void {
   const btn = root.querySelector<HTMLButtonElement>('.trick')!;
   const field = root.querySelector<SVGRectElement>('.field')!;
-  const bridge = root.querySelector<SVGPolygonElement>('.bridge')!;
+  const bridge = root.querySelector<SVGLineElement>('.bridge')!;
   const prompt = root.querySelector<HTMLElement>('.prompt')!;
   const idle = ctx.state.isTouch ? TEXT.promptTouch : TEXT.promptPointer;
   prompt.textContent = idle;
@@ -177,7 +180,7 @@ function mountIllusion(root: HTMLElement, ctx: PanelCtx, g: gsap.Context): void 
   let tl: gsap.core.Timeline | null = null;
   g.add(() => {
     tl = gsap.timeline({ paused: true })
-      .fromTo(bridge, { scaleY: 0, transformOrigin: '50% 0%' }, { scaleY: 1, duration: 0.36, ease: 'power2.out' }, 0)
+      .fromTo(bridge, { attr: { 'stroke-dashoffset': BRIDGE_LEN } }, { attr: { 'stroke-dashoffset': 0 }, duration: 0.36, ease: 'power2.out' }, 0)
       .fromTo(field, { opacity: 0 }, { opacity: 1, duration: 0.42, ease: 'sine.inOut' }, 0.1);
   });
 
@@ -321,7 +324,7 @@ function questionTwo(onSubmit: (guess: number) => void): HTMLElement {
 function columnHtml(group: Group, stats: Stats | null, mine: boolean, guess: number): string {
   const s = stats ? stats[group] : null;
   const hasMean = !!s && s.mean !== null && s.n > 0;
-  const count = !s ? '' : s.n === 0 ? 'no one yet' : `from ${s.n} ${s.n === 1 ? 'person' : 'people'}`;
+  const count = !s ? '' : s.n === 0 ? 'no one yet' : `average of ${s.n} ${s.n === 1 ? 'guess' : 'guesses'}`;
   return `
 <div class="col${mine ? ' mine' : ''}">
   <span class="kicker">saw ${ANCHOR[group]}</span>
@@ -407,6 +410,8 @@ function mountAnchoring(root: HTMLElement, ctx: PanelCtx, g: gsap.Context): () =
     p.className = 'step kicker placeholder';
     p.textContent = TEXT.fetching;
     stage.show(p);
+    // only a slow fetch shows the placeholder; a quick one crossfades straight to the reveal
+    if (!ctx.state.reducedMotion) g.add(() => { gsap.fromTo(p, { opacity: 0 }, { opacity: 1, duration: 0.3, delay: 0.4 }); });
     withTimeout(ctx.api.get<Stats>('/api/anchor/stats'))
       .then((s) => showReveal(s && s.A && s.B ? s : null, prior), () => showReveal(null, prior));
   } else {
@@ -453,7 +458,7 @@ ${figureHtml()}
       const stopAnchoring = mountAnchoring(root, ctx, g);
       return () => {
         stopAnchoring();
-        g.kill();
+        g.revert(); // kills every tween of this mount and runs the registered cleanups (window listeners)
       };
     },
   };
