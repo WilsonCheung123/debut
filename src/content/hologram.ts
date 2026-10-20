@@ -38,14 +38,3 @@ export const thumbnailUrl = (film: Film, width = 480): string =>
   `https://image.mux.com/${film.id}/thumbnail.jpg?width=${width}&time=${film.thumbTime}`;
 
 export const hlsUrl = (film: Film): string => `https://stream.mux.com/${film.id}.m3u8`;
-
-/** The embedded Mux player, in the panel's paper colours, starting as soon as it can. */
-export const playerUrl = (film: Film): string => {
-  const q = new URLSearchParams({
-    autoplay: 'true',
-    'primary-color': '#f4efe6',
-    'accent-color': '#6e2a2a',
-    'metadata-video-title': film.title,
-  });
-  return `https://player.mux.com/${film.id}?${q.toString()}`;
-};

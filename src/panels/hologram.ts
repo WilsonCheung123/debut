@@ -1,11 +1,11 @@
-// The hologram's panel (SPEC 4.7): "Realm" kicker, a short description of the
-// studio, then the five films as a list with posters; choosing one switches
-// the projector; "watch with sound" swaps the list for the Mux player inside
-// the panel, with a way back. The object hands in a controller; the panel
-// never touches three.js.
+// The hologram's panel (SPEC 4.7, 0.2): "Realm" kicker, a short description of
+// the studio, then the five films as a list with posters; choosing one switches
+// the projector; "watch with sound" plays the selected film fullscreen with
+// sound, exactly what a second click on the hologram does. The object hands in
+// a controller; the panel never touches three.js.
 import type { PanelFactory, PanelCtx } from './types';
 import { esc, p, link, kicker } from '../content/types';
-import { REALM, thumbnailUrl, playerUrl, type Film } from '../content/hologram';
+import { REALM, thumbnailUrl, type Film } from '../content/hologram';
 
 export interface HologramController {
   readonly films: Film[];
@@ -13,8 +13,8 @@ export interface HologramController {
   readonly selected: number;
   /** Switch the projector (crossfade). */
   select(i: number): void;
-  /** Freeze the projector while the sound player is open; release on the way back. */
-  hold(on: boolean): void;
+  /** The selected film fullscreen with sound (same as a second click on the hologram). Call from a click. */
+  cinema(): boolean;
   /** Subscribe to selection changes; returns an unsubscribe. */
   onChange(cb: (i: number) => void): () => void;
 }
@@ -45,13 +45,8 @@ const CSS = `
 #panel .content .holo .film .now::before { content: ''; width: 6px; height: 6px; border-radius: 3px; background: #2bb3d6; box-shadow: 0 0 6px rgba(43,179,214,.8); }
 #panel .content .holo .film[aria-pressed="true"] .now { opacity: 1; }
 #panel .content .holo .list > .kicker { margin: 0 0 6px; }
-#panel .content .holo .actions { margin: 0 0 1.2em; }
-#panel .content .holo .watch > .kicker { margin: 0 0 8px; }
-#panel .content .holo .frame {
-  position: relative; width: 100%; aspect-ratio: 16 / 9; margin: 0 0 14px;
-  background: #0b0a09; border-radius: 4px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.25);
-}
-#panel .content .holo .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+#panel .content .holo .actions { margin: 0 0 1.2em; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+#panel .content .holo .actions .or { font-family: var(--sans); font-size: 12px; letter-spacing: 0.06em; font-variant-caps: all-small-caps; color: var(--ink-faint); }
 `;
 
 function injectCss(): void {
@@ -109,44 +104,18 @@ export function hologramPanel(ctl: HologramController): PanelFactory {
       sound.type = 'button';
       sound.className = 'sound';
       sound.textContent = 'watch with sound';
-      actions.append(sound);
+      const or = document.createElement('span');
+      or.className = 'or';
+      or.textContent = 'or click the hologram';
+      actions.append(sound, or);
       listWrap.append(list, actions);
-
-      // the player, swapped in for the list
-      const watch = document.createElement('div');
-      watch.className = 'watch';
-      watch.hidden = true;
-      root.append(listWrap, watch);
+      root.append(listWrap);
       ctx.body.append(root);
 
-      const closePlayer = (): void => {
-        watch.innerHTML = '';      // removing the iframe stops the sound
-        watch.hidden = true;
-        listWrap.hidden = false;
-        ctl.hold(false);
-        sound.focus({ preventScroll: true });
-      };
-      const openPlayer = (): void => {
-        const f = ctl.films[ctl.selected];
-        watch.innerHTML =
-          kicker(f.title) +
-          `<div class="frame"><iframe src="${esc(playerUrl(f))}" title="${esc(f.title)}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe></div>` +
-          `<p class="actions"><button type="button" class="back-to-films">back to the films</button></p>`;
-        const back = watch.querySelector<HTMLButtonElement>('.back-to-films')!;
-        back.addEventListener('click', closePlayer);
-        listWrap.hidden = true;
-        watch.hidden = false;
-        ctl.hold(true);
-        ctx.scrollTo(watch);
-        back.focus({ preventScroll: true });
-      };
-      sound.addEventListener('click', openPlayer);
+      // fullscreen with sound; the browser's own controls and Escape bring the hologram back
+      sound.addEventListener('click', () => { ctl.cinema(); });
 
-      return () => {
-        unsubscribe();
-        watch.innerHTML = '';
-        ctl.hold(false);
-      };
+      return () => { unsubscribe(); };
     },
   };
 }
