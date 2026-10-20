@@ -332,7 +332,15 @@ export function createBooks(ctx: ObjectCtx): ObjectCluster {
       covers: () => books.map((b) => ({ id: b.id, canvas: ((b.hit[0] as THREE.Mesh).material as THREE.MeshStandardMaterial).map!.image as HTMLCanvasElement })),
       state: (id: string) => {
         const b = books.find((x) => x.id === id);
-        return b ? { pose: { ...b.pose }, motion: { ...ctx.motion(id) }, position: b.group.position.toArray(), hoverLift: b.hoverLiftNow(), tweens: gsap.getTweensOf(b.pose).length } : null;
+        if (!b) return null;
+        const { lift, z, yaw, roll, pitch } = b.pose;
+        const mo = ctx.motion(id);
+        // explicit fields: gsap attaches a circular `_gsap` cache to tweened objects
+        return {
+          pose: { lift, z, yaw, roll, pitch },
+          motion: { lift: mo.lift, z: mo.z, x: mo.x, yaw: mo.yaw, roll: mo.roll, pitch: mo.pitch },
+          position: b.group.position.toArray(), hoverLift: b.hoverLiftNow(), tweens: gsap.getTweensOf(b.pose).length,
+        };
       },
     };
   }
