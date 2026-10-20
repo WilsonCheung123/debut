@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HIT_LAYER } from '../engine/picking';
 
 /** A box with rounded edges (every box on the table uses one). */
@@ -29,4 +30,23 @@ export function solid<T extends THREE.Mesh>(mesh: T, name?: string): T {
   mesh.receiveShadow = true;
   if (name) mesh.name = name;
   return mesh;
+}
+
+/**
+ * Merges same-material parts into one geometry (one draw call). Parts may mix
+ * indexed (box, cylinder) and non-indexed (extrude) geometries: everything is
+ * made non-indexed and reduced to position/normal/uv first. The parts are disposed.
+ */
+export function mergeParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  const flat = parts.map((g) => {
+    const n = g.index ? g.toNonIndexed() : g.clone();
+    for (const name of Object.keys(n.attributes)) if (name !== 'position' && name !== 'normal' && name !== 'uv') n.deleteAttribute(name);
+    n.clearGroups();
+    return n;
+  });
+  const merged = mergeGeometries(flat, false);
+  if (!merged) throw new Error('mergeParts: incompatible geometries');
+  for (const g of parts) g.dispose();
+  for (const g of flat) g.dispose();
+  return merged;
 }

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { ObjectCtx, TableObject } from './types';
-import { roundedBox, hitProxy, solid } from './helpers';
+import { roundedBox, hitProxy, solid, mergeParts } from './helpers';
 import { makeCanvasTexture, hash2, metal, plastic } from '../materials';
 import { guitar as content } from '../content/guitar';
 
@@ -85,12 +84,12 @@ export function createGuitar(ctx: ObjectCtx): TableObject {
   const pin = new THREE.CylinderGeometry(0.0024, 0.0024, 0.0295, 16);
   pin.rotateZ(Math.PI / 2);
   steels.push(pin);
-  const spring = new THREE.TubeGeometry(new SpringCurve(0.0066, 0.0205, 6.5), 220, 0.00072, 7, false);
+  const spring = new THREE.TubeGeometry(new SpringCurve(0.0066, 0.0205, 6.5), 220, 0.00072, 7);
   steels.push(spring);
 
-  const blackMesh = solid(new THREE.Mesh(mergeGeometries(blacks, false), black), 'capo-body');
-  const rubberMesh = solid(new THREE.Mesh(mergeGeometries(rubbers, false), rubber), 'capo-rubber');
-  const steelMesh = solid(new THREE.Mesh(mergeGeometries(steels, false), steel), 'capo-spring');
+  const blackMesh = solid(new THREE.Mesh(mergeParts(blacks), black), 'capo-body');
+  const rubberMesh = solid(new THREE.Mesh(mergeParts(rubbers), rubber), 'capo-rubber');
+  const steelMesh = solid(new THREE.Mesh(mergeParts(steels), steel), 'capo-spring');
   capo.add(blackMesh, rubberMesh, steelMesh);
 
   // lie it down: tipped about the hinge axis until the bar and the lower handle's tip both touch the table
@@ -157,7 +156,7 @@ class SpringCurve extends THREE.Curve<THREE.Vector3> {
 /** An annular sector (angles in the y–z plane, measured from +z toward +y) extruded along x. */
 function sector(rOut: number, rIn: number, a0: number, a1: number, length: number): THREE.BufferGeometry {
   const s = new THREE.Shape();
-  s.absarc(0, 0, rOut, a0, a1, false);
+  s.absarc(0, 0, rOut, a0, a1);
   s.absarc(0, 0, rIn, a1, a0, true);
   s.closePath();
   const g = new THREE.ExtrudeGeometry(s, { depth: length, bevelEnabled: true, bevelThickness: 0.0006, bevelSize: 0.0006, bevelSegments: 2, curveSegments: 18, steps: 1 });

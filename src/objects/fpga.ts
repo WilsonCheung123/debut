@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { ObjectCtx, TableObject } from './types';
-import { roundedBox, hitProxy, solid } from './helpers';
+import { roundedBox, hitProxy, solid, mergeParts } from './helpers';
 import { makeCanvasTexture, hash2, metal, plastic, matte } from '../materials';
 import { fpga as content } from '../content/fpga';
 
@@ -99,9 +98,9 @@ export function createFpga(ctx: ObjectCtx): TableObject {
   const mouth = new THREE.BoxGeometry(USB.w - 0.0012, USB.h - 0.0012, 0.001);
   mouth.translate(USB.x, TOP + USB.h / 2, USB.z + USB.d / 2 - 0.0003);
   blacks.push(mouth);
-  const blackMesh = solid(new THREE.Mesh(mergeGeometries(blacks, false), black), 'fpga-plastic');
+  const blackMesh = solid(new THREE.Mesh(mergeParts(blacks), black), 'fpga-plastic');
   board.add(blackMesh);
-  const pinMesh = solid(new THREE.Mesh(mergeGeometries(pins, false), gold), 'fpga-pins');
+  const pinMesh = solid(new THREE.Mesh(mergeParts(pins), gold), 'fpga-pins');
   board.add(pinMesh);
 
   // metal: the USB-C shell, the crystal can, the regulator tab
@@ -115,7 +114,7 @@ export function createFpga(ctx: ObjectCtx): TableObject {
   const tab = new THREE.BoxGeometry(0.003, 0.0003, 0.0018);
   tab.translate(REG.x, TOP + 0.00015, REG.z - 0.0026);
   metals.push(tab);
-  const metalMesh = solid(new THREE.Mesh(mergeGeometries(metals, false), steel), 'fpga-metal');
+  const metalMesh = solid(new THREE.Mesh(mergeParts(metals), steel), 'fpga-metal');
   board.add(metalMesh);
 
   // passives: 0805, two kinds
@@ -127,8 +126,8 @@ export function createFpga(ctx: ObjectCtx): TableObject {
     g.translate(px, TOP + 0.00035, pz);
     (isTan ? tans : darks).push(g);
   }
-  board.add(solid(new THREE.Mesh(mergeGeometries(tans, false), tan), 'fpga-caps'));
-  board.add(solid(new THREE.Mesh(mergeGeometries(darks, false), dark), 'fpga-res'));
+  board.add(solid(new THREE.Mesh(mergeParts(tans), tan), 'fpga-caps'));
+  board.add(solid(new THREE.Mesh(mergeParts(darks), dark), 'fpga-res'));
 
   // the LED: a tiny 0805 lens that breathes, plus an additive glow above it
   const ledMat = new THREE.MeshStandardMaterial({ color: 0xe9e6cf, emissive: 0x7cff66, emissiveIntensity: 0.2, roughness: 0.3, metalness: 0 });

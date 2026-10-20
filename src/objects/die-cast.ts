@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { ObjectCtx, TableObject } from './types';
-import { roundedBox, hitProxy, solid } from './helpers';
+import { roundedBox, hitProxy, solid, mergeParts } from './helpers';
 import { makeCanvasTexture, grain, hash2, matte } from '../materials';
 import { dieCast as content } from '../content/die-cast';
 
@@ -69,7 +68,7 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
       parts.push(rib);
     }
   }
-  const castGeo = mergeGeometries(parts, false);
+  const castGeo = mergeParts(parts);
   projectUv(castGeo);
   const castMesh = solid(new THREE.Mesh(castGeo, cast), 'die-cast-ribs');
   walls.add(castMesh);
@@ -79,7 +78,7 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
     g.translate(bx, bossH - 0.0021, bz);
     return g;
   });
-  const holeMesh = new THREE.Mesh(mergeGeometries(holes, false), hole);
+  const holeMesh = new THREE.Mesh(mergeParts(holes), hole);
   holeMesh.name = 'die-cast-holes';
   walls.add(holeMesh);
 
@@ -99,10 +98,10 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
     new THREE.Vector3(-0.026, HEIGHT - 0.006, BOSS_R + 0.0025),
     new THREE.Vector3(-0.026 + BOSS_R + 0.001, HEIGHT - 0.007, 0.0),
   ], false, 'catmullrom', 0.6);
-  const stringGeo = new THREE.TubeGeometry(curve, 36, 0.00045, 6, false);
+  const stringGeo = new THREE.TubeGeometry(curve, 36, 0.00045, 6);
   const knot = new THREE.SphereGeometry(0.0011, 10, 8);
   knot.translate(hub.x, hub.y + 0.0004, hub.z);
-  const string = solid(new THREE.Mesh(mergeGeometries([stringGeo, knot], false), stringMat), 'die-cast-string');
+  const string = solid(new THREE.Mesh(mergeParts([stringGeo, knot]), stringMat), 'die-cast-string');
   walls.add(string);
 
   const proxy = hitProxy(OW + 0.03, HEIGHT + 0.01, OD + 0.05, `${ID}:proxy`);
@@ -167,13 +166,13 @@ function roundedRectPath(s: THREE.Path, w: number, h: number, r: number): void {
   const x = -w / 2, y = -h / 2;
   s.moveTo(x + r, y);
   s.lineTo(x + w - r, y);
-  s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0, false);
+  s.absarc(x + w - r, y + r, r, -Math.PI / 2, 0);
   s.lineTo(x + w, y + h - r);
-  s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2, false);
+  s.absarc(x + w - r, y + h - r, r, 0, Math.PI / 2);
   s.lineTo(x + r, y + h);
-  s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI, false);
+  s.absarc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
   s.lineTo(x, y + r);
-  s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5, false);
+  s.absarc(x + r, y + r, r, Math.PI, Math.PI * 1.5);
 }
 
 /** Pebbled cast noise, tiling, linear data (roughness and bump share it). */
@@ -229,10 +228,18 @@ function machinedMarks(): THREE.CanvasTexture {
 /** A manila tag: 样品 / SAMPLE, a handwritten lot number and date, an eyelet at the left end. */
 function createTag(): { mesh: THREE.Mesh; texture: THREE.CanvasTexture; material: THREE.MeshStandardMaterial } {
   const TW = 0.034, TD = 0.018, TT = 0.0004;
+  // the grained paper is drawn once (grain reads pixels back; a redraw must not read the same canvas again)
+  let paper: HTMLCanvasElement | null = null;
   const draw = (c: CanvasRenderingContext2D, w: number, h: number): void => {
-    c.fillStyle = '#d8c48f';
-    c.fillRect(0, 0, w, h);
-    grain(c, w, h, 0.05, 2);
+    if (!paper) {
+      paper = document.createElement('canvas');
+      paper.width = w; paper.height = h;
+      const pc = paper.getContext('2d')!;
+      pc.fillStyle = '#d8c48f';
+      pc.fillRect(0, 0, w, h);
+      grain(pc, w, h, 0.05, 2);
+    }
+    c.drawImage(paper, 0, 0);
     c.strokeStyle = 'rgba(80,60,30,0.35)';
     c.lineWidth = 2;
     c.strokeRect(10, 10, w - 20, h - 20);
