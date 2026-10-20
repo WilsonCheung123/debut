@@ -18,8 +18,8 @@ const CSS = `
 #panel .content .vinyl-panel .vinyl-off { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 24px; color: #d9d2c4; font-family: var(--sans); font-size: 14px; line-height: 1.5; box-sizing: border-box; }
 #panel .content .vinyl-panel .vinyl-off a { color: #f2ead8; }
 #panel .content .vinyl-panel .vinyl-row { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; }
-#panel .content .vinyl-panel .vinyl-toggle { display: inline-flex; align-items: center; gap: 9px; padding: 9px 14px 9px 12px; }
-#panel .content .vinyl-panel .vinyl-toggle .dot { width: 8px; height: 8px; border-radius: 50%; background: #9a9283; transition: background-color .25s ease, box-shadow .25s ease; }
+#panel .content .vinyl-panel .vinyl-toggle { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 9px; padding: 9px 14px 9px 12px; }
+#panel .content .vinyl-panel .vinyl-toggle .dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #9a9283; transition: background-color .25s ease, box-shadow .25s ease; }
 #panel .content .vinyl-panel .vinyl-toggle[aria-pressed="true"] .dot { background: #2f8f5b; box-shadow: 0 0 0 3px rgba(47,143,91,.18); animation: vinyl-pulse 2.4s ease-in-out infinite; }
 #panel .content .vinyl-panel .vinyl-note { font-family: var(--sans); font-size: 12.5px; line-height: 1.45; color: var(--ink-faint); margin: 0; }
 #panel .content .vinyl-panel .vinyl-after { margin-top: 18px; }
