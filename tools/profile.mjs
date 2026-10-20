@@ -18,7 +18,8 @@ const outdir = args[1] || 'shots/profile';
 const opt = (f, d = null) => (args.includes(f) ? args[args.indexOf(f) + 1] : d);
 const [vw, vh] = (opt('--viewport', '1440x900')).split('x').map(Number);
 const dpr = Number(opt('--dpr', '2'));
-const focusId = opt('--focus', 'id-card');
+const focusIds = opt('--focus', 'id-card').split(',');
+const focusId = focusIds[0];
 const tier = opt('--tier', null);
 const takeShots = args.includes('--shots');
 const u = new URL(url0);
@@ -82,6 +83,16 @@ try {
   await exitP;
   await page.waitForTimeout(600);
   await sampleFrames('rest-after', 1500);
+  // further focus states, screenshots only
+  for (const id of focusIds.slice(1)) {
+    await page.evaluate((id) => { window.__table.focus(id); }, id);
+    await page.waitForFunction(() => window.__table.info().mode === 'focus', null, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(900);
+    if (takeShots) await page.screenshot({ path: path.join(outdir, `focus-${id}-${vw}x${vh}@${dpr}.png`) });
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.__table.info().mode === 'rest', null, { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(300);
+  }
   report.problems = problems;
   fs.writeFileSync(path.join(outdir, `profile-${vw}x${vh}@${dpr}${tier ? '-' + tier : ''}.json`), JSON.stringify(report, null, 2));
   if (problems.length) console.log('problems:', problems.join('\n'));

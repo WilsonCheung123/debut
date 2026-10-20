@@ -32,7 +32,7 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
   // Cast aluminium: a warm mid grey, half metallic (the scene's room environment gives it something to
   // reflect; at metalness 0.2 under the cool window fill it read as bluish matte plastic), a pebbled bump.
   const cast = new THREE.MeshStandardMaterial({
-    color: 0xa39e96, roughness: 0.66, metalness: 0.55,
+    color: 0xaaa298, roughness: 0.66, metalness: 0.55,
     roughnessMap: noise, bumpMap: noise, bumpScale: 0.0007,
   });
   const toolMarks = machinedMarks();

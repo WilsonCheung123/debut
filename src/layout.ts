@@ -113,12 +113,13 @@ export const focus: Record<string, FocusFrame> = {
   'book.demi-gods': flatBook,
   'book.becoming-steve-jobs': flatBook,
   // the ID lifts 5.5 cm and faces the camera when focused (ID_FOCUS_LIFT): aim where it will be
-  'id-card':  { dist: 0.30, az: 2, el: 58, fov: 31, targetOffset: [0, 0.062, 0] },
+  // el 66 and the look-at nudged forward: the FPGA behind the card leaves the top of the frame (at el 58 its near edge sat exactly on it)
+  'id-card':  { dist: 0.30, az: 2, el: 66, fov: 31, targetOffset: [0, 0.062, 0.015] },
   guitar:     { dist: 0.30, az: 6, el: 50, fov: 31 },
   fpga:       { dist: 0.30, az: 4, el: 52, fov: 31 },
   'die-cast': { dist: 0.30, az: 12, el: 44, fov: 31 },
   hologram:   { dist: 0.84, az: 6, el: 22, fov: 32, targetOffset: [0, 0.05, 0] },
-  puppet:     { dist: 0.62, az: 20, el: 24, fov: 32, targetOffset: [0, 0.01, 0] },   // higher and more from the left: the lamp shade's mouth no longer cuts the top of the frame
+  puppet:     { dist: 0.62, az: 20, el: 32, fov: 32, targetOffset: [0, 0.01, 0] },   // from higher: the lamp's shade (0.4 m up, behind him) leaves the top of the frame (at el 12 and 24 its lit mouth cut the corner)
   jar:        { dist: 0.36, az: 14, el: 30, fov: 31, targetOffset: [0, 0.008, 0] },
   vinyl:      { dist: 0.58, az: -4, el: 40, fov: 32 },
 };

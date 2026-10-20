@@ -159,11 +159,13 @@ function roomEnvironment(renderer: THREE.WebGLRenderer, lampHead: THREE.Vector3)
     width: 512, height: 256, anisotropy: 1,
     draw(c, w, h) {
       const g = c.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, '#07070a'); g.addColorStop(0.46, '#100e0c'); g.addColorStop(0.56, '#2a1c11'); g.addColorStop(0.75, '#1a120b'); g.addColorStop(1, '#0a0806');
+      // below the horizon: the walnut under lamplight (a desk bounces warm light up into every
+      // metal's underside; without this the sides of things that face away from the key read cold)
+      g.addColorStop(0, '#07070a'); g.addColorStop(0.46, '#100e0c'); g.addColorStop(0.56, '#3a2615'); g.addColorStop(0.78, '#2a1b0f'); g.addColorStop(1, '#120c07');
       c.fillStyle = g; c.fillRect(0, 0, w, h);
-      // the lit table below the horizon, under the lamp
-      let r = c.createRadialGradient(u * w, h * 0.72, 2, u * w, h * 0.72, w * 0.3);
-      r.addColorStop(0, 'rgba(170,105,50,0.9)'); r.addColorStop(1, 'rgba(170,105,50,0)');
+      // the pool of light on the table, under the lamp
+      let r = c.createRadialGradient(u * w, h * 0.72, 2, u * w, h * 0.72, w * 0.42);
+      r.addColorStop(0, 'rgba(190,120,58,0.95)'); r.addColorStop(1, 'rgba(190,120,58,0)');
       c.fillStyle = r; c.fillRect(0, 0, w, h);
       // the lamp: a hot warm disc with a soft halo (the shade's lit lining)
       const lx = u * w, ly = (1 - v) * h;
