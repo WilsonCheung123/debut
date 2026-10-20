@@ -1,0 +1,35 @@
+[
+  {"action":"wait","ready":true},
+  {"action":"log","name":"info","js":"(function(){const i=window.__table.info();return {drawCalls:i.drawCalls,triangles:i.triangles};})()"},
+  {"action":"clock","pause":true},
+
+  {"action":"click-object","id":"id-card"},
+  {"action":"clock","runFor":1000},
+  {"action":"assert","name":"id-focused-no-panel","js":"window.__table.state.focused === 'id-card' && window.__table.info().mode === 'focus' && document.getElementById('panel').hidden === true"},
+  {"action":"click-object","id":"id-card"},
+  {"action":"clock","runFor":300},
+  {"action":"assert","name":"panel-still-closed-mid-flip","js":"document.getElementById('panel').hidden === true"},
+  {"action":"shot","name":"flip-mid"},
+  {"action":"clock","runFor":470},
+  {"action":"assert","name":"panel-open-after-flip","js":"document.getElementById('panel').hidden === false"},
+  {"action":"clock","runFor":500},
+  {"action":"shot","name":"flip-landed"},
+  {"action":"press","key":"Escape"},
+  {"action":"clock","runFor":1000},
+  {"action":"assert","name":"id-back-at-rest","js":"window.__table.state.focused === null && window.__table.info().mode === 'rest'"},
+
+  {"action":"click-object","id":"die-cast"},
+  {"action":"clock","runFor":1700},
+  {"action":"assert","name":"die-cast-focused","js":"window.__table.state.focused === 'die-cast' && window.__table.info().mode === 'focus' && document.getElementById('panel').hidden === false"},
+  {"action":"shot","name":"focus-die-cast"},
+  {"action":"press","key":"Escape"},
+  {"action":"clock","runFor":1100},
+
+  {"action":"click-object","id":"guitar"},
+  {"action":"clock","runFor":1700},
+  {"action":"assert","name":"guitar-focused","js":"window.__table.state.focused === 'guitar' && window.__table.info().mode === 'focus' && document.getElementById('panel').hidden === false"},
+  {"action":"shot","name":"focus-guitar"},
+  {"action":"press","key":"Escape"},
+  {"action":"clock","runFor":1100},
+  {"action":"assert","name":"back-at-rest","js":"window.__table.state.focused === null && window.__table.info().mode === 'rest'"}
+]

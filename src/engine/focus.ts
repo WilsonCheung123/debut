@@ -112,7 +112,7 @@ export class Focus {
 
     obj.focus.onEnter?.(d.ctx);
     const openPanel = (): void => {
-      if (state.focused !== id) return;
+      if (state.focused !== id || obj.focus.deferPanel) return;
       this.mark('panel:open', id);
       if (obj.focus.panel) d.panel.open(obj.focus.panel, { objectId: id, onClose: () => this.exit() });
     };
@@ -144,6 +144,14 @@ export class Focus {
         if (state.focused === id) { this.mark('bubble:show', id); d.bubble.show(austen); }
       }, 600);
     }
+  }
+
+  /** Opens the focused object's panel now (objects that defer it past +450 ms: the ID after its flip). */
+  openPanel(id: string): void {
+    const obj = this.byId.get(id);
+    if (!obj || state.focused !== id || !obj.focus.panel || this.d.panel.isOpen) return;
+    this.mark('panel:open', id);
+    this.d.panel.open(obj.focus.panel, { objectId: id, onClose: () => this.exit() });
   }
 
   /** Re-runs the camera to the focused object's current pose (after a flip, say). */

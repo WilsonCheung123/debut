@@ -9,7 +9,7 @@
   },
   {
     "action": "click-object",
-    "id": "id-card"
+    "id": "fpga"
   },
   {
     "action": "clock",
@@ -61,7 +61,7 @@
   },
   {
     "action": "timing",
-    "name": "id-card"
+    "name": "fpga"
   },
   {
     "action": "shot",
