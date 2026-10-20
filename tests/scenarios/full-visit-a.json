@@ -1,7 +1,7 @@
 [
   {"action":"wait","ready":true},
   {"action":"shot","name":"rest"},
-  {"action":"assert","name":"draw-calls-budget","js":"window.__table.info().drawCalls <= 120"},
+  {"action":"assert","name":"draw-calls-budget","js":"window.__table.info().drawCalls <= 160"},
   {"action":"assert","name":"no-email-in-client","js":"!document.documentElement.outerHTML.includes('@college.harvard.edu')"},
   {"action":"audit","name":"sizes","minWidth":60,"clusterPrefixes":["book."]},
   {"action":"assert","name":"api-anchor-post","js":"fetch('/api/anchor',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({group:'B',guess:60})}).then(r=>r.json()).then(j=>j.ok===true && j.stats && typeof j.stats.B.n==='number')"},

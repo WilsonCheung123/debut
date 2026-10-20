@@ -13,6 +13,8 @@ export interface RestPose {
   position: [number, number, number];
   /** Rotation about y in degrees. */
   rotationY?: number;
+  /** Uniform scale (the lamp only: a 10% shorter lamp keeps the rest camera close). */
+  scale?: number;
 }
 
 /**
@@ -50,7 +52,7 @@ export const camera = {
       [-0.65, 0, 0.4], [0.65, 0, 0.4], [-0.65, 0, -0.4], [0.65, 0, -0.4], [0.4, 0.5, -0.2],
     ] as [number, number, number][],
     /** Metres of table kept visible around the outermost objects. */
-    fitPad: 0.06,
+    fitPad: 0.03,
   },
   /** Pointer parallax, degrees (landscape, fine pointer only). */
   parallaxDeg: 1.2,
@@ -69,11 +71,11 @@ export const rest: Record<string, RestPose> = {
   fpga:     { position: [-0.30, 0, 0.06], rotationY: -12 },
   'die-cast': { position: [-0.13, 0, 0.10], rotationY: 24 },
   puppet:   { position: [0.44, 0, 0.08], rotationY: -16 },
-  'id-card': { position: [-0.42, 0, 0.28], rotationY: 9 },
+  'id-card': { position: [-0.42, 0, 0.25], rotationY: 9 },
   guitar:   { position: [0.12, 0, 0.26], rotationY: -22 },
-  jar:      { position: [0.56, 0, 0.26], rotationY: 0 },
+  jar:      { position: [0.56, 0, 0.24], rotationY: 0 },
   /** The lamp's head points down local -z, 0.74 m out; 123° aims it at (-0.06, 0.09): the pool covers the centre-front. */
-  lamp:     { position: [0.56, 0, -0.31], rotationY: 123 },
+  lamp:     { position: [0.56, 0, -0.31], rotationY: 123, scale: 0.9 },
 };
 
 /**

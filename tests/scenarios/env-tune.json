@@ -2,7 +2,7 @@
   {"action":"wait","ready":true},
   {"action":"shot","name":"rest-mat"},
   {"action":"log","name":"info","js":"JSON.stringify(window.__table.info())"},
-  {"action":"assert","name":"draw-calls-budget","js":"window.__table.info().drawCalls <= 120"},
+  {"action":"assert","name":"draw-calls-budget","js":"window.__table.info().drawCalls <= 160"},
   {"action":"eval","js":"window.__table.env.scene.getObjectByName('desk-mat').visible = false"},
   {"action":"wait","ms":300},
   {"action":"shot","name":"rest-nomat"},

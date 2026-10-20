@@ -75,6 +75,7 @@ async function boot(): Promise<void> {
       // seated on whatever is under it (the mat's top where the mat is)
       root.position.set(pose.position[0], pose.position[1] + surfaceHeightAt(pose.position[0], pose.position[2]), pose.position[2]);
       root.rotation.y = THREE.MathUtils.degToRad(pose.rotationY ?? 0);
+      if (pose.scale) root.scale.setScalar(pose.scale);
     } else {
       console.warn(`layout.rest has no pose for ${entry.key}`);
     }
@@ -101,7 +102,7 @@ async function boot(): Promise<void> {
       b.min.x -= pad; b.min.z -= pad; b.max.x += pad; b.max.z += pad; b.max.y += 0.02;
       corners(b);
     }
-    if (lamp) corners(b.setFromCenterAndSize(lamp.headWorld(), new THREE.Vector3(0.2, 0.2, 0.2)));
+    if (lamp) corners(b.setFromCenterAndSize(lamp.headWorld(), new THREE.Vector3(0.16, 0.16, 0.16)));
     rig.setMustSee(pts);
   }
   if (lamp) {

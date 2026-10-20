@@ -53,7 +53,14 @@ export class CameraRig {
     if (points.length) this.mustSee = points.map((p) => p.clone());
   }
 
-  /** Recomputes the rest pose for a viewport so everything in mustSee fits with a margin. */
+  /**
+   * Recomputes the rest pose for a viewport so everything in mustSee fits with
+   * a margin: the camera backs off along the rest direction until every point
+   * is inside the frame, and the look-at point is shifted (in the camera's
+   * screen plane) so the points' screen bounding box is centred; the two are
+   * iterated, so neither the lamp's head at the back nor the front row leaves
+   * a void on the other side.
+   */
   fitRest(width: number, height: number): void {
     this.width = width;
     this.height = height;
@@ -67,20 +74,43 @@ export class CameraRig {
     cam.fov = cfg.fov;
     cam.updateProjectionMatrix();
     const limit = 1 - cfg.margin * 2;
-    const fits = (d: number): boolean => {
+    const place = (d: number): void => {
       cam.position.copy(target).addScaledVector(dir, d);
       cam.lookAt(target);
       cam.updateMatrixWorld(true);
+    };
+    const fits = (d: number): boolean => {
+      place(d);
       for (const p of pts) {
         this.v.copy(p).project(cam);
         if (Math.abs(this.v.x) > limit || Math.abs(this.v.y) > limit || this.v.z > 1) return false;
       }
       return true;
     };
-    let lo = 0.6, hi = 10;
-    for (let i = 0; i < 28; i++) {
-      const mid = (lo + hi) / 2;
-      if (fits(mid)) hi = mid; else lo = mid;
+    let hi = 10;
+    const right = new THREE.Vector3(), up = new THREE.Vector3();
+    for (let pass = 0; pass < 4; pass++) {
+      let lo = 0.3;
+      hi = 10;
+      for (let i = 0; i < 28; i++) {
+        const mid = (lo + hi) / 2;
+        if (fits(mid)) hi = mid; else lo = mid;
+      }
+      // centre: the screen bounding box of the points, as a shift of the look-at in the camera's plane
+      place(hi);
+      let minX = 1, maxX = -1, minY = 1, maxY = -1;
+      for (const p of pts) {
+        this.v.copy(p).project(cam);
+        minX = Math.min(minX, this.v.x); maxX = Math.max(maxX, this.v.x);
+        minY = Math.min(minY, this.v.y); maxY = Math.max(maxY, this.v.y);
+      }
+      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+      if (Math.abs(cx) < 0.002 && Math.abs(cy) < 0.002) break;
+      const halfH = hi * Math.tan(THREE.MathUtils.degToRad(cfg.fov) / 2);
+      const halfW = halfH * cam.aspect;
+      right.setFromMatrixColumn(cam.matrixWorld, 0);
+      up.setFromMatrixColumn(cam.matrixWorld, 1);
+      target.addScaledVector(right, cx * halfW).addScaledVector(up, cy * halfH);
     }
     this.rest.position.copy(target).addScaledVector(dir, hi);
     this.rest.target.copy(target);
