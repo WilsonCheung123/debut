@@ -179,7 +179,7 @@ export function createLamp(ctx: ObjectCtx): LampObject {
       tmpColor.copy(KEY_AMBER).lerp(KEY_FINAL, Math.min(1, warm * 1.15));
       bulbMat.emissive.copy(tmpColor);
       bulbMat.emissiveIntensity = 2.3 * warm * k;
-      liningMat.emissiveIntensity = 1.15 * warm * k;
+      liningMat.emissiveIntensity = 0.7 * warm * k; // seen from below the mouth must grade, not read as a flat disc
       glowMat.uniforms.uOpacity.value = 0.085 * warm * (1 - 0.45 * dim);
       dust.setOpacity(warm * (1 - 0.5 * dim));
     },
@@ -226,7 +226,7 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
   const place = (i: number, along: number): void => {
     const r = Math.sqrt(Math.random());
     seed[i * 4] = along; seed[i * 4 + 1] = r; seed[i * 4 + 2] = Math.random() * Math.PI * 2; seed[i * 4 + 3] = 0.6 + Math.random() * 0.8;
-    sizes[i] = 0.004 + Math.random() * Math.random() * 0.007;
+    sizes[i] = 0.006 + Math.random() * Math.random() * 0.009; // bigger and dimmer reads as haze, not stars
     alphas[i] = (1 - r * r * 0.85) * (0.35 + Math.random() * 0.65);
   };
   for (let i = 0; i < n; i++) place(i, ALONG0 + Math.random() * (1 - ALONG0));
@@ -243,9 +243,9 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
       void main() {
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         float px = aSize * uScale / max(0.05, -mv.z);
-        gl_PointSize = clamp(px, 2.5, 20.0);
+        gl_PointSize = clamp(px, 3.0, 22.0);
         // motes within 30 cm of the lens would be huge blurs: fade them out
-        vA = aAlpha * smoothstep(0.12, 0.32, -mv.z) * clamp(px / 2.5, 0.35, 1.0);
+        vA = aAlpha * smoothstep(0.12, 0.32, -mv.z) * clamp(px / 3.0, 0.35, 1.0);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: `
@@ -291,7 +291,7 @@ function createDust(ctx: ObjectCtx, count: number, apex: THREE.Vector3, aim: THR
       // pixels per metre at unit distance: screen height / (2 tan(fov/2))
       const h = ctx.renderer.getDrawingBufferSize(size2).y;
       mat.uniforms.uScale.value = h / (2 * Math.tan(THREE.MathUtils.degToRad(ctx.camera.fov) / 2));
-      mat.uniforms.uOpacity.value = 0.42 * opacity;
+      mat.uniforms.uOpacity.value = 0.3 * opacity;
     },
     setCount(c) {
       active = Math.max(0, Math.min(n, c));

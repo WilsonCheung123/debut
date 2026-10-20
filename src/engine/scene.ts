@@ -13,10 +13,12 @@ export const TABLE = { w: 1.6, d: 0.9, thickness: 0.03, height: 0.74 } as const;
 
 /**
  * The desk mat: leather, under the writing area at the front-left (the ID
- * card and the capo sit on it). Clear of the books, the FPGA and the front
- * edge. `?mat=0` removes it, `?mat=1` forces it (for side-by-side shots).
+ * card and the capo would sit on it). Off by default: side by side it splits
+ * the table into two surfaces and darkens the quadrant where the window fill
+ * should read, and it forces anything on it to be seated 3.5 mm up. Kept
+ * behind `?mat=1` for comparison.
  */
-export const MAT = { w: 0.58, d: 0.36, x: -0.29, z: 0.24, thickness: 0.0035, radius: 0.014, on: true } as const;
+export const MAT = { w: 0.58, d: 0.36, x: -0.29, z: 0.24, thickness: 0.0035, radius: 0.014, on: false } as const;
 
 const params = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
 const flag = (name: string, dflt: boolean): boolean => {
