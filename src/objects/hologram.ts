@@ -28,8 +28,8 @@ const GHOST = { w: 0.12, y: 0.115, intensity: 0.28 };
 const SCREEN = { w: 0.32, h: 0.18, y: 0.255, bow: 0.012, tilt: -0.10 };
 const CYAN = new THREE.Color(0x6fdcff);
 
-const REST = { cone: 0.16, glow: 0.35, light: 0.05, coneScale: 1 };
-const FOCUS = { cone: 0.30, glow: 0.9, light: 0.3, coneScale: 1.05 };
+const REST = { cone: 0.26, glow: 0.35, light: 0.05, coneScale: 1 };
+const FOCUS = { cone: 0.5, glow: 0.9, light: 0.3, coneScale: 1.05 };
 
 // ---------------------------------------------------------------- shaders
 
@@ -49,7 +49,7 @@ varying vec2 vUv; varying vec3 vN; varying vec3 vV;
 void main() {
   float h = 1.0 - vUv.y;                       // 0 at the lens, 1 at the top
   float rim = pow(abs(dot(normalize(vN), normalize(vV))), 1.6);   // thin at the silhouette: reads as volume
-  float fall = pow(1.0 - h, 1.9) * (0.3 + 0.7 * smoothstep(0.0, 0.10, h)) * smoothstep(1.0, 0.78, h);
+  float fall = pow(1.0 - h, 1.5) * (0.3 + 0.7 * smoothstep(0.0, 0.10, h)) * smoothstep(1.0, 0.6, h);
   float bands = 0.93 + 0.07 * sin(h * 24.0 - time * 1.1 + sin(vUv.x * 12.566 + time * 0.3));
   float flick = 1.0 + 0.02 * sin(time * 9.0) * sin(time * 3.1);
   vec3 col = mix(colorA, colorB, h);
@@ -231,9 +231,10 @@ class Player {
       this.mode = 'native';
       v.src = hlsUrl(film);
     } else {
-      const mod = await import('hls.js');
+      let HlsCtor: typeof Hls;
+      try { HlsCtor = (await import('hls.js')).default; }
+      catch (e: unknown) { this.lastError = `hls-import: ${e instanceof Error ? e.message : String(e)}`; this.playing = false; return; }
       if (token !== this.token) return;
-      const HlsCtor = mod.default;
       if (!HlsCtor.isSupported()) { this.lastError = 'hls-unsupported'; this.playing = false; return; }
       this.mode = 'hls';
       const hls = new HlsCtor({ enableWorker: true, maxBufferLength: 20, backBufferLength: 20, startLevel: -1 });
@@ -375,7 +376,7 @@ export function createHologram(ctx: ObjectCtx): TableObject {
   };
   const coneMat = new THREE.ShaderMaterial({
     uniforms: coneUniforms, vertexShader: CONE_VERT, fragmentShader: CONE_FRAG,
-    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide, // one layer: a beam, not a bowl
   });
   const coneGeo = new THREE.CylinderGeometry(CONE.rTop, CONE.rBottom, CONE.h, 56, 1, true);
   coneGeo.translate(0, CONE.h / 2, 0); // apex at the origin so scale.y grows it upward
