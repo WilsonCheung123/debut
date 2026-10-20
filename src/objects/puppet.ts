@@ -5,6 +5,7 @@ import type { ObjectCtx, TableObject } from './types';
 import { roundedBox, hitProxy, solid } from './helpers';
 import { makeCanvasTexture, hash2, plastic, metal } from '../materials';
 import { pinocchioPanel, type PuppetItem } from '../panels/pinocchio';
+import { flags } from '../state';
 
 // The wooden puppet (SPEC 4.8): our own marionette, not Disney's character.
 // Pale wood with grain, ball joints at shoulders, elbows, wrists, waist, hips
@@ -282,7 +283,11 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
   ball(body, shL, 0.0105);
   ball(body, shR, 0.0105);
   limb(body, V(0, 0.182, 0), V(0, 0.200, 0.001), 0.0065);
-  put(painted, new THREE.CylinderGeometry(0.0215, 0.019, 0.0035, 36), mat(V(0, 0.1865, 0.001), Q0, V(1, 1, 0.86)));
+  put(painted, new THREE.CylinderGeometry(0.0135, 0.013, 0.0032, 24), mat(V(0, 0.1865, 0.001)));
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + 0.3;
+    put(painted, new THREE.SphereGeometry(0.0072, 16, 10), mat(V(Math.cos(a) * 0.0165, 0.1865, 0.001 + Math.sin(a) * 0.0145), Q0, V(1, 0.4, 1)));
+  }
 
   // head (its own mesh: painted face) and the nose, merged into the body
   const headPos = V(0, 0.222, 0.002);
@@ -295,7 +300,7 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
   figure.add(head);
   hit.push(head);
   // nose: a long cone from the face, base just inside the sphere
-  put(body, new THREE.ConeGeometry(0.0042, 0.031, 18), headM.clone().multiply(mat(V(0, -0.001, 0.034), euler(Math.PI / 2, 0, 0))));
+  put(body, new THREE.ConeGeometry(0.0042, 0.037, 18), headM.clone().multiply(mat(V(0, -0.001, 0.0365), euler(Math.PI / 2, 0, 0))));
 
   // arms: left holds the camera (palm up, chest height); right holds the phone (lower, turned to the viewer)
   const elbowL = V(0.047, 0.140, 0.012), wristL = V(0.034, 0.150, 0.044);
@@ -390,8 +395,8 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
 
   // ---- the controller: a wooden cross lying on the table behind him ----------
   const bar = new THREE.Group();
-  bar.position.set(0.014, 0, -0.108);
-  bar.rotation.y = THREE.MathUtils.degToRad(22);
+  bar.position.set(-0.012, 0, -0.118);
+  bar.rotation.y = THREE.MathUtils.degToRad(10);
   group.add(bar);
   const barBucket: Bucket = [];
   put(barBucket, roundedBox(0.118, 0.008, 0.008, 0.0025), mat(V(0, 0.004, 0)));
@@ -481,6 +486,20 @@ export function createPuppet(ctx: ObjectCtx): TableObject {
 
   let lastY: number | null = null;
   const contactMat = contact.material as THREE.MeshBasicMaterial;
+
+  // Test hook (?qa=1 only): the screen point of each item, so a scenario can click it while focused.
+  if (flags.qa) {
+    const w = new THREE.Vector3();
+    (window as unknown as { __puppet: unknown }).__puppet = {
+      point(item: PuppetItem): { x: number; y: number } {
+        if (item === 'camera') camera.localToWorld(w.set(0, CAM.h / 2, 0.004));
+        else if (item === 'phone') phone.localToWorld(w.set(0, 0, 0.002));
+        else head.getWorldPosition(w);
+        w.project(ctx.camera);
+        return { x: (w.x + 1) / 2 * innerWidth, y: (1 - w.y) / 2 * innerHeight };
+      },
+    };
+  }
 
   return {
     id: 'puppet',

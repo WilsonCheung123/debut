@@ -40,7 +40,7 @@ interface Section { item: PuppetItem; kicker: string; title: string; body: strin
 
 const INTRO = [
   'Before a single frame of <em>Pinocchio</em> was drawn, Disney’s model shop sculpted him. Animators could turn him in their hands, study him from every angle, and watch how light fell on his face. The object came before the drawing.',
-  'The three things on this stand each did something like that for everyone else. Each introduced a cultural moment, and each redefined how people live with technology.',
+  'The three objects here each did something like that for everyone else. Each introduced a cultural moment, and each redefined how people live with technology.',
 ];
 
 const SECTIONS: Section[] = [
