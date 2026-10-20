@@ -147,7 +147,7 @@ function rule(c: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y
 }
 
 /** A head-in-profile silhouette facing left in a 100 x 140 box (origin top-left). */
-function profilePath(c: CanvasRenderingContext2D): void {
+function profilePath(c: CanvasRenderingContext2D, updo = false): void {
   c.beginPath();
   c.moveTo(46, 140);
   c.bezierCurveTo(44, 126, 42, 118, 37, 112);   // throat
@@ -159,12 +159,25 @@ function profilePath(c: CanvasRenderingContext2D): void {
   c.bezierCurveTo(21, 76, 17, 74, 13, 72);      // nose base to tip
   c.bezierCurveTo(13, 67, 18, 62, 22, 57);      // bridge
   c.bezierCurveTo(25, 53, 27, 51, 26, 47);      // brow
-  c.bezierCurveTo(27, 40, 28, 30, 33, 20);      // forehead
-  c.bezierCurveTo(42, 7, 62, -1, 82, 6);        // crown
-  c.bezierCurveTo(98, 12, 106, 30, 100, 46);    // back of the head (bun)
-  c.bezierCurveTo(98, 56, 92, 60, 88, 66);      // under the bun
-  c.bezierCurveTo(86, 80, 82, 96, 74, 108);     // nape
-  c.bezierCurveTo(70, 118, 68, 130, 68, 140);   // back of the neck
+  if (updo) {
+    // regency hair: curls at the forehead, a high bun at the back, a slim neck
+    c.bezierCurveTo(26, 42, 24, 36, 26, 30);    // forehead
+    c.bezierCurveTo(22, 26, 22, 18, 30, 14);    // a curl
+    c.bezierCurveTo(28, 8, 34, 2, 42, 4);       // second curl
+    c.bezierCurveTo(54, -4, 72, -4, 84, 4);     // crown
+    c.bezierCurveTo(90, 0, 100, 0, 104, 8);     // top of the bun
+    c.bezierCurveTo(114, 14, 114, 32, 104, 40); // the bun
+    c.bezierCurveTo(100, 46, 94, 48, 92, 54);   // under the bun
+    c.bezierCurveTo(92, 70, 84, 86, 72, 100);   // nape
+    c.bezierCurveTo(66, 110, 62, 124, 62, 140); // back of the neck
+  } else {
+    c.bezierCurveTo(27, 40, 28, 30, 33, 20);    // forehead
+    c.bezierCurveTo(42, 7, 62, -1, 82, 6);      // crown
+    c.bezierCurveTo(98, 12, 106, 30, 100, 46);  // back of the head
+    c.bezierCurveTo(98, 56, 92, 60, 88, 66);
+    c.bezierCurveTo(86, 80, 82, 96, 74, 108);   // nape
+    c.bezierCurveTo(70, 118, 68, 130, 68, 140); // back of the neck
+  }
   c.closePath();
 }
 
@@ -448,7 +461,7 @@ const powerBroker: CoverDesign = {
 };
 
 const pride: CoverDesign = {
-  id: 'book.pride-and-prejudice', hardcover: true, size: [0.031, 0.205, 0.135], roughness: 0.86,
+  id: 'book.pride-and-prejudice', hardcover: true, size: [0.032, 0.205, 0.142], roughness: 0.86,
   palette: { bg: '#b7c5ae', ink: '#1f2d26', accent: '#a98b48', paper: '#efe8d4', cloth: '#b7c5ae', endpaper: '#e4e0cc' },
   front(c, p) {
     c.fillStyle = p.bg;
@@ -475,9 +488,9 @@ const pride: CoverDesign = {
     c.lineWidth = 0.9;
     c.beginPath(); c.ellipse(cx, cy, 88, 113, 0, 0, Math.PI * 2); c.stroke();
     c.save();
-    c.translate(cx - 56, cy - 86);
+    c.translate(cx - 62, cy - 86);
     c.scale(1.22, 1.22);
-    profilePath(c);
+    profilePath(c, true);
     c.fillStyle = p.ink;
     c.fill();
     c.restore();
