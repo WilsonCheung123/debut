@@ -1,57 +1,242 @@
 [
-  {"action": "wait", "ready": true},
-  {"action": "assert", "name": "nine-covers-loaded", "js": "(function(){ const c = window.__books.covers(); return c.length === 9 && c.every((x) => x.canvas.width >= 512 && x.canvas.height === x.canvas.width * 2); })()"},
-  {"action": "hover", "id": "books"},
-  {"action": "shot", "name": "hover-books"},
-  {"action": "focus", "id": "books", "panel": false},
-  {"action": "wait", "ms": 600},
-  {"action": "shot", "name": "shelf"},
-  {"action": "eval", "js": "window.__books.drive.hover('book.anna-karenina')"},
-  {"action": "click-object", "id": "book.anna-karenina"},
-  {"action": "wait", "selector": "#panel:not([hidden])"},
-  {"action": "wait", "ms": 800},
-  {"action": "assert", "name": "anna-blurb", "js": "document.querySelector('#panel .content').textContent.indexOf('deepening spiritual crisis') > 0"},
-  {"action": "shot", "name": "open-anna-karenina"},
-  {"action": "press", "key": "Escape"},
-  {"action": "wait", "ms": 500},
-  {"action": "eval", "js": "window.__books.drive.hover('book.becoming-steve-jobs')"},
-  {"action": "click-object", "id": "book.becoming-steve-jobs"},
-  {"action": "wait", "selector": "#panel:not([hidden])"},
-  {"action": "wait", "ms": 800},
-  {"action": "assert", "name": "jobs-open", "js": "document.getElementById('panel-title').textContent === 'Becoming Steve Jobs'"},
-  {"action": "press", "key": "Escape"},
-  {"action": "wait", "ms": 500},
-  {"action": "eval", "js": "window.__books.drive.hover('book.innovators-dilemma')"},
-  {"action": "click-object", "id": "book.innovators-dilemma"},
-  {"action": "wait", "selector": "#panel:not([hidden])"},
-  {"action": "wait", "ms": 800},
-  {"action": "assert", "name": "innovators-open", "js": "document.getElementById('panel-title').textContent === \"The Innovator's Dilemma\""},
-  {"action": "press", "key": "Escape"},
-  {"action": "wait", "ms": 500},
-  {"action": "eval", "js": "window.__books.drive.scrollBy(0.4)"},
-  {"action": "wait", "ms": 900},
-  {"action": "eval", "js": "window.__books.drive.hover('book.power-broker')"},
-  {"action": "click-object", "id": "book.power-broker"},
-  {"action": "wait", "selector": "#panel:not([hidden])"},
-  {"action": "wait", "ms": 800},
-  {"action": "assert", "name": "power-broker-blurb", "js": "document.querySelector('#panel .content').textContent.indexOf('interested in architecture') > 0"},
-  {"action": "shot", "name": "open-power-broker"},
-  {"action": "press", "key": "Escape"},
-  {"action": "wait", "ms": 500},
-  {"action": "eval", "js": "window.__books.drive.hover('book.demi-gods')"},
-  {"action": "click-object", "id": "book.demi-gods"},
-  {"action": "wait", "selector": "#panel:not([hidden])"},
-  {"action": "wait", "ms": 800},
-  {"action": "assert", "name": "demi-gods-blurb", "js": "document.querySelector('#panel .content').textContent.indexOf('all 15 of his novels') > 0"},
-  {"action": "shot", "name": "open-demi-gods"},
-  {"action": "press", "key": "Escape"},
-  {"action": "wait", "ms": 500},
-  {"action": "press", "key": "Escape"},
-  {"action": "wait", "ms": 1400},
-  {"action": "assert", "name": "back-at-rest", "js": "window.__table.state.focused === null && window.__table.info().mode === 'rest'"},
-  {"action": "focus", "id": "book.inferno", "cluster": true},
-  {"action": "assert", "name": "deep-focus-inferno", "js": "window.__table.state.focused === 'book.inferno' && document.querySelector('#panel figure img') !== null"},
-  {"action": "shot", "name": "focus-inferno-single"},
-  {"action": "exit"},
-  {"action": "audit", "name": "sizes", "minWidth": 60, "clusterPrefixes": ["book."]}
+  {
+    "action": "wait",
+    "ready": true
+  },
+  {
+    "action": "eval",
+    "js": "window.__until = async (f, ms) => { const t0 = Date.now(); for (;;) { try { if (f()) return true; } catch {} if (Date.now() - t0 > ms) return false; await new Promise((r) => setTimeout(r, 200)); } }"
+  },
+  {
+    "action": "assert",
+    "name": "nine-covers-loaded",
+    "js": "(function(){ const c = window.__books.covers(); return c.length === 9 && c.every((x) => x.canvas.width >= 512 && x.canvas.height === x.canvas.width * 2); })()"
+  },
+  {
+    "action": "hover",
+    "id": "books"
+  },
+  {
+    "action": "shot",
+    "name": "hover-books"
+  },
+  {
+    "action": "focus",
+    "id": "books",
+    "panel": false
+  },
+  {
+    "action": "assert",
+    "name": "shelf-active",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.active && s.spread > 0.99; }, 15000)"
+  },
+  {
+    "action": "shot",
+    "name": "shelf"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.anna-karenina')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.anna-karenina"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "assert",
+    "name": "anna-blurb",
+    "js": "document.querySelector('#panel .content').textContent.indexOf('deepening spiritual crisis') > 0"
+  },
+  {
+    "action": "shot",
+    "name": "open-anna-karenina"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "book-closed-13",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && window.__table.state.focused === 'books' && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.becoming-steve-jobs')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.becoming-steve-jobs"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "assert",
+    "name": "jobs-open",
+    "js": "document.getElementById('panel-title').textContent === 'Becoming Steve Jobs'"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "book-closed-20",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && window.__table.state.focused === 'books' && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.innovators-dilemma')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.innovators-dilemma"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "assert",
+    "name": "innovators-open",
+    "js": "document.getElementById('panel-title').textContent === \"The Innovator's Dilemma\""
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "book-closed-27",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && window.__table.state.focused === 'books' && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.scrollBy(0.4)"
+  },
+  {
+    "action": "assert",
+    "name": "shelf-scrolled",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return Math.abs(s.scroll - s.min) > 0.05 || s.max - s.min < 0.06; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.power-broker')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.power-broker"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "assert",
+    "name": "power-broker-blurb",
+    "js": "document.querySelector('#panel .content').textContent.indexOf('interested in architecture') > 0"
+  },
+  {
+    "action": "shot",
+    "name": "open-power-broker"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "book-closed-37",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && window.__table.state.focused === 'books' && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "eval",
+    "js": "window.__books.drive.hover('book.demi-gods')"
+  },
+  {
+    "action": "click-object",
+    "id": "book.demi-gods"
+  },
+  {
+    "action": "wait",
+    "selector": "#panel:not([hidden])"
+  },
+  {
+    "action": "wait",
+    "frames": 1
+  },
+  {
+    "action": "assert",
+    "name": "demi-gods-blurb",
+    "js": "document.querySelector('#panel .content').textContent.indexOf('all 15 of his novels') > 0"
+  },
+  {
+    "action": "shot",
+    "name": "open-demi-gods"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "book-closed-45",
+    "js": "window.__until(() => { const s = window.__books.shelf(); return s.open === null && window.__table.state.focused === 'books' && document.getElementById('panel').hidden; }, 15000)"
+  },
+  {
+    "action": "press",
+    "key": "Escape"
+  },
+  {
+    "action": "assert",
+    "name": "back-at-rest",
+    "js": "window.__until(() => { return window.__table.state.focused === null && window.__table.info().mode === 'rest' && document.getElementById('shelf') === null; }, 20000)"
+  },
+  {
+    "action": "focus",
+    "id": "book.inferno",
+    "cluster": true
+  },
+  {
+    "action": "assert",
+    "name": "deep-focus-inferno",
+    "js": "window.__table.state.focused === 'book.inferno' && document.querySelector('#panel figure img') !== null"
+  },
+  {
+    "action": "shot",
+    "name": "focus-inferno-single"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "audit",
+    "name": "sizes",
+    "minWidth": 60,
+    "clusterPrefixes": [
+      "book."
+    ]
+  }
 ]

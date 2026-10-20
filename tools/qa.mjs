@@ -9,7 +9,13 @@ import { spawnSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const url = process.env.QA_URL || 'http://localhost:5180/';
+// QA runs against the static preview (5181, `npm run build && npm run preview`) when it is up: the dev
+// server reloads every open page on a source edit, which kills a run in progress. QA_URL overrides.
+const probe = async (u) => { try { return (await fetch(u, { signal: AbortSignal.timeout(1500) })).ok; } catch { return false; } };
+const url = process.env.QA_URL || ((await probe('http://localhost:5181/')) ? 'http://localhost:5181/' : 'http://localhost:5180/');
+console.log(`qa against ${url}`);
+// software GL plus a busy machine: every page wait is stretched unless the caller set the scale
+process.env.SHOT_TIMEOUT_SCALE ||= '3';
 const outdir = process.env.QA_OUT || 'shots/qa';
 const D = ['--viewport', 'desktop'];
 const runs = [
