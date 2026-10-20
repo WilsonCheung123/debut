@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 // Dev server on 5180; /api is proxied to the Cloudflare Worker running under
 // `npm run worker` (wrangler dev --local on 8780). WORKER_PORT overrides the
 // proxy target so parallel builders can run their own worker on another port.
-const workerPort = process.env.WORKER_PORT || '8780';
+const workerPort = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.WORKER_PORT || '8780';
 const api = { target: `http://localhost:${workerPort}`, changeOrigin: true };
 
 export default defineConfig({
