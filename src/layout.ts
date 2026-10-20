@@ -114,8 +114,9 @@ export const focus: Record<string, FocusFrame> = {
   'book.demi-gods': book,
   'book.pride-and-prejudice': book,
   // the ID lifts 5.5 cm and faces the camera when focused (ID_FOCUS_LIFT): aim where it will be
-  'id-card':  { dist: 0.30, az: 2, el: 58, fov: 31, targetOffset: [0, 0.062, 0] },
-  guitar:     { dist: 0.30, az: 6, el: 50, fov: 31 },
+  'id-card':  { dist: 0.30, az: 2, el: 64, fov: 31, targetOffset: [0, 0.062, 0.01] },
+  // from the right and lower, so the hinge end with the coil spring faces the camera
+  guitar:     { dist: 0.28, az: -70, el: 52, fov: 31 },
   fpga:       { dist: 0.30, az: 4, el: 52, fov: 31 },
   'die-cast': { dist: 0.30, az: 12, el: 44, fov: 31 },
   hologram:   { dist: 0.84, az: 6, el: 22, fov: 32, targetOffset: [0, 0.05, 0] },

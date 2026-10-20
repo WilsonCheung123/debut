@@ -3,9 +3,9 @@
 // reach me". The principles are written fresh in his voice from the points
 // the spec lists; Sigil Wen's post was the reference for tone only.
 
-/** Above the fields, in Wilson's voice. */
+/** Above the fields, in Wilson's voice. English throughout; the book is named author-first (SPEC 0.1). */
 export const jarNote =
-  'This jar is borrowed from 解忧杂货店, The Miracles of the Namiya General Store: ' +
+  'This jar is borrowed from Keigo Higashino’s The Miracles of the Namiya General Store: ' +
   'people slip their worries through the shop’s shutter at night and find an answer in the milk crate by morning. ' +
   'I’m not an old man with wisdom. But if you have something thoughtful to say, write it down.';
 
