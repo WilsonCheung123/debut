@@ -10,8 +10,9 @@ import gsap from 'gsap';
 import { state, refreshMedia, flags } from './state';
 import { api } from './api';
 import { materials } from './materials';
-import { createScene } from './engine/scene';
+import { createScene, surfaceHeightAt, addProbe } from './engine/scene';
 import { Lights } from './engine/lights';
+import { createContactShadows } from './engine/contact';
 import { CameraRig } from './engine/camera';
 import { Picker } from './engine/picking';
 import { Hover } from './engine/hover';
@@ -70,7 +71,8 @@ async function boot(): Promise<void> {
     const pose = restPoses[entry.key];
     const root = isCluster(r) ? r.root : r.group;
     if (pose) {
-      root.position.set(pose.position[0], pose.position[1], pose.position[2]);
+      // seated on whatever is under it (the mat's top where the mat is)
+      root.position.set(pose.position[0], pose.position[1] + surfaceHeightAt(pose.position[0], pose.position[2]), pose.position[2]);
       root.rotation.y = THREE.MathUtils.degToRad(pose.rotationY ?? 0);
     } else {
       console.warn(`layout.rest has no pose for ${entry.key}`);
@@ -84,7 +86,14 @@ async function boot(): Promise<void> {
   for (const o of objects) hover.register(o);
   const interactive = objects.filter((o) => o.hit.length > 0);
   picker.register(interactive);
-  if (lamp) lights.attachToLamp(lamp.headWorld(), lamp.aimWorld());
+  if (lamp) {
+    lights.attachToLamp(lamp.headWorld(), lamp.aimWorld());
+    const l = lamp;
+    lights.onApply = (w, d) => l.setGlow(w, d);
+  }
+  // contact shadows under everything that sits on the wood (sized from real bounds)
+  const contact = createContactShadows(scene);
+  for (const o of interactive) contact.add(o);
 
   focusCtl = new Focus({ rig, lights, hover, picker, overlay, label, panel, bubble, a11y, objects: interactive, ctx });
   const focus = focusCtl;
@@ -183,6 +192,7 @@ async function boot(): Promise<void> {
     hover.apply();
     for (const o of objects) o.update?.(dt, t);
     rig.update(dt);
+    contact.update();
     lights.apply();
     overlay.apply();
     placeLabel();
@@ -226,6 +236,8 @@ async function boot(): Promise<void> {
     liftOf(id: string) { return hover.liftOf(id); },
     /** Music test hooks: __table.music.setPlaying(true) arms the Austen trick without Spotify. */
     music: music.hooks,
+    /** Environment tuning handles for scripted comparisons (several variants per run). */
+    env: { lights, renderer, scene, overlay, probe: () => addProbe(scene) },
     info() {
       return {
         drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
