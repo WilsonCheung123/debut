@@ -57,6 +57,7 @@ fs.mkdirSync(outdir, { recursive: true });
 
 const VIEWPORTS = {
   desktop: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
+  hd: { viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
   iphone: { ...devices['iPhone 13'], deviceScaleFactor: 2 },
   pixel: { ...devices['Pixel 7'], deviceScaleFactor: 2 },
 };
