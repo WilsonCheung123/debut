@@ -118,7 +118,7 @@ export function createJar(ctx: ObjectCtx): TableObject {
   const slipTex = makeCanvasTexture({
     width: 256, height: 256, anisotropy: 4,
     draw(c, w, h) {
-      c.fillStyle = '#f0e8d8'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#e9e0cc'; c.fillRect(0, 0, w, h);
       c.strokeStyle = 'rgba(110,105,140,0.16)'; c.lineWidth = 1;
       for (let y = 24; y < h; y += 26) { c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(w, y + 0.5); c.stroke(); }
       // pencil lines that read as handwriting from a distance
@@ -283,7 +283,7 @@ function lidPlateGeometry(): THREE.ExtrudeGeometry {
  * or along x) and raised by `open` radians, with small wrinkles. Lies in the
  * x/z plane with the crease at y = 0.
  */
-function foldedSlip(seed: number, open: number, w = 0.05, h = 0.034, crease: 'x' | 'z' = 'z'): THREE.BufferGeometry {
+function foldedSlip(seed: number, open: number, w = 0.044, h = 0.03, crease: 'x' | 'z' = 'z'): THREE.BufferGeometry {
   const g = new THREE.PlaneGeometry(w, h, 12, 6);
   g.rotateX(-Math.PI / 2);
   if (crease === 'x') g.rotateY(Math.PI / 2);
@@ -314,7 +314,7 @@ function crumpledSlip(seed: number, r: number): THREE.BufferGeometry {
     v.fromBufferAttribute(pos, i);
     const n = hash2(q(v.x) * 7 + q(v.y), q(v.z), seed);
     const n2 = hash2(q(v.y) * 3 + q(v.z), q(v.x), seed + 1);
-    v.multiplyScalar(0.76 + 0.34 * n + 0.14 * (n2 - 0.5));
+    v.multiplyScalar(0.86 + 0.2 * n + 0.08 * (n2 - 0.5)); // gentle: larger amplitudes flip facets inward (black triangles)
     pos.setXYZ(i, v.x, v.y * 0.82, v.z);
   }
   g.computeVertexNormals();
@@ -322,7 +322,7 @@ function crumpledSlip(seed: number, r: number): THREE.BufferGeometry {
 }
 
 /** A slip curling up at both ends. */
-function curledSlip(seed: number, w = 0.046, h = 0.03): THREE.BufferGeometry {
+function curledSlip(seed: number, w = 0.04, h = 0.027): THREE.BufferGeometry {
   const g = new THREE.PlaneGeometry(w, h, 12, 4);
   g.rotateX(-Math.PI / 2);
   const pos = g.attributes.position as THREE.BufferAttribute;

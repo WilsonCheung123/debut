@@ -67,7 +67,7 @@ if (!device) { console.error(`unknown viewport ${viewportName}`); process.exit(1
 const touch = !!device.hasTouch;
 
 const browser = await chromium.launch({
-  args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync'],
+  args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'], // 2D canvas on the CPU: procedural textures take ms, not minutes, under SwiftShader
 });
 const context = await browser.newContext({
   ...device,
@@ -131,12 +131,12 @@ async function aimPoint(id, minPx = 0) {
 async function marksSince(t0) {
   return page.evaluate((t0) => window.__table.timeline.filter((m) => m.t >= t0), t0);
 }
-async function waitMark(ev, id, t0, timeout = 8000) {
+async function waitMark(ev, id, t0, timeout = 8000 * SLOW) {
   await page.waitForFunction(([ev, id, t0]) => window.__table.timeline.some((m) => m.ev === ev && m.t >= t0 && (!id || m.id === id)), [ev, id, t0], { timeout });
 }
 const now = () => page.evaluate(() => performance.now());
 /** Waits until the engine is idle (not busy) and `n` more frames have rendered, so projected rects are current. */
-async function settle(n = 2, timeout = 15000) {
+async function settle(n = 2, timeout = 15000 * SLOW) {
   await page.waitForFunction(() => !window.__table.info().busy, null, { timeout }).catch(() => {});
   const f = await page.evaluate(() => window.__table.info().frame);
   await page.waitForFunction(([f, n]) => window.__table.info().frame >= f + n, [f, n], { timeout }).catch(() => {});
@@ -200,7 +200,7 @@ async function doHover(id) {
     const t = window.__table;
     const op = +getComputedStyle(document.getElementById('label')).opacity;
     return t.state.hovered === id && op >= 0.99 && (t.state.reducedMotion || t.liftOf(id) >= 0.95);
-  }, id, { timeout: 8000 }).catch(() => {});
+  }, id, { timeout: 8000 * SLOW }).catch(() => {});
   const info = await page.evaluate((id) => {
     const t = window.__table;
     const label = document.getElementById('label');
@@ -240,7 +240,7 @@ async function doFocus(id, frames = 0, name = id, cluster = false) {
   }
   try { await waitMark('focus:settled', id, t0); }
   catch { note(`[focus:${id}] never settled (focused=${await page.evaluate(() => window.__table.state.focused)})`); return; }
-  await page.waitForFunction(() => { const p = document.getElementById('panel'); return p && !p.hidden; }, null, { timeout: 4000 }).catch(() => note(`[focus:${id}] panel did not open`));
+  await page.waitForFunction(() => { const p = document.getElementById('panel'); return p && !p.hidden; }, null, { timeout: 4000 * SLOW }).catch(() => note(`[focus:${id}] panel did not open`));
   await sleep(500); // panel entrance (420 ms) settles
   lastFocusT0 = t0;
 }
@@ -328,9 +328,9 @@ try {
           break;
         case 'focus': await doFocus(s.id, s.frames || 0, s.name || s.id, !!s.cluster); break;
         case 'exit': await doExit(); break;
-        case 'click': await page.locator(s.selector).first().click({ timeout: 8000 }); break;
-        case 'tap': if (touch) await page.locator(s.selector).first().tap({ timeout: 8000 }); else await page.locator(s.selector).first().click({ timeout: 8000 }); break;
-        case 'fill': await page.locator(s.selector).first().fill(s.text, { timeout: 8000 }); break;
+        case 'click': await page.locator(s.selector).first().click({ timeout: 8000 * SLOW }); break;
+        case 'tap': if (touch) await page.locator(s.selector).first().tap({ timeout: 8000 * SLOW }); else await page.locator(s.selector).first().click({ timeout: 8000 * SLOW }); break;
+        case 'fill': await page.locator(s.selector).first().fill(s.text, { timeout: 8000 * SLOW }); break;
         case 'press': await page.keyboard.press(s.key); break;
         case 'shot': await shot(`${baseName}-${s.name}`); break;
         case 'eval': await page.evaluate(s.js); break;

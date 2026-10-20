@@ -14,7 +14,7 @@ const base = process.argv[2] || 'http://localhost:5187/';
 const url = new URL(base); url.searchParams.set('qa', '1');
 const problems = [];
 const expectedNoise = /Failed to load resource|net::ERR_FAILED|net::ERR_CONNECTION_REFUSED/;
-const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync'] });
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--disable-gpu-vsync', '--disable-accelerated-2d-canvas'] });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 page.setDefaultTimeout(30000);
 page.on('console', (m) => { if ((m.type() === 'error' || m.type() === 'warning') && !expectedNoise.test(m.text()) && !/KHR_parallel_shader_compile|GL Driver Message/.test(m.text())) problems.push(`[console.${m.type()}] ${m.text()}`); });
