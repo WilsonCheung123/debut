@@ -10,10 +10,10 @@ import { idCard as content } from '../content/id-card';
 // The student ID (SPEC 4.3). A credit-card-sized card, 3 mm plan corners, a
 // hair of edge bevel, satin clear-coat. Front: the drawn card inside
 // public/id-card.webp (cropped to its outline, so the card's proportions are
-// the drawing's). Back: a designed cream back on canvas. Focus lifts it and
-// turns it to face the camera; a click inside flips it 180° about its long
-// axis over 700 ms with a slight arc, and only then does the panel open
-// (focus.deferPanel + ctx.openPanel).
+// the drawing's). Back: a designed cream back on canvas (seen only on the
+// card's edges and underside; the flip was dropped in SPEC 0.2). Focus lifts
+// it and turns it to face the camera; the panel opens at the engine's usual
+// +450 ms.
 
 const ID = 'id-card';
 /** The drawn card's outline inside the 1024 × 683 image (measured; the rest is margin and a baked shadow). */
@@ -62,38 +62,10 @@ export function createIdCard(ctx: ObjectCtx): TableObject {
   const blob = contactBlob(W, H, restYaw, { strength: 0.42 });
   group.add(blob.mesh);
 
-  const pose = { y: 0, rx: 0, ry: 0, rz: 0 };
-  let flips = 0;
-  let flipping = false;
+  const pose = { y: 0, rx: 0, ry: 0 };
   const apply = (): void => {
     pivot.position.y = T / 2 + pose.y;
-    pivot.rotation.set(pose.rx, pose.ry, pose.rz, 'YXZ');
-  };
-
-  const land = (): void => {
-    flipping = false;
-    if (ctx.state.focused === ID) ctx.openPanel(ID);
-  };
-
-  const flip = (): void => {
-    if (flipping || ctx.state.focused !== ID) return;
-    flipping = true;
-    flips += 1;
-    const rx = alpha + Math.PI * flips;
-    gsap.killTweensOf(pose);
-    if (ctx.state.reducedMotion) {
-      pose.rx = rx; pose.ry = beta; pose.y = ID_FOCUS_LIFT; pose.rz = 0;
-      apply();
-      land();
-      return;
-    }
-    // 700 ms about the long axis; the arc is a rise of ~3 cm that settles as the turn lands, with a hint of yaw.
-    const tl = gsap.timeline({ onComplete: land });
-    tl.to(pose, { rx, duration: 0.7, ease: 'power2.inOut' }, 0);
-    tl.to(pose, { y: ID_FOCUS_LIFT + 0.03, duration: 0.32, ease: 'sine.out' }, 0);
-    tl.to(pose, { y: ID_FOCUS_LIFT, duration: 0.38, ease: 'sine.inOut' }, 0.32);
-    tl.to(pose, { ry: beta + 0.07, rz: 0.03, duration: 0.34, ease: 'sine.out' }, 0);
-    tl.to(pose, { ry: beta, rz: 0, duration: 0.36, ease: 'sine.inOut' }, 0.34);
+    pivot.rotation.set(pose.rx, pose.ry, 0, 'YXZ');
   };
 
   return {
@@ -106,26 +78,16 @@ export function createIdCard(ctx: ObjectCtx): TableObject {
     focus: {
       camera: ctx.focusPose(ID),
       panel: content,
-      deferPanel: true,
       onEnter() {
         gsap.killTweensOf(pose);
-        flipping = false;
-        flips = 0;
-        pose.rx = ((pose.rx % TAU) + TAU) % TAU; // a whole number of turns is a turn of zero
-        if (pose.rx > Math.PI) pose.rx -= TAU;
-        if (ctx.state.reducedMotion) { pose.y = ID_FOCUS_LIFT; pose.rx = alpha; pose.ry = beta; pose.rz = 0; apply(); return; }
-        gsap.to(pose, { y: ID_FOCUS_LIFT, rx: alpha, ry: beta, rz: 0, duration: 0.9, ease: 'power3.inOut' });
+        if (ctx.state.reducedMotion) { pose.y = ID_FOCUS_LIFT; pose.rx = alpha; pose.ry = beta; apply(); return; }
+        gsap.to(pose, { y: ID_FOCUS_LIFT, rx: alpha, ry: beta, duration: 0.9, ease: 'power3.inOut' });
       },
       onExit() {
         gsap.killTweensOf(pose);
-        flipping = false;
-        flips = 0;
-        // settle face-up by the shorter way round (a flipped card tumbles on over its far edge)
-        const rx = Math.round(pose.rx / TAU) * TAU;
-        if (ctx.state.reducedMotion) { pose.y = 0; pose.rx = rx; pose.ry = 0; pose.rz = 0; apply(); return; }
-        gsap.to(pose, { y: 0, rx, ry: 0, rz: 0, duration: 0.8, ease: 'power3.inOut' });
+        if (ctx.state.reducedMotion) { pose.y = 0; pose.rx = 0; pose.ry = 0; apply(); return; }
+        gsap.to(pose, { y: 0, rx: 0, ry: 0, duration: 0.8, ease: 'power3.inOut' });
       },
-      onClickInside() { flip(); },
     },
     update() { apply(); blob.update(group); },
     dispose() {

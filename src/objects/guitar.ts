@@ -64,15 +64,17 @@ export function createGuitar(ctx: ObjectCtx): TableObject {
   lowerHandle.rotateX(-0.52);
   lowerHandle.translate(0, -0.0155, -0.0205);
   blacks.push(lowerHandle);
-  // grip ridges on the handles' outer faces
+  // grip ridges on the handles' outer faces: the handle is 47 mm long (local z ±23.5 mm), so the
+  // four ridges run from -5 to -20.6 mm and stay on it (a 6.2 mm pitch put the last one 3.6 mm past
+  // the tip, floating in the air above the capo)
   for (let i = 0; i < 4; i++) {
     const r1 = new THREE.BoxGeometry(0.02, 0.0012, 0.0016);
-    r1.translate(0, 0.0039, -0.0085 - i * 0.0062);
+    r1.translate(0, 0.0039, -0.005 - i * 0.0052);
     r1.rotateX(0.52);
     r1.translate(0, 0.0155, -0.0205);
     blacks.push(r1);
     const r2 = new THREE.BoxGeometry(0.02, 0.0012, 0.0016);
-    r2.translate(0, -0.0039, -0.0085 - i * 0.0062);
+    r2.translate(0, -0.0039, -0.005 - i * 0.0052);
     r2.rotateX(-0.52);
     r2.translate(0, -0.0155, -0.0205);
     blacks.push(r2);
