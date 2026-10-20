@@ -33,7 +33,8 @@ function panelFor(content: BookContent): PanelSpec {
   const key = customFor[content.id];
   const mod = key ? customPanels[`../panels/${key}.ts`] : undefined;
   if (!mod) return plain;
-  const candidates = [mod[`${key}Panel`], mod.default, mod.panel];
+  // the named factory first, then whatever the module exports that looks like one
+  const candidates = [mod[`${key}Panel`], mod.default, mod.panel, ...Object.values(mod)].filter((c) => c !== undefined);
   for (const cand of candidates) {
     try {
       const spec = typeof cand === 'function' ? (cand as (c: BookContent) => unknown)(content) : cand;
