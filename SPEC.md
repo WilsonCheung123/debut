@@ -12,6 +12,7 @@ The bar: no glitch, no jank, every transition thoughtful. The details are the pr
 
 - **Desktop web first.** The target is Chrome, Safari and Firefox at 1280 to 1920 px wide (QA at 1440x900 and 1920x1080). Do not spend time optimising for phones: keep the portrait path from throwing errors, but no tap-target work, no bottom-sheet tuning, no mobile screenshots. The 44 px tap audits are informational only.
 - **Never stall.** If something is not working after about 20 minutes of effort, immediately try two different approaches; if both fail, take the simplest thing that works, write it down in your report, and move on. Working, committed, partial progress beats a perfect part that never lands. Do not wait on long background jobs idly; do other parts of your job meanwhile.
+- **Never open a visible browser window on the owner's machine.** Headless only (no Playwright headless:false, no `open`). The owner views the site himself; builders prove things with headless screenshots and logs.
 - **Commit early and often** on your branch with messages that say what works, so the integrator can salvage anything.
 - **Craft bar is unchanged:** bevelled edges, believable materials, contact shadows, a hover lift that reads as lifting, labels that never collide, focus framing with margin, panel typography that reads like paper, transitions with no pop. Look at your own screenshots critically before reporting done.
 
