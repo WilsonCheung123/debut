@@ -48,9 +48,10 @@ const focusId = opt('--focus');
 const scenarioPath = opt('--scenario');
 const baseName = opt('--name', viewportName);
 const reduced = args.includes('--reduced-motion');
-let url = url0;
-if (reduced && !/motion=reduce/.test(url)) url += (url.includes('?') ? '&' : '?') + 'motion=reduce';
-if (!/qa=1/.test(url)) url += (url.includes('?') ? '&' : '?') + 'qa=1'; // headless GPUs are slow: lock the tier, wall-clock tweens
+const u = new URL(url0);
+if (reduced) u.searchParams.set('motion', 'reduce');
+u.searchParams.set('qa', '1'); // headless GPUs are slow: lock the tier, wall-clock tweens (keeps any #hash)
+const url = u.toString();
 
 fs.mkdirSync(outdir, { recursive: true });
 

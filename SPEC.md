@@ -8,6 +8,13 @@ A single 3D scene in the browser: a desk, late at night, lit by one warm lamp. O
 
 The bar: no glitch, no jank, every transition thoughtful. The details are the product: the hover lift, the label, the camera move, the panel entrance, the music-pause bubble.
 
+## 0.1 Build priorities (added 2026-10-20, override anything below that conflicts)
+
+- **Desktop web first.** The target is Chrome, Safari and Firefox at 1280 to 1920 px wide (QA at 1440x900 and 1920x1080). Do not spend time optimising for phones: keep the portrait path from throwing errors, but no tap-target work, no bottom-sheet tuning, no mobile screenshots. The 44 px tap audits are informational only.
+- **Never stall.** If something is not working after about 20 minutes of effort, immediately try two different approaches; if both fail, take the simplest thing that works, write it down in your report, and move on. Working, committed, partial progress beats a perfect part that never lands. Do not wait on long background jobs idly; do other parts of your job meanwhile.
+- **Commit early and often** on your branch with messages that say what works, so the integrator can salvage anything.
+- **Craft bar is unchanged:** bevelled edges, believable materials, contact shadows, a hover lift that reads as lifting, labels that never collide, focus framing with margin, panel typography that reads like paper, transitions with no pop. Look at your own screenshots critically before reporting done.
+
 ## 1. Stack (settled)
 
 - Vite 8 (vanilla TypeScript, no framework), `three@0.186.x` on the classic `WebGLRenderer`, `gsap@3.15` for all tweens, `hls.js` for the hologram video (native HLS on Safari), `@fontsource/newsreader` (body serif), `@fontsource/caveat` (handwriting), system sans for small labels, system CJK for Chinese text on canvas.

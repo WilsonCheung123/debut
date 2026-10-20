@@ -237,8 +237,8 @@ export class Focus {
     if (this.busy) return;
     const focused = this.focused;
     if (!focused) {
-      const minPx = state.isTouch ? 44 : 28;
-      const pick = d.picker.pickAt(clientX, clientY, minPx);
+      const minPx = state.isTouch ? 44 : 0;
+      const pick = d.hover.atRest(() => d.picker.pickAt(clientX, clientY, minPx));
       if (pick) void this.focus(pick.obj.id);
       return;
     }

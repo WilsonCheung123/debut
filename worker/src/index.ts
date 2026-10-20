@@ -12,6 +12,8 @@ export interface Env {
   RESEND_API_KEY?: string;
   OWNER_EMAIL?: string;
   IP_SALT?: string;
+  /** Notes per hashed IP per hour (default 5). `npm run worker` raises it for local development. */
+  NOTE_LIMIT_PER_HOUR?: string;
 }
 
 const LIMITS = { name: 80, email: 254, note: 2000, perHour: 5 } as const;
@@ -97,7 +99,8 @@ async function postNote(req: Request, env: Env, ip: string): Promise<Response> {
 
   const ipHash = await sha256Hex(`${env.IP_SALT ?? 'salt'}:${ip}`);
   const recent = await env.DB.prepare(`SELECT COUNT(*) AS n FROM notes WHERE ip_hash = ? AND created_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 hour')`).bind(ipHash).first<{ n: number }>();
-  if ((recent?.n ?? 0) >= LIMITS.perHour) return bad('too many notes for now; try again in an hour', 429);
+  const perHour = Number(env.NOTE_LIMIT_PER_HOUR) > 0 ? Number(env.NOTE_LIMIT_PER_HOUR) : LIMITS.perHour;
+  if ((recent?.n ?? 0) >= perHour) return bad('too many notes for now; try again in an hour', 429);
 
   await env.DB.prepare(`INSERT INTO notes (name, email, note, ip_hash) VALUES (?, ?, ?, ?)`).bind(name, email, note, ipHash).run();
   await emailOwner(env, { name, email, note });

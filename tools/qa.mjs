@@ -15,6 +15,8 @@ const runs = [
   { name: 'desktop-reduced', args: ['--viewport', 'desktop', '--reduced-motion', '--scenario', 'tests/scenarios/reduced-motion.json'] },
   // choreography timings under a fake clock: panel at +450 ms, camera settled at +900 ms, exit at +800 ms
   { name: 'timing', args: ['--viewport', 'desktop', '--clock', '--scenario', 'tests/scenarios/timing.json'] },
+  // deep link: /#jar focuses the jar after the warm-up; back/Escape clears the hash
+  { name: 'deep-link', url: '#jar', args: ['--viewport', 'desktop', '--scenario', 'tests/scenarios/deep-link.json'] },
 ];
 const only = process.argv[2];
 
@@ -23,7 +25,7 @@ let worker = null;
 const apiUp = async () => { try { const r = await fetch(new URL('/api/anchor/stats', url)); return r.ok; } catch { return false; } };
 if (!(await apiUp())) {
   console.log('starting the worker (wrangler dev --local on 8780)...');
-  worker = spawn('npx', ['wrangler', 'dev', '--config', 'worker/wrangler.toml', '--local', '--port', '8780'], { stdio: 'ignore', detached: true });
+  worker = spawn('npx', ['wrangler', 'dev', '--config', 'worker/wrangler.toml', '--local', '--port', '8780', '--var', 'NOTE_LIMIT_PER_HOUR:500'], { stdio: 'ignore', detached: true });
   for (let i = 0; i < 40 && !(await apiUp()); i++) await new Promise((r) => setTimeout(r, 1000));
   if (!(await apiUp())) { console.error('worker did not come up; API asserts will fail'); }
 }
@@ -33,7 +35,7 @@ let failed = false;
 for (const run of runs) {
   if (only && run.name !== only) continue;
   console.log(`\n=== ${run.name} ===`);
-  const r = spawnSync('node', ['tools/shot.mjs', url, outdir, '--name', run.name, ...run.args], { stdio: 'inherit' });
+  const r = spawnSync('node', ['tools/shot.mjs', url + (run.url || ''), outdir, '--name', run.name, ...run.args], { stdio: 'inherit' });
   const file = path.join(outdir, `${run.name}-problems.txt`);
   const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '(missing)';
   const bad = text.split('\n').filter((l) => /^\[(console\.error|console\.warn|pageerror|assert|audit|timing|hover|focus|exit|scenario|requestfailed|http )/.test(l));

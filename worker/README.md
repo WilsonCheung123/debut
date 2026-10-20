@@ -7,7 +7,9 @@ Local: `npm run worker` starts `wrangler dev --local` on port 8780 with a local
 D1 (sqlite under `.wrangler/`); the Vite dev server proxies `/api` to it. The
 schema is created on first request (idempotent) and also lives in `schema.sql`
 (`npm run worker:init` applies it explicitly). Secrets go in `worker/.dev.vars`
-(copy `.dev.vars.example`); none are needed locally.
+(copy `.dev.vars.example`); none are needed locally. `npm run worker` passes
+`--var NOTE_LIMIT_PER_HOUR:500` so repeated local testing of the jar is not
+rate-limited; production keeps the default of 5 notes per IP per hour.
 
 Deploy (the owner's step, later):
 

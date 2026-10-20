@@ -1,0 +1,32 @@
+[
+  {
+    "action": "wait",
+    "ready": true
+  },
+  {
+    "action": "wait",
+    "ms": 2500
+  },
+  {
+    "action": "assert",
+    "name": "deep-link-focused",
+    "js": "window.__table.state.focused === 'jar' && location.hash === '#jar'"
+  },
+  {
+    "action": "assert",
+    "name": "deep-link-panel",
+    "js": "document.getElementById('panel').hidden === false"
+  },
+  {
+    "action": "shot",
+    "name": "focus-jar"
+  },
+  {
+    "action": "exit"
+  },
+  {
+    "action": "assert",
+    "name": "deep-link-hash-cleared",
+    "js": "location.hash === '' && window.__table.state.focused === null"
+  }
+]

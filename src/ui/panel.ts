@@ -77,8 +77,10 @@ export class Panel {
   }
 
   setSheet(sheet: boolean): void {
+    if (sheet === this.sheet) return;
     this.sheet = sheet;
     this.el.classList.toggle('sheet', sheet);
+    if (this.isOpen) this.setDetent('half', false);
   }
 
   open(spec: PanelSpec, opts: PanelOpenOptions): void {
@@ -172,6 +174,7 @@ export class Panel {
 
   private setDetent(d: 'half' | 'full', animate: boolean): void {
     this.detent = d;
+    if (!this.sheet) { gsap.set(this.paper, { clearProps: 'maxHeight' }); return; } // the side card is full height
     const vh = `${Panel.DETENTS[d] * 100}dvh`;
     if (!animate || state.reducedMotion) { gsap.set(this.paper, { maxHeight: vh }); return; }
     gsap.to(this.paper, { maxHeight: vh, duration: 0.36, ease: 'power3.out', overwrite: 'auto' });

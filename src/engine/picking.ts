@@ -21,8 +21,8 @@ export class Picker {
   private readonly hitMap = new Map<THREE.Object3D, TableObject>();
   private hits: THREE.Object3D[] = [];
   private objects: TableObject[] = [];
-  /** Latest pointer position in CSS px, and whether it moved since the last resolve. */
-  readonly pointer = { x: -1, y: -1, inside: false, dirty: false };
+  /** Latest pointer position in CSS px; `dirty` asks for a resolve, `moved` says a real pointer event caused it. */
+  readonly pointer = { x: -1, y: -1, inside: false, dirty: false, moved: false };
   private readonly corners = Array.from({ length: 8 }, () => new THREE.Vector3());
   private readonly box = new THREE.Box3();
   private readonly v = new THREE.Vector3();
@@ -33,9 +33,9 @@ export class Picker {
     canvas.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'touch') return;
       this.pointer.x = e.clientX; this.pointer.y = e.clientY;
-      this.pointer.inside = true; this.pointer.dirty = true;
+      this.pointer.inside = true; this.pointer.dirty = true; this.pointer.moved = true;
     }, { passive: true });
-    canvas.addEventListener('pointerleave', () => { this.pointer.inside = false; this.pointer.dirty = true; });
+    canvas.addEventListener('pointerleave', () => { this.pointer.inside = false; this.pointer.dirty = true; this.pointer.moved = true; });
   }
 
   register(objects: TableObject[]): void {
@@ -60,22 +60,19 @@ export class Picker {
   }
 
   /**
-   * Exact raycast against all hit meshes. With `keep`, that object stays the
-   * result while the ray still passes through it, even if a neighbour is in
-   * front: a lifted or tilted book must not hand the hover to the book it
-   * uncovers, which would settle, cover the point again and oscillate.
+   * Exact raycast against all hit meshes. Callers resolve hover and clicks
+   * inside Hover.atRest() so the result never depends on the lift the hover
+   * itself caused (otherwise a tilted book uncovers its neighbour, which steals
+   * the hover, settles, covers the point again, and the two oscillate).
    */
-  raycast(clientX: number, clientY: number, keep: TableObject | null = null): Pick | null {
+  raycast(clientX: number, clientY: number): Pick | null {
     this.setRay(clientX, clientY);
     const hits = this.raycaster.intersectObjects(this.hits, true);
-    let first: Pick | null = null;
     for (const h of hits) {
       const obj = this.hitMap.get(h.object);
-      if (!obj) continue;
-      if (keep && obj === keep) return { obj, hit: h.object, via: 'ray' };
-      if (!first) first = { obj, hit: h.object, via: 'ray' };
+      if (obj) return { obj, hit: h.object, via: 'ray' };
     }
-    return first;
+    return null;
   }
 
   /** Raycast against one object's hit meshes only (in-focus click routing). */

@@ -166,11 +166,15 @@ async function boot(): Promise<void> {
       lastMode = rig.mode;
       picker.pointer.dirty = true;
     }
-    // one raycast per frame at most, only when the pointer moved (or the scene settled)
+    // one raycast per frame at most, only when the pointer moved (or the scene settled).
+    // A keyboard-initiated hover (a focused list button) keeps it until the pointer really moves.
     if (picker.pointer.dirty) {
+      const byPointer = picker.pointer.moved;
       picker.pointer.dirty = false;
-      if (!state.focused && !state.isTouch && rig.mode === 'rest') {
-        const pick = picker.pointer.inside ? picker.raycast(picker.pointer.x, picker.pointer.y, hover.current) : null;
+      picker.pointer.moved = false;
+      const keyboardOwns = !byPointer && a11y.el.contains(document.activeElement);
+      if (!state.focused && !state.isTouch && rig.mode === 'rest' && !keyboardOwns) {
+        const pick = picker.pointer.inside ? hover.atRest(() => picker.raycast(picker.pointer.x, picker.pointer.y)) : null;
         setHover(pick?.obj ?? null);
       }
     }
@@ -214,7 +218,7 @@ async function boot(): Promise<void> {
     rect(id: string, minPx = 0) { const o = byId.get(id); return o ? picker.rectOf(o, minPx) : null; },
     visibleRect(id: string) { const o = byId.get(id); return o ? picker.visibleRect(o) : null; },
     anchor(id: string) { const o = byId.get(id); return o ? anchorScreen(o) : null; },
-    pickAt(x: number, y: number) { return picker.pickAt(x, y, state.isTouch ? 44 : 0)?.obj.id ?? null; },
+    pickAt(x: number, y: number) { return hover.atRest(() => picker.pickAt(x, y, state.isTouch ? 44 : 0))?.obj.id ?? null; },
     hover(id: string | null) { setHover(id ? byId.get(id) ?? null : null); },
     focus(id: string) { return focus.focus(id); },
     exit() { return focus.exit(); },

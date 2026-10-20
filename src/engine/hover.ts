@@ -7,6 +7,7 @@ import { state } from '../state';
 interface Rig {
   obj: TableObject;
   base: { position: THREE.Vector3; quaternion: THREE.Quaternion };
+  saved: { position: THREE.Vector3; quaternion: THREE.Quaternion };
   hover: { t: number; tiltX: number; tiltZ: number; wantX: number; wantZ: number };
   motion: Motion;
   /** Half-extent of the hit shapes on the table plane, for normalising the cursor offset. */
@@ -50,6 +51,7 @@ export class Hover {
     this.rigs.set(obj.id, {
       obj,
       base: { position: obj.group.position.clone(), quaternion: obj.group.quaternion.clone() },
+      saved: { position: new THREE.Vector3(), quaternion: new THREE.Quaternion() },
       hover: { t: 0, tiltX: 0, tiltZ: 0, wantX: 0, wantZ: 0 },
       motion: { lift: 0, yaw: 0, pitch: 0, roll: 0, x: 0, z: 0 },
       radius: Math.max(0.02, Math.max(size.x, size.z) / 2),
@@ -155,6 +157,36 @@ export class Hover {
       Q.setFromEuler(EULER);
       g.quaternion.copy(Q).multiply(r.base.quaternion);
       void UP;
+    }
+  }
+
+  /**
+   * Runs `fn` with every lifted/tilted object temporarily at its rest
+   * transform, so picking is a pure function of pointer and camera. Objects
+   * mid-focus (motion layer) are left alone: hover is not resolved then.
+   */
+  atRest<T>(fn: () => T): T {
+    const touched: Rig[] = [];
+    for (const r of this.rigs.values()) {
+      const h = r.hover;
+      if (h.t === 0 && h.tiltX === 0 && h.tiltZ === 0) continue;
+      const g = r.obj.group;
+      r.saved.position.copy(g.position);
+      r.saved.quaternion.copy(g.quaternion);
+      g.position.copy(r.base.position);
+      g.quaternion.copy(r.base.quaternion);
+      g.updateMatrixWorld(true);
+      touched.push(r);
+    }
+    try {
+      return fn();
+    } finally {
+      for (const r of touched) {
+        const g = r.obj.group;
+        g.position.copy(r.saved.position);
+        g.quaternion.copy(r.saved.quaternion);
+        g.updateMatrixWorld(true);
+      }
     }
   }
 

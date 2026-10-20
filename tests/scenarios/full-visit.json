@@ -1,6 +1,8 @@
 [
   {"action":"wait","ready":true},
   {"action":"shot","name":"rest"},
+  {"action":"assert","name":"draw-calls-budget","js":"window.__table.info().drawCalls <= 120"},
+  {"action":"assert","name":"no-email-in-client","js":"!document.documentElement.outerHTML.includes('@college.harvard.edu')"},
   {"action":"audit","name":"sizes","minWidth":60,"clusterPrefixes":["book."]},
 
   {"action":"assert","name":"api-anchor-post","js":"fetch('/api/anchor',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({group:'B',guess:60})}).then(r=>r.json()).then(j=>j.ok===true && j.stats && typeof j.stats.B.n==='number')"},
@@ -32,6 +34,7 @@
   {"action":"eval","js":"window.__table.hover(null)"},
 
   {"action":"focus","id":"id-card"},
+  {"action":"assert","name":"panel-geometry","js":"(function(){ const r = document.querySelector('#panel .paper').getBoundingClientRect(); const portrait = innerHeight > innerWidth; return portrait ? (r.bottom >= innerHeight - 1 && r.height <= innerHeight * 0.5 + 1) : (Math.abs(r.top - 24) < 1 && Math.abs(innerHeight - r.bottom - 24) < 1 && r.width <= 440); })()"},
   {"action":"shot","name":"focus-id-card"},
   {"action":"exit"},
   {"action":"assert","name":"hash-cleared","js":"location.hash === ''"},

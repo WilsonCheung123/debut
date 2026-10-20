@@ -69,20 +69,22 @@ export const rest: Record<string, RestPose> = {
 };
 
 /**
- * Book slots inside the books cluster (local metres). The books builder reads
- * these for placement; the engine uses the object's real bounds for framing.
- * Five standing (spines toward +z) between the bookends, then a lying stack.
+ * The books, in shelf order (also the keyboard/reading order): five standing
+ * between the bookends (spines toward +z), left to right, then the lying
+ * stack, bottom to top. The books builder decides sizes and exact positions
+ * inside the cluster (standing books start near local x = -0.19; the stack
+ * sits around local x = +0.14); the engine frames from real bounds.
  */
-export const bookSlots: { id: string; title: string; standing: boolean; x: number; z: number; stackIndex?: number }[] = [
-  { id: 'book.anna-karenina',      title: 'Anna Karenina',            standing: true, x: -0.185, z: 0 },
-  { id: 'book.inferno',            title: 'Inferno',                  standing: true, x: -0.145, z: 0 },
-  { id: 'book.three-body',         title: 'The Three-Body Problem',   standing: true, x: -0.105, z: 0 },
-  { id: 'book.power-broker',       title: 'The Power Broker',         standing: true, x: -0.055, z: 0 },
-  { id: 'book.pride-and-prejudice', title: 'Pride and Prejudice',      standing: true, x: -0.010, z: 0 },
-  { id: 'book.thinking-fast-slow', title: 'Thinking, Fast and Slow',  standing: false, x: 0.14, z: 0.01, stackIndex: 0 },
-  { id: 'book.innovators-dilemma', title: "The Innovator's Dilemma",  standing: false, x: 0.15, z: 0.00, stackIndex: 1 },
-  { id: 'book.demi-gods',          title: '天龙八部',                  standing: false, x: 0.135, z: 0.02, stackIndex: 2 },
-  { id: 'book.becoming-steve-jobs', title: 'Becoming Steve Jobs',      standing: false, x: 0.145, z: 0.005, stackIndex: 3 },
+export const bookSlots: { id: string; title: string; standing: boolean; stackIndex?: number }[] = [
+  { id: 'book.anna-karenina',      title: 'Anna Karenina',            standing: true },
+  { id: 'book.inferno',            title: 'Inferno',                  standing: true },
+  { id: 'book.three-body',         title: 'The Three-Body Problem',   standing: true },
+  { id: 'book.power-broker',       title: 'The Power Broker',         standing: true },
+  { id: 'book.pride-and-prejudice', title: 'Pride and Prejudice',      standing: true },
+  { id: 'book.thinking-fast-slow', title: 'Thinking, Fast and Slow',  standing: false, stackIndex: 0 },
+  { id: 'book.innovators-dilemma', title: "The Innovator's Dilemma",  standing: false, stackIndex: 1 },
+  { id: 'book.demi-gods',          title: '天龙八部',                  standing: false, stackIndex: 2 },
+  { id: 'book.becoming-steve-jobs', title: 'Becoming Steve Jobs',      standing: false, stackIndex: 3 },
 ];
 
 const book: FocusFrame = { dist: 0.44, az: 8, el: 26, fov: 31, targetOffset: [0, 0.01, 0] };
