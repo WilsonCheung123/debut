@@ -10,7 +10,7 @@ const jobs = [
   {
     src: path.join(HOME, 'Downloads', 'Harvard student portrait card.png'),
     out: 'public/id-card.webp',
-    resize: { width: 1024, withoutEnlargement: true },
+    resize: { width: 2048, withoutEnlargement: true }, // the source is 1536 wide; SPEC 0.2 wants close-up textures at 2048² (was capped at 1024)
   },
   {
     src: path.join(HOME, 'Downloads', 'Red-robed traveler in an antique forest.png'),

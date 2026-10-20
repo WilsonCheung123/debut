@@ -7,9 +7,12 @@ import { noiseDataUrl } from '../materials';
  * reduced-motion camera cuts. depth 0 = rest, 1 = focused. During warm-up
  * depth starts above 1 and settles to 0 with the lamp.
  *
- * The grain is a 3% tiled noise: enough to break the 8-bit banding of a CSS
- * gradient over a mostly-black frame (the renderer dithers its own output),
- * and it lifts pure black to the faint grey of film, which is the point.
+ * The grain is a 1% tiled noise, sized so one noise pixel is one device
+ * pixel (256 px tile at 128 CSS px on a 2x screen): just enough to break the
+ * 8-bit banding of the CSS vignette gradient over a near-black frame. The
+ * renderer dithers its own output (materials/index.ts `standard`), so this
+ * is not the anti-banding for the 3D; at 3% with 2x2-device-pixel grains it
+ * read as coarse paper over everything (SPEC 0.2), which is why it is a whisper now.
  */
 export class Overlay {
   readonly el: HTMLDivElement;
@@ -28,7 +31,7 @@ export class Overlay {
     this.vignette.className = 'vignette';
     this.grain = document.createElement('div');
     this.grain.className = 'grain';
-    this.grain.style.backgroundImage = `url(${noiseDataUrl(128, 1, 11)})`;
+    this.grain.style.backgroundImage = `url(${noiseDataUrl(256, 1, 11)})`;
     this.cutEl = document.createElement('div');
     this.cutEl.className = 'cut';
     this.el.append(this.vignette, this.grain, this.cutEl);

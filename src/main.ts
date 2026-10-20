@@ -10,7 +10,7 @@ import gsap from 'gsap';
 import { state, refreshMedia, flags } from './state';
 import { api } from './api';
 import { materials } from './materials';
-import { createScene, surfaceHeightAt, addProbe } from './engine/scene';
+import { createScene, surfaceHeightAt, addProbe, TABLE } from './engine/scene';
 import { Lights } from './engine/lights';
 import { createContactShadows } from './engine/contact';
 import { CameraRig } from './engine/camera';
@@ -37,8 +37,18 @@ async function boot(): Promise<void> {
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   const ui = document.getElementById('ui') as HTMLElement;
 
-  const { renderer, scene, maxAnisotropy } = createScene(canvas);
-  const lights = new Lights(scene, state.isPhone);
+  const { renderer, scene, maxAnisotropy, software, setEnvironment } = createScene(canvas, state.isPhone);
+  // Quality ladder (engine/quality.ts): full resolution first; dust, transmission and the shadow map
+  // go before the DPR, which never drops below 1.5 on a real GPU.
+  const quality = new Quality({ isPhone: state.isPhone, software, locked: flags.lockTier }, (s, level) => {
+    state.gfxLevel = level;
+    state.quality = s.transmission ? 'high' : 'low';
+    renderer.setPixelRatio(s.dpr);
+    renderer.setSize(innerWidth, innerHeight, false);
+    lights.setShadowSize(s.shadowMap);
+    lamp?.setDustCount(s.dust);
+  });
+  const lights = new Lights(scene, quality.settings().shadowMap);
   const rig = new CameraRig();
   const overlay = new Overlay(ui);
   const label = new Label(ui);
@@ -110,6 +120,14 @@ async function boot(): Promise<void> {
     lights.attachToLamp(lamp.headWorld(), lamp.aimWorld());
     const l = lamp;
     lights.onApply = (w, d) => l.setGlow(w, d);
+    setEnvironment(lamp.headWorld());
+  }
+  // the shadow frustum: the table top plus whatever stands on it (a tight fit is what makes the 4096 map count)
+  {
+    const b = new THREE.Box3(new THREE.Vector3(-TABLE.w / 2, -TABLE.thickness, -TABLE.d / 2), new THREE.Vector3(TABLE.w / 2, 0.01, TABLE.d / 2));
+    const ob = new THREE.Box3();
+    for (const o of interactive) b.union(picker.worldBounds(o, ob));
+    lights.fitShadow(b);
   }
   // contact shadows under everything that sits on the wood (sized from real bounds)
   const contact = createContactShadows(scene);
@@ -161,20 +179,14 @@ async function boot(): Promise<void> {
     canvas.style.cursor = obj ? 'pointer' : '';
   };
 
-  // Quality tier: one-way drop on sustained slow frames.
-  const quality = new Quality(() => {
-    state.quality = 'low';
-    renderer.setPixelRatio(1);
-    lights.setShadowSize(1024);
-    lamp?.setDustCount(60);
-  }, flags.lockTier);
+  lamp?.setDustCount(quality.settings().dust);
 
   const applySize = (): void => {
     refreshMedia();
     const w = innerWidth, h = innerHeight;
-    const dpr = state.quality === 'low' ? 1 : Math.min(devicePixelRatio || 1, state.isPhone ? 1.5 : 2);
-    renderer.setPixelRatio(dpr);
+    renderer.setPixelRatio(quality.settings().dpr); // read live: the window may have moved to another screen
     renderer.setSize(w, h, false);
+    quality.reset();
     rig.fitRest(w, h);
     panel.setSheet(state.portrait);
     rig.parallaxEnabled = !state.isTouch && !state.reducedMotion;
@@ -187,7 +199,9 @@ async function boot(): Promise<void> {
   // frame-time record of the last camera move (for the no-frame-over-50-ms check on a real GPU)
   const moveStats = { max: 0, frames: 0, last: { max: 0, frames: 0 } };
   let frame = 0;
+  const frameTimes = new Float32Array(240); // the last four seconds of frame times, for __table.info()
   const loop = createLoop((dt, t, frameMs) => {
+    frameTimes[frame % frameTimes.length] = frameMs;
     frame++;
     quality.sample(frameMs);
     if (rig.mode === 'moving') { moveStats.max = Math.max(moveStats.max, frameMs); moveStats.frames++; }
@@ -260,10 +274,17 @@ async function boot(): Promise<void> {
     music: music.hooks,
     /** Environment tuning handles for scripted comparisons (several variants per run). */
     env: { lights, renderer, scene, overlay, probe: () => addProbe(scene) },
+    /** Quality ladder hooks: step() forces the next degrade step (to see each level on a real GPU). */
+    gfx: { step: () => quality.step(), get level() { return quality.level; }, settings: () => quality.settings() },
     info() {
+      const n = Math.min(frame, frameTimes.length);
+      const recent = Array.from(frameTimes.subarray(0, n)).sort((a, b) => a - b);
+      const mean = n ? recent.reduce((a, b) => a + b, 0) / n : 0;
       return {
         drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles,
         dpr: renderer.getPixelRatio(), tier: state.quality, mode: rig.mode, busy: focus.busy, frame,
+        gfx: { level: quality.level, ...quality.settings(), shadowMap: lights.shadowMapSize, software },
+        frames: { n, mean: Math.round(mean * 10) / 10, p50: recent[n >> 1] ?? 0, p95: recent[Math.floor(n * 0.95)] ?? 0, max: recent[n - 1] ?? 0 },
         lastMove: moveStats.last,
         camera: { position: rig.camera.position.toArray(), target: rig.pose.target.toArray(), fov: rig.camera.fov, offX: rig.pose.offX, offY: rig.pose.offY },
         rest: { position: rig.rest.position.toArray(), target: rig.rest.target.toArray(), fov: rig.rest.fov },

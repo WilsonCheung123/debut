@@ -4,9 +4,9 @@
 // metalness 0 except metal; no pure black (#141210 floor) or white (#f2ead8 ceiling).
 
 import * as THREE from 'three';
-import { makeCanvasTexture, hash2 } from './canvas';
+import { makeCanvasTexture, hash2, closeUpSize } from './canvas';
 
-export { makeCanvasTexture, grain, noiseDataUrl, hash2, setMaxAnisotropy } from './canvas';
+export { makeCanvasTexture, grain, noiseDataUrl, hash2, setMaxAnisotropy, setMaxTextureSize, closeUpSize } from './canvas';
 
 export const PALETTE = {
   darkest: 0x141210,
@@ -56,6 +56,7 @@ const TAU = Math.PI * 2;
 function drawWalnut(ctx: CanvasRenderingContext2D, w: number, h: number, seed: number, mode: 'color' | 'rough'): void {
   const R = (i: number, j: number): number => hash2(i, j, seed);
   const color = mode === 'color';
+  const S = w / 1024; // the figure was designed at 1024: strokes keep their world width at 2048, pores and noise get finer
   ctx.fillStyle = color ? '#3a2a1d' : '#9c9c9c'; // roughness 0.61 base
   ctx.fillRect(0, 0, w, h);
 
@@ -104,9 +105,9 @@ function drawWalnut(ctx: CanvasRenderingContext2D, w: number, h: number, seed: n
         gr.addColorStop(u, `rgba(${base},${(alpha * (0.3 + 0.7 * m)).toFixed(3)})`);
       }
       ctx.strokeStyle = gr;
-      ctx.lineWidth = 0.6 + R(s, 20) * (dark ? 2.0 : 1.3);
+      ctx.lineWidth = (0.6 + R(s, 20) * (dark ? 2.0 : 1.3)) * S;
       ctx.beginPath();
-      for (let x = 0; x <= w; x += 6) {
+      for (let x = 0; x <= w; x += 6 * S) {
         const yy = y0 + a1 * Math.sin(TAU * k1 * x / w + p1) + a2 * Math.sin(TAU * k2 * x / w + p2);
         if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
       }
@@ -131,11 +132,11 @@ function drawWalnut(ctx: CanvasRenderingContext2D, w: number, h: number, seed: n
 
   // wear: fine scratches, mostly along the grain (things slid across it)
   for (let i = 0; i < 16; i++) {
-    const x = R(i, 40) * w, y = R(i, 41) * h, len = 60 + R(i, 42) * 260;
+    const x = R(i, 40) * w, y = R(i, 41) * h, len = (60 + R(i, 42) * 260) * S;
     const ang = (R(i, 43) < 0.75 ? (R(i, 44) - 0.5) * 0.5 : R(i, 44) * TAU);
     const a = color ? 0.04 + R(i, 45) * 0.07 : 0.2 + R(i, 45) * 0.2;
     ctx.strokeStyle = color ? `rgba(220,200,170,${a.toFixed(3)})` : `rgba(255,255,255,${a.toFixed(3)})`;
-    ctx.lineWidth = 0.7 + R(i, 46) * 0.8;
+    ctx.lineWidth = (0.7 + R(i, 46) * 0.8) * S;
     for (const dx of [0, -w, w]) {
       ctx.beginPath();
       ctx.moveTo(x + dx, y);
@@ -167,10 +168,10 @@ function drawWalnut(ctx: CanvasRenderingContext2D, w: number, h: number, seed: n
     }
   }
 
-  // fine noise (per pixel, so it tiles)
+  // fine noise (per pixel, so it tiles); gentler than it was: at 2048 it is half the size in the world already
   const img = ctx.getImageData(0, 0, w, h);
   const d = img.data;
-  const amp = color ? 11 : 8;
+  const amp = color ? 7 : 8;
   for (let i = 0; i < d.length; i += 4) {
     const n = (hash2(i & 1023, i >> 10, seed + 5) - 0.5) * amp;
     d[i] += n; d[i + 1] += n * 0.92; d[i + 2] += n * 0.82;
@@ -220,16 +221,16 @@ function texOnce(key: string, make: () => THREE.CanvasTexture): THREE.CanvasText
   return t;
 }
 
-/** Procedural walnut colour, tiled. Dark, slightly worn. */
-export function woodTexture(seed = 3, size = 1024): THREE.CanvasTexture {
+/** Procedural walnut colour, tiled. Dark, slightly worn. 2048 on desktop (the table top is seen close in every focus), 1024 on phones. */
+export function woodTexture(seed = 3, size = closeUpSize()): THREE.CanvasTexture {
   return texOnce(`wood:${seed}:${size}`, () => makeCanvasTexture({
     width: size, height: size, repeat: [1, 1], anisotropy: 16,
     draw(ctx, w, h) { drawWalnut(ctx, w, h, seed, 'color'); },
   }));
 }
 
-/** The roughness map matching woodTexture(seed): same wear, same seed. */
-export function woodRoughness(seed = 3, size = 512): THREE.CanvasTexture {
+/** The roughness map matching woodTexture(seed): same wear, same seed (half the colour map's size: it carries no fine detail). */
+export function woodRoughness(seed = 3, size = closeUpSize() / 2): THREE.CanvasTexture {
   return texOnce(`woodr:${seed}:${size}`, () => makeCanvasTexture({
     width: size, height: size, repeat: [1, 1], anisotropy: 8, colorSpace: THREE.NoColorSpace,
     draw(ctx, w, h) { drawWalnut(ctx, w, h, seed, 'rough'); },

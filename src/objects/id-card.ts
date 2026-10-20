@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import type { ObjectCtx, TableObject } from './types';
 import { hitProxy, solid, contactBlob } from './helpers';
-import { makeCanvasTexture, grain, hash2 } from '../materials';
+import { makeCanvasTexture, grain, hash2, closeUpSize } from '../materials';
 import { focus as focusFrames, rest as restPoses } from '../layout';
 import { dirFrom } from '../engine/camera';
 import { idCard as content } from '../content/id-card';
@@ -16,8 +16,11 @@ import { idCard as content } from '../content/id-card';
 // +450 ms.
 
 const ID = 'id-card';
-/** The drawn card's outline inside the 1024 × 683 image (measured; the rest is margin and a baked shadow). */
+/** The drawn card's outline inside the image, measured on the 1024 × 683 version (the rest is margin and a baked shadow); scaled to the image that arrives. */
 const CROP = { x: 31, y: 56, w: 962, h: 561 };
+const CROP_REF_W = 1024;
+/** The front texture's width: 2048 on desktop (the card fills ~1000 device pixels in focus on a 2x screen), 1024 on phones. */
+const FRONT_W = closeUpSize();
 const W = 0.0856;
 const H = W * CROP.h / CROP.w;        // 0.0499: the drawing's aspect
 const T = 0.00078;                     // thickness
@@ -151,7 +154,7 @@ function roundedRect(s: THREE.Shape, w: number, h: number, r: number): void {
 /** The front: cream until the image arrives, then the drawn card cropped to its outline. */
 function frontTexture(): THREE.CanvasTexture {
   const tex = makeCanvasTexture({
-    width: 1024, height: Math.round(1024 * CROP.h / CROP.w), anisotropy: 16,
+    width: FRONT_W, height: Math.round(FRONT_W * CROP.h / CROP.w), anisotropy: 16,
     draw(c, w, h) { c.fillStyle = '#f1e7d3'; c.fillRect(0, 0, w, h); },
   });
   const img = new Image();
@@ -160,7 +163,9 @@ function frontTexture(): THREE.CanvasTexture {
     const canvas = tex.image as HTMLCanvasElement;
     const c = canvas.getContext('2d');
     if (!c) return;
-    c.drawImage(img, CROP.x, CROP.y, CROP.w, CROP.h, 0, 0, canvas.width, canvas.height);
+    const k = img.naturalWidth / CROP_REF_W;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(img, CROP.x * k, CROP.y * k, CROP.w * k, CROP.h * k, 0, 0, canvas.width, canvas.height);
     tex.needsUpdate = true;
   };
   img.onerror = () => console.warn('id-card: front image failed to load; showing the blank card');
@@ -171,7 +176,7 @@ function frontTexture(): THREE.CanvasTexture {
 /** The back: cream with a thin maroon rule, a small roundel, a line of fine print, a faint barcode. */
 function backTexture(): THREE.CanvasTexture {
   return makeCanvasTexture({
-    width: 1024, height: Math.round(1024 * CROP.h / CROP.w), anisotropy: 16,
+    width: FRONT_W, height: Math.round(FRONT_W * CROP.h / CROP.w), anisotropy: 16,
     draw(c, w, h) {
       c.fillStyle = '#efe6d2';
       c.fillRect(0, 0, w, h);

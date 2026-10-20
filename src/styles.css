@@ -23,8 +23,8 @@
   background: radial-gradient(ellipse 78% 76% at var(--vx) var(--vy), rgba(0,0,0,0) var(--vin), rgba(0,0,0,var(--vout)) 100%);
   opacity: 0.6;
 }
-/* Film grain over everything: tiled noise at 3%, breaks gradient banding, lifts black to film black. */
-#overlay .grain { position: absolute; inset: 0; background-size: 128px 128px; background-repeat: repeat; opacity: 0.032; }
+/* Film grain over everything: a whisper (1%), one noise pixel per device pixel on 2x screens; breaks the vignette gradient's banding. */
+#overlay .grain { position: absolute; inset: 0; background-size: 128px 128px; background-repeat: repeat; opacity: 0.01; }
 #overlay .cut { position: absolute; inset: 0; background: #000; opacity: 0; }
 
 /* Hover label: small caps, cream on nothing. */

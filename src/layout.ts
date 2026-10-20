@@ -70,7 +70,7 @@ export const rest: Record<string, RestPose> = {
   vinyl:    { position: [0.28, 0, -0.25], rotationY: 6 },
   fpga:     { position: [-0.30, 0, 0.06], rotationY: -12 },
   'die-cast': { position: [-0.13, 0, 0.10], rotationY: 24 },
-  puppet:   { position: [0.44, 0, 0.08], rotationY: -16 },
+  puppet:   { position: [0.44, 0, 0.08], rotationY: 8 },   // turned toward the lamp so the key grazes his front (he read grey at -16: only the cool fill reached his face)
   'id-card': { position: [-0.42, 0, 0.25], rotationY: 9 },
   guitar:   { position: [0.12, 0, 0.26], rotationY: -22 },
   jar:      { position: [0.56, 0, 0.24], rotationY: 0 },
@@ -120,7 +120,7 @@ export const focus: Record<string, FocusFrame> = {
   fpga:       { dist: 0.30, az: 4, el: 52, fov: 31 },
   'die-cast': { dist: 0.30, az: 12, el: 44, fov: 31 },
   hologram:   { dist: 0.84, az: 6, el: 22, fov: 32, targetOffset: [0, 0.05, 0] },
-  puppet:     { dist: 0.62, az: 10, el: 12, fov: 32, targetOffset: [0, 0.01, 0] },
+  puppet:     { dist: 0.62, az: 20, el: 32, fov: 32, targetOffset: [0, 0.01, 0] },   // from higher: the lamp's shade (0.4 m up, behind him) leaves the top of the frame (at el 12 and 24 its lit mouth cut the corner)
   jar:        { dist: 0.36, az: 14, el: 30, fov: 31, targetOffset: [0, 0.008, 0] },
   vinyl:      { dist: 0.58, az: -4, el: 40, fov: 32 },
 };

@@ -29,14 +29,14 @@ export function createDieCast(ctx: ObjectCtx): TableObject {
   group.name = ID;
 
   const noise = castNoise();
-  // One lamp and no environment map: a true metal (metalness 1) reads black or blown out.
-  // Cast aluminium is matte anyway: a mid grey with modest metalness and a pebbled bump sells it.
+  // Cast aluminium: a warm mid grey, half metallic (the scene's room environment gives it something to
+  // reflect; at metalness 0.2 under the cool window fill it read as bluish matte plastic), a pebbled bump.
   const cast = new THREE.MeshStandardMaterial({
-    color: 0x8f9396, roughness: 0.84, metalness: 0.2,
+    color: 0xaaa298, roughness: 0.66, metalness: 0.55,
     roughnessMap: noise, bumpMap: noise, bumpScale: 0.0007,
   });
   const toolMarks = machinedMarks();
-  const machined = new THREE.MeshStandardMaterial({ color: 0xb9bdbf, roughness: 0.4, metalness: 0.48, roughnessMap: toolMarks });
+  const machined = new THREE.MeshStandardMaterial({ color: 0xcfc9bf, roughness: 0.32, metalness: 0.8, roughnessMap: toolMarks });
   const hole = matte(0x1a1a19, 0.85);
 
   // walls: an extruded ring, filleted top and bottom; the top cap is the machined rim

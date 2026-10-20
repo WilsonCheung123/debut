@@ -45,8 +45,8 @@ export class Lights {
   private readonly tmp = new THREE.Color();
   private shadowSize = 2048;
 
-  constructor(scene: THREE.Scene, isPhone: boolean) {
-    this.shadowSize = isPhone ? 1024 : 2048;
+  constructor(scene: THREE.Scene, shadowSize: number) {
+    this.shadowSize = shadowSize;
     const { key, sun, spill, fill, hemi, ambient, keeper } = this;
     key.name = 'key';
     key.castShadow = false;
@@ -56,14 +56,12 @@ export class Lights {
     sun.name = 'sun';
     sun.castShadow = true;
     sun.shadow.mapSize.set(this.shadowSize, this.shadowSize);
-    sun.shadow.bias = -0.00025;
-    sun.shadow.normalBias = 0.01;
-    sun.shadow.radius = 4;
     const cam = sun.shadow.camera;
     cam.left = -0.85; cam.right = 0.85; cam.top = 0.75; cam.bottom = -0.75;
     cam.near = 0.1; cam.far = 3.2;
     sun.target = this.keyTarget;
     scene.add(sun);
+    this.applyShadowFilter();
 
     spill.name = 'spill';
     scene.add(spill);
@@ -111,7 +109,57 @@ export class Lights {
     this.shadowSize = size;
     this.sun.shadow.mapSize.set(size, size);
     if (this.sun.shadow.map) { this.sun.shadow.map.dispose(); this.sun.shadow.map = null; }
+    this.applyShadowFilter();
   }
+
+  /**
+   * Fits the shadow camera to a world box (the objects' bounds plus the table
+   * top) seen from the sun: the eight corners in the light's view give the
+   * ortho extents and the depth range, with a small margin. A tight frustum
+   * is what makes a 4096 map worth having: every texel lands on the table.
+   */
+  fitShadow(box: THREE.Box3): void {
+    const sun = this.sun;
+    const cam = sun.shadow.camera;
+    sun.updateMatrixWorld(true);
+    this.keyTarget.updateMatrixWorld(true);
+    // Matrix4.lookAt builds the light's rotation (looking down -z); with its position it is the light's world matrix, whose inverse is the view
+    const inv = new THREE.Matrix4().lookAt(sun.position, this.keyTarget.position, new THREE.Vector3(0, 1, 0)).setPosition(sun.position).invert();
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    const p = new THREE.Vector3();
+    for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+      p.set(x, y, z).applyMatrix4(inv);
+      minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+      minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+    }
+    const pad = 0.03; // a shadow may fall a little outside the casters' box
+    cam.left = minX - pad; cam.right = maxX + pad;
+    cam.bottom = minY - pad; cam.top = maxY + pad;
+    cam.near = Math.max(0.02, -maxZ - pad);
+    cam.far = -minZ + pad;
+    cam.updateProjectionMatrix();
+    this.applyShadowFilter();
+  }
+
+  /**
+   * Bias and blur in world terms, so a map resize keeps the same look. Texel
+   * size follows from the fitted frustum; the normal bias is one texel plus a
+   * hair (enough against acne on the table at the lamp's ~30° grazing angle,
+   * small enough that a 1 mm card or pick still casts a shadow touching it:
+   * the old 10 mm normal bias lifted every thin thing off its shadow). The
+   * blur radius is ~3 mm: a soft penumbra from a shade, not a point source.
+   */
+  private applyShadowFilter(): void {
+    const cam = this.sun.shadow.camera;
+    const extent = Math.max(cam.right - cam.left, cam.top - cam.bottom);
+    const texel = extent / this.shadowSize;
+    this.sun.shadow.normalBias = texel * 1.6 + 0.0005;
+    this.sun.shadow.bias = -(texel * 0.5) / (cam.far - cam.near); // depth units: half a texel of world depth
+    this.sun.shadow.radius = Math.max(2, 0.003 / texel);
+  }
+
+  get shadowMapSize(): number { return this.shadowSize; }
 
   /** Writes intensities from `warm` and `dim`. Called every frame (cheap). */
   apply(): void {
