@@ -1,0 +1,52 @@
+[
+  {"action":"wait","ready":true},
+  {"action":"eval","js":"window.__until = async (f, ms) => { const t0 = Date.now(); for (;;) { try { if (f()) return true; } catch {} if (Date.now() - t0 > ms) return false; await new Promise((r) => setTimeout(r, 250)); } }; window.__advances = async (label, ms) => { const H = window.__hologram, T = window.__table; const v0 = H.textureVersion, t0 = H.status().currentTime, f0 = T.info().frame, w0 = Date.now(); /* software GL renders well under 1 fps on a loaded machine: measure over at least four rendered frames, not a fixed time */ while (T.info().frame - f0 < 4 && Date.now() - w0 < 60000) await new Promise((r) => setTimeout(r, 250)); if (Date.now() - w0 < ms) await new Promise((r) => setTimeout(r, ms - (Date.now() - w0))); const s = H.status(); const frames = T.info().frame - f0; const r = { label, live: s.live, playing: s.playing, paused: s.paused, mapIsVideo: H.liveMix > 0.95, frames, textureUploads: H.textureVersion - v0, timeDelta: +(s.currentTime - t0).toFixed(2), error: s.error, tail: s.events.slice(-6) }; (window.__advLog ||= []).push(r); return r; }"},
+  {"action":"assert","name":"prepared-at-idle","js":"window.__until(() => { const s = window.__hologram.status(); return s.playing === false && (s.mode !== 'hls' || s.hls === true); }, 20000)"},
+
+  {"action":"focus","id":"hologram"},
+  {"action":"assert","name":"first-live","js":"window.__until(() => window.__hologram.status().live === true && window.__hologram.liveMix > 0.95, 45000)"},
+  {"action":"assert","name":"first-frames-advance","js":"(async function(){ const r = await window.__advances('first', 2000); return r.mapIsVideo && r.frames >= 3 && r.textureUploads >= r.frames - 1 && r.timeDelta > 0.5 && r.paused === false; })()"},
+  {"action":"log","name":"first","js":"window.__advLog.at(-1)"},
+  {"action":"shot","name":"first"},
+
+  {"action":"exit"},
+  {"action":"assert","name":"released","js":"(function(){ const s = window.__hologram.status(); return s.playing === false && s.live === false && window.__hologram.screenVisible === false; })()"},
+  {"action":"wait","ms":4500},
+  {"action":"log","name":"re-prepared","js":"(function(){ const s = window.__hologram.status(); return { hls: s.hls, playing: s.playing, tail: s.events.slice(-3) }; })()"},
+
+  {"action":"focus","id":"hologram"},
+  {"action":"assert","name":"second-live","js":"window.__until(() => window.__hologram.status().live === true && window.__hologram.liveMix > 0.95, 45000)"},
+  {"action":"assert","name":"second-frames-advance","js":"(async function(){ const r = await window.__advances('second', 2000); return r.mapIsVideo && r.frames >= 3 && r.textureUploads >= r.frames - 1 && r.timeDelta > 0.5 && r.paused === false; })()"},
+  {"action":"log","name":"second","js":"window.__advLog.at(-1)"},
+  {"action":"shot","name":"second"},
+
+  {"action":"click","selector":"#panel .films .film[data-index=\"3\"]"},
+  {"action":"assert","name":"switched-live","js":"window.__until(() => window.__hologram.selected === 3 && window.__hologram.status().live === true && window.__hologram.liveMix > 0.95, 45000)"},
+  {"action":"assert","name":"switched-frames-advance","js":"(async function(){ const r = await window.__advances('switched', 2000); return r.mapIsVideo && r.frames >= 3 && r.textureUploads >= r.frames - 1 && r.timeDelta > 0.5 && r.paused === false; })()"},
+  {"action":"log","name":"switched","js":"window.__advLog.at(-1)"},
+  {"action":"click","selector":"#panel .films .film[data-index=\"1\"]"},
+  {"action":"assert","name":"switched-again-live","js":"window.__until(() => window.__hologram.selected === 1 && window.__hologram.status().live === true && window.__hologram.liveMix > 0.95, 45000)"},
+  {"action":"assert","name":"switched-again-frames-advance","js":"(async function(){ const r = await window.__advances('switched-again', 2000); return r.mapIsVideo && r.frames >= 3 && r.textureUploads >= r.frames - 1 && r.timeDelta > 0.5 && r.paused === false; })()"},
+  {"action":"log","name":"switched-again","js":"window.__advLog.at(-1)"},
+  {"action":"shot","name":"switched"},
+
+  {"action":"click","selector":"#panel .sound"},
+  {"action":"assert","name":"cinema-on","js":"window.__until(() => { const s = window.__hologram.status(); return s.cinema === true && s.muted === false && s.paused === false; }, 10000)"},
+  {"action":"wait","ms":1500},
+  {"action":"press","key":"Escape"},
+  {"action":"assert","name":"cinema-off-still-focused","js":"window.__until(() => { const s = window.__hologram.status(); return s.cinema === false && s.muted === true && s.paused === false && window.__table.state.focused === 'hologram' && window.__hologram.screenVisible === true && window.__hologram.screenOpacity > 0.9; }, 10000)"},
+  {"action":"assert","name":"after-cinema-frames-advance","js":"(async function(){ const r = await window.__advances('after-cinema', 2000); return r.live && r.mapIsVideo && r.frames >= 3 && r.textureUploads >= r.frames - 1 && r.timeDelta > 0.5 && r.paused === false; })()"},
+  {"action":"log","name":"after-cinema","js":"window.__advLog.at(-1)"},
+  {"action":"shot","name":"after-cinema"},
+
+  {"action":"exit"},
+  {"action":"assert","name":"released-after-cinema","js":"(function(){ const s = window.__hologram.status(); return s.playing === false && s.cinema === false && window.__table.state.focused === null && window.__table.info().mode === 'rest'; })()"},
+  {"action":"wait","ms":4500},
+  {"action":"log","name":"before-third","js":"(function(){ const i = window.__table.info(); return { mode: i.mode, focused: window.__table.state.focused, fs: document.fullscreenElement && document.fullscreenElement.tagName, tail: window.__hologram.status().events.slice(-3) }; })()"},
+  {"action":"focus","id":"hologram"},
+  {"action":"assert","name":"third-live","js":"window.__until(() => window.__hologram.selected === 1 && window.__hologram.status().live === true && window.__hologram.liveMix > 0.95, 45000)"},
+  {"action":"assert","name":"third-frames-advance","js":"(async function(){ const r = await window.__advances('third', 2000); return r.mapIsVideo && r.frames >= 3 && r.textureUploads >= r.frames - 1 && r.timeDelta > 0.5 && r.paused === false; })()"},
+  {"action":"log","name":"third","js":"window.__advLog.at(-1)"},
+  {"action":"exit"},
+  {"action":"log","name":"all","js":"window.__advLog.map((r) => `${r.label}: uploads ${r.textureUploads} over ${r.frames} frames, time +${r.timeDelta}`)"}
+]

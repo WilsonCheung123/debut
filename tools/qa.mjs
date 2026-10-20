@@ -31,6 +31,7 @@ const runs = [
   { name: 'shelf', args: [...D, '--scenario', 'tests/scenarios/shelf.json'] },   // shelf mode end to end: scroll, lean, open, keyboard, Kahneman, the Austen letter, restore
   { name: 'hologram', args: [...D, '--scenario', 'tests/scenarios/hologram.json'] },   // native HLS path (headless Chromium plays the m3u8 itself)
   { name: 'hologram-hls', url: '?holo=hls', args: [...D, '--scenario', 'tests/scenarios/hologram.json'] },   // the hls.js path real Chrome takes
+  { name: 'hologram-again', url: '?holo=hls', args: [...D, '--scenario', 'tests/scenarios/hologram-again.json'] },   // the sheet keeps advancing on a second focus, after a film switch, after cinema (texture uploads counted per rendered frame)
   { name: 'puppet', args: [...D, '--scenario', 'tests/scenarios/puppet.json'] },   // intro, hover tags, the three item views
   { name: 'vinyl', args: [...D, '--scenario', 'tests/scenarios/vinyl.json'] },
   { name: 'vinyl-offline', args: [...D, '--scenario', 'tests/scenarios/vinyl-offline.json'] },
